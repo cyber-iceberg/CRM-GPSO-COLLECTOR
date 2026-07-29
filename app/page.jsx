@@ -1,37 +1,55 @@
 // =====================================================================
-//  GPSO COLLECTOR · Home provisional  ·  Ruta EXACTA: app/page.jsx
-//  Solo para tener la ruta raiz "/". En la Fase 2 la sustituimos por
-//  el catalogo real conectado a Supabase.
+//  GPSO COLLECTOR · Central de Leads (REAL)  ·  app/page.jsx
+//  Servidor: valida sesion, lee perfil + catalogo + mis leads de Supabase
+//  y se lo pasa al cliente. Sustituye a la home provisional.
 // =====================================================================
 
-import Link from 'next/link';
+import { createClient } from '../lib/supabase/server';
+import { redirect } from 'next/navigation';
+import CentralClient from './CentralClient';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const supabase = createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const { data: perfil } = await supabase
+    .from('perfiles_alumno')
+    .select('nombre, rol, activo, leads_ganados, leads_perdidos, leads_expirados')
+    .eq('id', user.id)
+    .single();
+
+  const { data: catalogo } = await supabase
+    .from('v_catalogo')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  const { data: misLeads } = await supabase
+    .from('leads')
+    .select('*')
+    .eq('alumno_id', user.id)
+    .eq('estado', 'reservado')
+    .order('reservado_en', { ascending: false });
+
+  const { data: config } = await supabase.from('config').select('*').single();
+
+  const { data: motivos } = await supabase
+    .from('motivos_descarte')
+    .select('*')
+    .eq('activo', true)
+    .order('orden');
+
   return (
-    <div className="gpso-bg" style={{ display: 'grid', placeItems: 'center', minHeight: '100vh', padding: 20 }}>
-      <div className="caja" style={{ maxWidth: 420, textAlign: 'center', padding: 30 }}>
-        <div style={{
-          width: 52, height: 52, borderRadius: 12, background: 'var(--de-line)',
-          display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 17, color: '#000',
-          margin: '0 auto 16px', boxShadow: '0 4px 16px rgba(221,0,0,.3)',
-        }}>GP</div>
-
-        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, marginBottom: 6 }}>
-          GPSO <span style={{ color: 'var(--red)' }}>COLLECTOR</span>
-        </h1>
-        <div className="texto-alemania" style={{ fontSize: 12, letterSpacing: 2, fontWeight: 700, marginBottom: 18 }}>
-          CENTRAL DE LEADS
-        </div>
-        <div className="de-line" style={{ margin: '0 auto 20px', maxWidth: 120 }} />
-
-        <p style={{ color: 'var(--text-soft)', fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>
-          Proyecto en marcha. Pronto podras reservar y gestionar tus clientes de importacion desde aqui.
-        </p>
-
-        <Link href="/login" className="btn-de" style={{ display: 'inline-flex', width: '100%' }}>
-          Acceder
-        </Link>
-      </div>
-    </div>
+    <CentralClient
+      user={{ id: user.id, email: user.email }}
+      perfil={perfil}
+      catalogoInicial={catalogo || []}
+      misLeadsInicial={misLeads || []}
+      config={config || { slots_max: 3, cooldown_horas: 4, expiracion_sin_contactar_horas: 24 }}
+      motivos={motivos || []}
+    />
   );
 }
