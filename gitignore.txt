@@ -1,0 +1,17 @@
+# dependencias
+/node_modules
+
+# next
+/.next
+/out
+
+# produccion
+/build
+
+# entorno (secretos: van en Vercel, no en el repo)
+.env
+.env*.local
+
+# logs y varios
+npm-debug.log*
+.DS_Store
