@@ -1,8 +1,8 @@
 'use client';
 
 // =====================================================================
-//  GPSO COLLECTOR · LOGIN  ·  app/login/page.jsx  (v3 — AURA)
-//  Logo real presidiendo, aura roja, cristal.
+//  GPSO COLLECTOR · LOGIN  ·  app/login/page.jsx  (v4)
+//  Logo UNIFICADO dentro de la tarjeta. Tema claro por defecto.
 // =====================================================================
 
 import { useState } from 'react';
@@ -53,13 +53,22 @@ export default function LoginPage() {
 
   return (
     <div className="gpso-bg" style={{ display: 'grid', placeItems: 'center', minHeight: '100vh', padding: 20 }}>
-      <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ textAlign: 'center', marginBottom: 22 }}>
-          <div className="hero-logo"><img src={LOGO} alt="GPSO Collector" /></div>
-          <div style={{ fontSize: 11, letterSpacing: 3, fontWeight: 700, color: 'var(--gray-mid)', textTransform: 'uppercase', marginTop: 10 }}>Central de Leads</div>
+      <div className="glass" style={{ width: '100%', maxWidth: 400, overflow: 'hidden' }}>
+
+        {/* CABECERA UNIFICADA: logo + tagline dentro de la misma tarjeta */}
+        <div style={{ textAlign: 'center', padding: '32px 26px 20px' }}>
+          <div className="hero-logo" style={{ width: 88, height: 88, borderRadius: 20 }}>
+            <img src={LOGO} alt="GPSO Collector" />
+          </div>
+          <div style={{ fontSize: 11, letterSpacing: 3, fontWeight: 700, color: 'var(--gray-mid)', textTransform: 'uppercase', marginTop: 12 }}>
+            Central de Leads
+          </div>
         </div>
 
-        <div className="glass" style={{ padding: 26 }}>
+        <div style={{ height: 1, background: 'var(--card-bd)' }} />
+
+        {/* FORMULARIO */}
+        <div style={{ padding: '22px 26px 26px' }}>
           <div className="seg" style={{ display: 'flex', width: '100%', marginBottom: 18 }}>
             <button className={`seg-btn ${modo === 'login' ? 'active' : ''}`} style={{ flex: 1, justifyContent: 'center' }}
               onClick={() => { setModo('login'); setError(''); setOk(''); }}>Entrar</button>
