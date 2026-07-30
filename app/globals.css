@@ -18,8 +18,8 @@
   --red-bg:rgba(198,26,26,.10); --red-bd:rgba(198,26,26,.34);
   --gold:#E8A33D; --gold-soft:#f0bd6a;
   --green:#46c483; --green-bg:rgba(70,196,131,.10); --green-bd:rgba(70,196,131,.30);
-  --btn-grad:linear-gradient(100deg, #0e0e0e 0%, #141414 60%, #7a1414 100%);
-  --btn-fg:#ffffff;
+  --btn-grad:linear-gradient(100deg, #ffffff 0%, #f2eded 62%, #f0cfcf 100%);
+  --btn-fg:#141414;
   --de-line:linear-gradient(90deg, #6b6b6b 0%, #DD0000 50%, #FFCE00 100%);
   --sombra:0 10px 30px rgba(0,0,0,.4);
   --glow-red:0 0 40px rgba(198,26,26,.12);
