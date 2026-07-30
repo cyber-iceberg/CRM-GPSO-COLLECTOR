@@ -1,41 +1,44 @@
 /* =====================================================================
-   GPSO COLLECTOR · CENTRAL DE LEADS · globals.css
-   Design system oficial CON TEMA CLARO/OSCURO.
-   El tema se controla con  <html data-theme="dark|light">.
-   Oscuro es el tema por defecto (marca). Importar en app/layout.jsx.
+   GPSO COLLECTOR · CENTRAL DE LEADS · globals.css  (v3 — premium)
+   Alineado con gpsocollector.com: sobrio, negro, rojo->dorado suave,
+   logo tipografico, bandera SOLO como acento puntual en texto.
+   Tema claro/oscuro. Importar en app/layout.jsx.
    ===================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Instrument+Serif:ital@1&display=swap');
 
 /* ---------- TEMA OSCURO (por defecto) ---------- */
 :root, :root[data-theme="dark"]{
-  --bg:#000; --card:#111111; --card-soft:#161616; --border:#222222;
-  --text:#ffffff; --text-soft:#c8c8c8; --gray-mid:#808080; --gray-dark:#333333;
+  --bg:#0a0a0a; --card:#111111; --card-soft:#161616; --border:#232323;
+  --text:#f2f2f2; --text-soft:#b9b9b9; --gray-mid:#7c7c7c; --gray-dark:#3a3a3a;
   --red:#C61A1A; --red-soft:#e23b3b; --red-deep:#9e1414;
-  --red-bg:rgba(198,26,26,.10); --red-bd:rgba(198,26,26,.38);
+  --red-bg:rgba(198,26,26,.09); --red-bd:rgba(198,26,26,.32);
+  --gold:#E8A33D; --gold-soft:#f0bd6a; --gold-deep:#c9821f;
   --green:#46c483; --green-bg:rgba(70,196,131,.10); --green-bd:rgba(70,196,131,.30);
-  --amber:#c9a23c;
-  --caja-grad:linear-gradient(180deg,#141414 0%,#0e0e0e 100%);
-  --caja-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 2px 8px rgba(0,0,0,.30);
-  --caja-shadow-hover:inset 0 1px 0 rgba(255,255,255,.05), 0 16px 34px rgba(0,0,0,.55), 0 0 0 1px rgba(198,26,26,.15);
-  --amb-red:rgba(198,26,26,.11); --amb-amarillo:rgba(255,206,0,.045);
-  --de-grad:linear-gradient(90deg, #000000 0%, #C61A1A 40%, #DD0000 64%, #FFCE00 100%);
-  --de-line:linear-gradient(90deg, #505050 5%, #DD0000 50%, #FFCE00 100%);
+  --caja-grad:linear-gradient(180deg,#131313 0%,#0d0d0d 100%);
+  --caja-shadow:inset 0 1px 0 rgba(255,255,255,.03), 0 2px 10px rgba(0,0,0,.35);
+  --caja-shadow-hover:inset 0 1px 0 rgba(255,255,255,.04), 0 16px 36px rgba(0,0,0,.55), 0 0 0 1px rgba(198,26,26,.12);
+  --amb-red:rgba(198,26,26,.08); --amb-gold:rgba(232,163,61,.05);
+  /* boton principal: rojo -> dorado (estilo web) */
+  --btn-grad:linear-gradient(95deg, #C61A1A 0%, #CF521C 50%, #E8A33D 100%);
+  /* bandera Alemania SOLO para acentos de texto puntuales */
+  --de-line:linear-gradient(90deg, #6b6b6b 0%, #DD0000 50%, #FFCE00 100%);
 }
 
 /* ---------- TEMA CLARO ---------- */
 :root[data-theme="light"]{
-  --bg:#f5f5f7; --card:#ffffff; --card-soft:#f0f0f3; --border:#e5e5ea;
-  --text:#141416; --text-soft:#54545c; --gray-mid:#8a8a92; --gray-dark:#c6c6cc;
-  --red:#C61A1A; --red-soft:#c22319; --red-deep:#9e1414;
-  --red-bg:rgba(198,26,26,.07); --red-bd:rgba(198,26,26,.26);
+  --bg:#f6f6f7; --card:#ffffff; --card-soft:#f1f1f3; --border:#e6e6ea;
+  --text:#131315; --text-soft:#55555d; --gray-mid:#8a8a92; --gray-dark:#c4c4ca;
+  --red:#C61A1A; --red-soft:#bf241a; --red-deep:#9e1414;
+  --red-bg:rgba(198,26,26,.07); --red-bd:rgba(198,26,26,.24);
+  --gold:#c9821f; --gold-soft:#e0a038; --gold-deep:#a8681a;
   --green:#1f9d63; --green-bg:rgba(31,157,99,.09); --green-bd:rgba(31,157,99,.28);
-  --amber:#a8791f;
   --caja-grad:linear-gradient(180deg,#ffffff 0%,#fbfbfc 100%);
   --caja-shadow:0 1px 2px rgba(20,20,30,.05), 0 6px 20px rgba(20,20,30,.05);
-  --caja-shadow-hover:0 12px 30px rgba(20,20,30,.10), 0 0 0 1px rgba(198,26,26,.12);
-  --amb-red:rgba(198,26,26,.05); --amb-amarillo:rgba(255,206,0,.06);
-  /* El boton bandera y la linea tricolor NO cambian: se ven bien en ambos */
+  --caja-shadow-hover:0 12px 30px rgba(20,20,30,.10), 0 0 0 1px rgba(198,26,26,.10);
+  --amb-red:rgba(198,26,26,.04); --amb-gold:rgba(232,163,61,.05);
+  --btn-grad:linear-gradient(95deg, #C61A1A 0%, #CF521C 50%, #E8A33D 100%);
+  --de-line:linear-gradient(90deg, #6b6b6b 0%, #DD0000 50%, #FFCE00 100%);
 }
 
 *{ box-sizing:border-box; margin:0; padding:0; }
@@ -48,17 +51,29 @@ html,body{
 a{ color:inherit; text-decoration:none; }
 input, button, textarea, select{ font-family:inherit; }
 
-/* Ambiente sutil de fondo */
+/* Ambiente sutil (muy discreto) */
 .gpso-bg{
   min-height:100vh;
   background:
-    radial-gradient(820px 420px at 90% -6%, var(--amb-red) 0%, transparent 58%),
-    radial-gradient(620px 420px at -8% 104%, var(--amb-amarillo) 0%, transparent 55%),
+    radial-gradient(760px 380px at 88% -8%, var(--amb-red) 0%, transparent 60%),
+    radial-gradient(560px 380px at -8% 106%, var(--amb-gold) 0%, transparent 58%),
     var(--bg);
   background-attachment:fixed;
 }
 
-/* Degradado bandera Alemania sobre texto */
+/* ---------- LOGO TIPOGRAFICO (estilo web) ---------- */
+.marca{
+  font-family:'Inter Tight', sans-serif; font-weight:700;
+  letter-spacing:-.5px; line-height:.98; text-transform:lowercase;
+  color:var(--text);
+}
+.marca .low{ display:block; font-size:.62em; font-weight:600; letter-spacing:0; opacity:.92; }
+.marca .dot{ color:var(--red); }
+
+/* Acento en cursiva elegante (como "para hacerlo realidad") */
+.acento-serif{ font-family:'Instrument Serif', serif; font-style:italic; font-weight:400; }
+
+/* Degradado bandera Alemania — SOLO acento de texto puntual */
 .texto-alemania{
   background:var(--de-line);
   -webkit-background-clip:text; background-clip:text;
@@ -66,33 +81,32 @@ input, button, textarea, select{ font-family:inherit; }
   font-weight:700;
 }
 
-/* Boton bandera (accion principal) */
+/* ---------- BOTON PRINCIPAL (rojo -> dorado suave) ---------- */
 .btn-de{
   position:relative; overflow:hidden; border:none; cursor:pointer;
-  color:#fff; font-weight:700; letter-spacing:.3px; text-shadow:0 1px 2px rgba(0,0,0,.5);
-  background:var(--de-grad);
-  box-shadow:0 6px 20px rgba(198,26,26,.30), inset 0 1px 0 rgba(255,255,255,.18);
-  border-radius:9px; padding:12px 16px;
+  color:#fff; font-weight:700; letter-spacing:.2px; text-shadow:0 1px 2px rgba(0,0,0,.35);
+  background:var(--btn-grad);
+  box-shadow:0 4px 16px rgba(198,26,26,.22);
+  border-radius:10px; padding:12px 16px;
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   transition:transform .15s ease, box-shadow .2s ease, filter .15s ease;
 }
-.btn-de:hover{ transform:translateY(-2px); filter:brightness(1.06);
-  box-shadow:0 10px 26px rgba(198,26,26,.40), inset 0 1px 0 rgba(255,255,255,.22); }
+.btn-de:hover{ transform:translateY(-1px); filter:brightness(1.05); box-shadow:0 8px 22px rgba(198,26,26,.30); }
 .btn-de:active{ transform:translateY(0); }
 .btn-de::after{
   content:''; position:absolute; top:0; left:-130%; width:55%; height:100%;
-  background:linear-gradient(120deg, transparent, rgba(255,255,255,.38), transparent);
+  background:linear-gradient(120deg, transparent, rgba(255,255,255,.28), transparent);
   transform:skewX(-20deg); transition:left .6s cubic-bezier(.2,.8,.2,1); pointer-events:none;
 }
 .btn-de:hover::after{ left:150%; }
-.btn-de:disabled, .btn-de.off{ background:rgba(128,128,128,.18); color:var(--gray-mid);
+.btn-de:disabled, .btn-de.off{ background:rgba(128,128,128,.16); color:var(--gray-mid);
   cursor:not-allowed; box-shadow:none; text-shadow:none; transform:none; }
 .btn-de:disabled::after, .btn-de.off::after{ display:none; }
 
 /* Boton secundario */
 .btn-ghost{
   background:transparent; border:1px solid var(--border); color:var(--text-soft);
-  border-radius:9px; padding:11px 16px; cursor:pointer; font-weight:600;
+  border-radius:10px; padding:11px 16px; cursor:pointer; font-weight:600;
   transition:border-color .15s ease, color .15s ease;
 }
 .btn-ghost:hover{ border-color:var(--red-bd); color:var(--text); }
@@ -100,38 +114,35 @@ input, button, textarea, select{ font-family:inherit; }
 /* Inputs */
 .campo{
   width:100%; background:var(--card); border:1px solid var(--border);
-  border-radius:9px; padding:12px 13px; color:var(--text); font-size:14px; font-weight:500;
+  border-radius:10px; padding:12px 13px; color:var(--text); font-size:14px; font-weight:500;
   transition:border-color .15s ease, box-shadow .15s ease;
 }
 .campo::placeholder{ color:var(--gray-mid); }
-.campo:focus{ outline:none; border-color:var(--red-bd); box-shadow:0 0 0 3px rgba(198,26,26,.12); }
+.campo:focus{ outline:none; border-color:var(--red-bd); box-shadow:0 0 0 3px rgba(198,26,26,.10); }
 .etiqueta{ font-size:12px; color:var(--gray-mid); font-weight:600; margin-bottom:6px; display:block;
-  text-transform:uppercase; letter-spacing:.5px; }
+  text-transform:uppercase; letter-spacing:.6px; }
 
-/* Caja / tarjeta base */
+/* Caja / tarjeta */
 .caja{
-  background:var(--caja-grad);
-  border:1px solid var(--border); border-radius:14px; padding:20px;
-  box-shadow:var(--caja-shadow);
+  background:var(--caja-grad); border:1px solid var(--border);
+  border-radius:14px; padding:20px; box-shadow:var(--caja-shadow);
 }
 
-/* Linea tricolor decorativa */
-.de-line{ height:3px; border-radius:3px; background:var(--de-line); opacity:.9;
-  box-shadow:0 0 18px rgba(221,0,0,.25); }
+/* Linea divisoria fina y sobria (sin bandera) */
+.de-line{ height:1px; background:linear-gradient(90deg, var(--red) 0%, transparent 60%); opacity:.5; }
 
 /* Mensajes */
 .aviso{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600;
-  border-radius:9px; padding:10px 13px; }
+  border-radius:10px; padding:10px 13px; }
 .aviso.ok{ background:var(--green-bg); border:1px solid var(--green-bd); color:var(--green); }
 .aviso.error{ background:var(--red-bg); border:1px solid var(--red-bd); color:var(--red-soft); }
 
-/* Boton de tema (claro/oscuro) */
+/* Boton de tema */
 .theme-toggle{
   position:fixed; top:16px; right:16px; z-index:100;
   width:40px; height:40px; border-radius:10px; cursor:pointer;
   background:var(--card); border:1px solid var(--border); color:var(--text);
-  display:grid; place-items:center;
-  box-shadow:var(--caja-shadow);
+  display:grid; place-items:center; box-shadow:var(--caja-shadow);
   transition:border-color .15s ease, transform .15s ease, background .25s ease, color .25s ease;
 }
 .theme-toggle:hover{ border-color:var(--red-bd); transform:translateY(-1px); }
