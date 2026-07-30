@@ -173,15 +173,14 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
         {/* HEADER */}
         <div style={S.header}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={S.logo}>GP</div>
-            <div>
-              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1.1 }}>
-                GPSO <span style={{ color: 'var(--red)' }}>COLLECTOR</span>
-              </div>
-              <div className="texto-alemania" style={{ fontSize: 10.5, letterSpacing: 2, fontWeight: 700, marginTop: 3 }}>
-                CENTRAL DE LEADS
-              </div>
-            </div>
+           <div>
+  <div className="marca" style={{ fontSize: 24 }}>
+    gpso<span className="low">collector<span className="dot">.</span></span>
+  </div>
+  <div style={{ fontSize: 10, letterSpacing: 2.5, fontWeight: 700, color: 'var(--gray-mid)', textTransform: 'uppercase', marginTop: 2 }}>
+    Central de Leads
+  </div>
+</div>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <Stat icon={<Circle size={12} />} val={`${misLeads.length} / ${config.slots_max}`} lab="Slots" hot={slotsLibres <= 0} />
