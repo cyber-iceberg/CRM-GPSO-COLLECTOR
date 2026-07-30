@@ -135,7 +135,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
             <div className="brand-tile"><img src={LOGO} alt="GPSO Collector" /></div>
             <div>
               <div className="marca" style={{ fontSize: 23 }}>gpso<span className="low">collector<span className="dot">.</span></span></div>
-              <div style={{ fontSize: 10, letterSpacing: 2.5, fontWeight: 700, color: 'var(--gray-mid)', textTransform: 'uppercase', marginTop: 3 }}>Central de Leads</div>
+              <div style={{ fontSize: 10, letterSpacing: 2.5, fontWeight: 700, color: 'var(--gray-mid)', textTransform: 'uppercase', marginTop: 3 }}>Central de Clientes</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
