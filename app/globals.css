@@ -18,7 +18,7 @@
   --red-bg:rgba(198,26,26,.10); --red-bd:rgba(198,26,26,.34);
   --gold:#E8A33D; --gold-soft:#f0bd6a;
   --green:#46c483; --green-bg:rgba(70,196,131,.10); --green-bd:rgba(70,196,131,.30);
-  --btn-grad:linear-gradient(95deg, #C61A1A 0%, #CF521C 50%, #E8A33D 100%);
+  --btn-grad:linear-gradient(180deg, #D11E1E 0%, #C61A1A 55%, #A81414 100%);
   --de-line:linear-gradient(90deg, #6b6b6b 0%, #DD0000 50%, #FFCE00 100%);
   --sombra:0 10px 30px rgba(0,0,0,.4);
   --glow-red:0 0 40px rgba(198,26,26,.12);
@@ -35,7 +35,7 @@
   --red-bg:rgba(198,26,26,.07); --red-bd:rgba(198,26,26,.24);
   --gold:#c9821f; --gold-soft:#e0a038;
   --green:#1f9d63; --green-bg:rgba(31,157,99,.09); --green-bd:rgba(31,157,99,.28);
-  --btn-grad:linear-gradient(95deg, #C61A1A 0%, #CF521C 50%, #E8A33D 100%);
+  --btn-grad:linear-gradient(180deg, #D11E1E 0%, #C61A1A 55%, #A81414 100%);
   --de-line:linear-gradient(90deg, #6b6b6b 0%, #DD0000 50%, #FFCE00 100%);
   --sombra:0 6px 20px rgba(20,20,30,.06);
   --glow-red:0 0 30px rgba(198,26,26,.08);
