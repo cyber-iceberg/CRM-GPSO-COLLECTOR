@@ -61,7 +61,7 @@ export default function LoginPage() {
             <img src={LOGO} alt="GPSO Collector" />
           </div>
           <div style={{ fontSize: 11, letterSpacing: 3, fontWeight: 700, color: 'var(--gray-mid)', textTransform: 'uppercase', marginTop: 12 }}>
-            Central de Leads
+            Central de Clientes
           </div>
         </div>
 
