@@ -1,46 +1,30 @@
 // =====================================================================
-//  GPSO COLLECTOR · Central de Leads (REAL)  ·  app/page.jsx
-//  Servidor: valida sesion, lee perfil + catalogo + mis leads de Supabase
-//  y se lo pasa al cliente. Sustituye a la home provisional.
+//  GPSO COLLECTOR · Central de Leads (servidor)  ·  app/central/page.jsx
+//  Igual que la antigua app/page.jsx, pero ahora vive en /central.
+//  Imports a DOS niveles porque está en app/central/.
 // =====================================================================
 
-import { createClient } from '../lib/supabase/server';
+import { createClient } from '../../lib/supabase/server';
 import { redirect } from 'next/navigation';
 import CentralClient from './CentralClient';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Home() {
+export default async function CentralPage() {
   const supabase = createClient();
-
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
   const { data: perfil } = await supabase
-    .from('perfiles_alumno')
-    .select('nombre, rol, activo, leads_ganados, leads_perdidos, leads_expirados')
-    .eq('id', user.id)
-    .single();
-
-  const { data: catalogo } = await supabase
-    .from('v_catalogo')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  const { data: misLeads } = await supabase
-    .from('leads')
-    .select('*')
-    .eq('alumno_id', user.id)
-    .eq('estado', 'reservado')
-    .order('reservado_en', { ascending: false });
+    .from('perfiles_alumno').select('*').eq('id', user.id).single();
 
   const { data: config } = await supabase.from('config').select('*').single();
+  const { data: motivos } = await supabase.from('motivos_descarte').select('*').order('orden');
+  const { data: catalogo } = await supabase.from('v_catalogo').select('*').order('created_at', { ascending: false });
+  const { data: misLeads } = await supabase.from('leads').select('*')
+    .eq('alumno_id', user.id).eq('estado', 'reservado').order('reservado_en', { ascending: false });
 
-  const { data: motivos } = await supabase
-    .from('motivos_descarte')
-    .select('*')
-    .eq('activo', true)
-    .order('orden');
+  const cfg = config || { slots_max: 3, cooldown_horas: 4, expiracion_sin_contactar_horas: 24 };
 
   return (
     <CentralClient
@@ -48,7 +32,7 @@ export default async function Home() {
       perfil={perfil}
       catalogoInicial={catalogo || []}
       misLeadsInicial={misLeads || []}
-      config={config || { slots_max: 3, cooldown_horas: 4, expiracion_sin_contactar_horas: 24 }}
+      config={cfg}
       motivos={motivos || []}
     />
   );
