@@ -10,7 +10,7 @@ import MenuDrawer from './components/MenuDrawer';
 import { Target, Gem, UploadCloud, ArrowRight } from 'lucide-react';
 
 // URL de la app de Albert (subir unidades). Cambiar aquí cuando esté lista.
-const URL_STOCK = 'https://stock.gpsocollector.com';
+const URL_STOCK = 'https://gpsocollector.com/acceso';
 
 export default function HomeClient({ email, perfil, stats }) {
   const router = useRouter();
