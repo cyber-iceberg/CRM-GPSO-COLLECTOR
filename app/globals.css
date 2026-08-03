@@ -236,3 +236,31 @@ input, button, textarea, select{ font-family:inherit; }
 .mitem.salir{ color:var(--red-soft); }
 .mspacer{ flex:1; }
 .dsep{ height:1px; background:var(--card-bd); margin:8px 0; }
+
+/* ===================================================================
+   SLIDER "Tu aportación" (VIP) · barra rojo→dorado con pomo dorado
+   =================================================================== */
+input[type="range"].slider-gpso{
+  -webkit-appearance:none; appearance:none; height:10px; border-radius:20px; outline:none; cursor:pointer;
+  background:linear-gradient(90deg, var(--red) 0%, var(--gold) 100%);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.4);
+}
+/* rellena el track a la izquierda del pomo con el degradado y el resto apagado
+   (se hace con un fondo dinámico via variable --p, ver JS) */
+input[type="range"].slider-gpso{
+  background:linear-gradient(90deg, var(--red), var(--gold)) no-repeat;
+  background-size:var(--p,50%) 100%;
+  background-color:rgba(255,255,255,.10);
+}
+input[type="range"].slider-gpso::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none; width:24px; height:24px; border-radius:50%;
+  background:#fff; border:3px solid var(--gold);
+  box-shadow:0 0 0 5px rgba(232,163,61,.22), 0 3px 10px rgba(0,0,0,.5);
+  transition:transform .12s ease;
+}
+input[type="range"].slider-gpso::-webkit-slider-thumb:hover{ transform:scale(1.12); }
+input[type="range"].slider-gpso::-moz-range-thumb{
+  width:24px; height:24px; border-radius:50%; background:#fff; border:3px solid var(--gold);
+  box-shadow:0 0 0 5px rgba(232,163,61,.22), 0 3px 10px rgba(0,0,0,.5); cursor:pointer;
+}
+input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
