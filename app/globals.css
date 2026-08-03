@@ -202,9 +202,10 @@ input, button, textarea, select{ font-family:inherit; }
   display:grid; grid-template-rows:auto 1fr auto; gap:0; }
 .acc-badge{ align-self:start; display:inline-flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
   letter-spacing:1px; text-transform:uppercase; padding:5px 12px; border-radius:20px; width:fit-content; }
-.acc-badge.leads{ background:rgba(198,26,26,.25); border:1px solid rgba(232,68,59,.5); color:#ff9d96; }
-.acc-badge.vip{ background:rgba(232,163,61,.2); border:1px solid rgba(232,163,61,.5); color:#f4c778; }
-.acc-badge.stock{ background:rgba(120,160,210,.2); border:1px solid rgba(120,160,210,.45); color:#a9cdf0; }
+.acc-badge{ backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); text-shadow:0 1px 3px rgba(0,0,0,.5); font-weight:800; }
+.acc-badge.leads{ background:rgba(198,26,26,.55); border:1px solid rgba(232,68,59,.7); color:#ffffff; }
+.acc-badge.vip{ background:rgba(180,120,30,.5); border:1px solid rgba(232,163,61,.75); color:#fff4e0; }
+.acc-badge.stock{ background:rgba(70,110,160,.5); border:1px solid rgba(150,185,225,.7); color:#eaf3ff; }
 .acc-mid{ align-self:end; }              /* titulo + descripcion pegados a la base */
 .acc-card h2{ margin-bottom:6px; }
 .acc-desc{ font-size:13px; color:rgba(255,255,255,.72); line-height:1.5; min-height:39px; }  /* 2 lineas fijas */
