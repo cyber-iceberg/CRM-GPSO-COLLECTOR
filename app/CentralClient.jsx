@@ -8,7 +8,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '../lib/supabase/client';
+import { createClient } from '../../lib/supabase/client';
+import MenuDrawer from '../components/MenuDrawer';
 import {
   Car, MapPin, Wallet, Lock, Unlock, Clock, Phone, Mail, User,
   Trophy, Timer, Users, TrendingUp, X, RotateCcw, XCircle,
@@ -135,14 +136,14 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
             <div className="brand-tile"><img src={LOGO} alt="GPSO Collector" /></div>
             <div>
               <div className="marca" style={{ fontSize: 23 }}>gpso<span className="low">collector<span className="dot">.</span></span></div>
-              <div style={{ fontSize: 10, letterSpacing: 2.5, fontWeight: 700, color: 'var(--gray-mid)', textTransform: 'uppercase', marginTop: 3 }}>Central de Clientes</div>
+              <div style={{ fontSize: 10, letterSpacing: 2.5, fontWeight: 700, color: 'var(--gray-mid)', textTransform: 'uppercase', marginTop: 3 }}>Central de Leads</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <Stat icon={<Circle size={12} />} val={`${misLeads.length} / ${config.slots_max}`} lab="Slots" hot={slotsLibres <= 0} />
             <Stat icon={<Trophy size={13} />} val={perfil?.leads_ganados || 0} lab="Cerrados" />
             <Stat icon={<TrendingUp size={13} />} val={reputacion == null ? '—' : `${reputacion}%`} lab="Reputación" />
-            <button className="btn-ghost" onClick={salir} style={{ padding: '10px 12px' }} title="Salir"><LogOut size={16} /></button>
+            <MenuDrawer perfil={perfil} email={user.email} />
           </div>
         </div>
 
@@ -305,3 +306,4 @@ const S = {
   empty: { gridColumn: '1/-1', textAlign: 'center', padding: '60px 20px', color: 'var(--gray-mid)', fontSize: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, lineHeight: 1.6 },
   rules: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 11.5, marginTop: 30, paddingTop: 18, borderTop: '1px solid var(--card-bd)' },
 };
+
