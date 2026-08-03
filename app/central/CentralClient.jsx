@@ -13,7 +13,7 @@ import MenuDrawer from '../components/MenuDrawer';
 import {
   Car, MapPin, Wallet, Lock, Unlock, Clock, Phone, Mail, User,
   Trophy, Timer, Users, TrendingUp, X, RotateCcw, XCircle,
-  LogOut, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Circle
+  LogOut, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Circle, ArrowLeft
 } from 'lucide-react';
 
 const CALOR = {
@@ -133,6 +133,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
         {/* HEADER */}
         <div style={S.header}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <button className="btn-ghost" onClick={() => router.push('/')} style={{ padding: '10px 12px' }} title="Volver al inicio"><ArrowLeft size={16} /></button>
             <div className="brand-tile"><img src={LOGO} alt="GPSO Collector" /></div>
             <div>
               <div className="marca" style={{ fontSize: 23 }}>gpso<span className="low">collector<span className="dot">.</span></span></div>
