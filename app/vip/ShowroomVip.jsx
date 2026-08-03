@@ -44,7 +44,7 @@ export default function ShowroomVip({ user, perfil, esVip, esAdmin, operacionesI
   // ---- SIN ACCESO ----
   if (!acceso) {
     return (
-      <div style={S.lockWrap}>
+      <div data-theme="dark" style={S.lockWrap}>
         <div style={S.lockCard}>
           <div style={S.lockIcon}><Lock size={26} /></div>
           <h1 className="display" style={{ fontSize: 24, marginBottom: 8 }}>Zona de inversores VIP</h1>
@@ -62,7 +62,7 @@ export default function ShowroomVip({ user, perfil, esVip, esAdmin, operacionesI
   // ---- SIN OPERACIONES ----
   if (ops.length === 0) {
     return (
-      <div style={S.lockWrap}>
+      <div data-theme="dark" style={S.lockWrap}>
         <div style={S.lockCard}>
           <div style={S.lockIcon}><TrendingUp size={26} /></div>
           <h1 className="display" style={{ fontSize: 24, marginBottom: 8 }}>Sin operaciones abiertas</h1>
@@ -124,7 +124,7 @@ export default function ShowroomVip({ user, perfil, esVip, esAdmin, operacionesI
   }
 
   return (
-    <div className="gpso-bg" style={{ background: '#050505' }}>
+    <div className="gpso-bg" data-theme="dark" style={{ background: '#050505', color: '#f4f4f4' }}>
       {flash && (
         <div style={{ ...S.flash, ...(flash.t === 'ok' ? S.flashOk : S.flashWarn) }}>{flash.m}</div>
       )}
@@ -267,7 +267,7 @@ export default function ShowroomVip({ user, perfil, esVip, esAdmin, operacionesI
                   <div key={k} style={{ ...S.so, ...(k === 1 ? { borderColor: 'rgba(232,163,61,.4)' } : {}) }}>
                     <div style={S.soL}>{e.nombre}</div>
                     <div style={S.soV}>+{eur(aporta * e.roi_pct / 100)}</div>
-                    <div style={S.soP}><b style={{ color: 'var(--gold)' }}>+{e.roi_pct}%</b> sobre tu inversión · {e.dias} días</div>
+                    <div style={S.soP}><b style={{ color: 'var(--gold)' }}>+{e.roi_pct}%</b> sobre tu inversión</div>
                   </div>
                 ))}
               </div>
@@ -322,18 +322,23 @@ function MercadoBar({ mkt, compra }) {
   const posN = mkt.nuestro != null ? ((mkt.nuestro - mkt.min) / span) * 100 : null;
   const posMed = ((mkt.med - mkt.min) / span) * 100;
   const comps = Array.isArray(mkt.comps) ? mkt.comps : [];
+  // clamp para que la etiqueta "venta prevista" no se salga por los bordes
+  const clampL = Math.max(9, Math.min(91, posN != null ? posN : 50));
   return (
     <>
-      <div style={{ position: 'relative', height: 14, borderRadius: 20, background: 'linear-gradient(90deg,#2a6b3f,#7a6b1e 55%,#7a2020)', margin: '40px 0 34px' }}>
-        <div style={{ position: 'absolute', top: -26, left: 0, transform: 'translateX(-50%)', fontSize: 12, color: 'var(--text-soft)', fontWeight: 600, whiteSpace: 'nowrap' }}>{eur(mkt.min)}<span style={{ display: 'block', color: 'var(--gray-mid)', fontSize: 10, textAlign: 'center' }}>Mín</span></div>
-        <div style={{ position: 'absolute', top: -26, left: posMed + '%', transform: 'translateX(-50%)', fontSize: 12, color: 'var(--text-soft)', fontWeight: 600, whiteSpace: 'nowrap' }}>{eur(mkt.med)}<span style={{ display: 'block', color: 'var(--gray-mid)', fontSize: 10, textAlign: 'center' }}>Medio</span></div>
-        <div style={{ position: 'absolute', top: -26, left: '100%', transform: 'translateX(-50%)', fontSize: 12, color: 'var(--text-soft)', fontWeight: 600, whiteSpace: 'nowrap' }}>{eur(mkt.max)}<span style={{ display: 'block', color: 'var(--gray-mid)', fontSize: 10, textAlign: 'center' }}>Máx</span></div>
+      <div style={{ position: 'relative', height: 14, borderRadius: 20, background: 'linear-gradient(90deg,#2a6b3f,#7a6b1e 55%,#7a2020)', margin: '48px 6px 70px' }}>
+        {/* Min - anclado a la izquierda */}
+        <div style={{ position: 'absolute', top: -30, left: 0, fontSize: 12.5, color: '#f4f4f4', fontWeight: 700, whiteSpace: 'nowrap' }}>{eur(mkt.min)}<span style={{ display: 'block', color: '#8a8a92', fontSize: 9.5, fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase' }}>Mín</span></div>
+        {/* Medio - centrado */}
+        <div style={{ position: 'absolute', top: -30, left: posMed + '%', transform: 'translateX(-50%)', fontSize: 12.5, color: '#f4f4f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'center' }}>{eur(mkt.med)}<span style={{ display: 'block', color: '#8a8a92', fontSize: 9.5, fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase' }}>Medio</span></div>
+        {/* Max - anclado a la derecha */}
+        <div style={{ position: 'absolute', top: -30, right: 0, fontSize: 12.5, color: '#f4f4f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}>{eur(mkt.max)}<span style={{ display: 'block', color: '#8a8a92', fontSize: 9.5, fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase' }}>Máx</span></div>
         {posN != null && (
           <>
-            <div style={{ position: 'absolute', top: '50%', left: posN + '%', transform: 'translate(-50%,-50%)', width: 22, height: 22, borderRadius: '50%', background: '#fff', border: '3px solid var(--gold)', boxShadow: '0 0 0 5px rgba(232,163,61,.25),0 4px 12px rgba(0,0,0,.5)', zIndex: 3 }} />
-            <div style={{ position: 'absolute', bottom: -44, left: posN + '%', transform: 'translateX(-50%)', textAlign: 'center', whiteSpace: 'nowrap' }}>
+            <div style={{ position: 'absolute', top: '50%', left: posN + '%', transform: 'translate(-50%,-50%)', width: 24, height: 24, borderRadius: '50%', background: '#fff', border: '3px solid var(--gold)', boxShadow: '0 0 0 5px rgba(232,163,61,.25),0 4px 14px rgba(0,0,0,.6)', zIndex: 3 }} />
+            <div style={{ position: 'absolute', bottom: -52, left: clampL + '%', transform: 'translateX(-50%)', textAlign: 'center', whiteSpace: 'nowrap', background: 'rgba(232,163,61,.1)', border: '1px solid rgba(232,163,61,.35)', borderRadius: 10, padding: '6px 12px' }}>
               <div style={{ fontFamily: 'Bricolage Grotesque', fontWeight: 800, fontSize: 16, color: 'var(--gold)' }}>{eur(mkt.nuestro)}</div>
-              <div style={{ fontSize: 10, color: 'var(--gray-mid)', textTransform: 'uppercase', letterSpacing: .5 }}>Venta prevista</div>
+              <div style={{ fontSize: 9.5, color: '#8a8a92', textTransform: 'uppercase', letterSpacing: .5, fontWeight: 600 }}>Venta prevista</div>
             </div>
           </>
         )}
