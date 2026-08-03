@@ -12,7 +12,7 @@ import { createClient } from '../../lib/supabase/client';
 import { Menu, X, Home, Target, Gem, UploadCloud, User, ShieldCheck, LogOut } from 'lucide-react';
 
 // URL de la app de Albert (subir unidades). Cambiar aquí cuando esté lista.
-const URL_STOCK = 'https://stock.gpsocollector.com';
+const URL_STOCK = 'https://gpsocollector.com/acceso';
 
 export default function MenuDrawer({ perfil, email }) {
   const router = useRouter();
