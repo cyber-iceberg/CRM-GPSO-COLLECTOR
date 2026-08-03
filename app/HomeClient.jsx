@@ -49,21 +49,21 @@ export default function HomeClient({ email, perfil, stats }) {
           <Acc onClick={() => router.push('/central')}
             img="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1000"
             badge="● Leads en directo" badgeClass="leads"
-            titulo="Central de Leads" desc="Reserva y gestiona tus clientes de importación. Reparto justo, en tiempo real."
+            titulo="Central de Leads" desc="Reserva y gestiona tus clientes de importación en tiempo real."
             icon={<Target size={16} />} />
 
           {(esVip || esAdmin) && (
             <Acc onClick={() => router.push('/vip')}
               img="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1000"
               badge="◆ Exclusivo" badgeClass="vip"
-              titulo="Inversión VIP" desc="Coinversión en coches de alta gama seleccionados por el equipo Collector."
+              titulo="Inversión VIP" desc="Coinversión en coches de alta gama seleccionados por Collector."
               icon={<Gem size={16} />} />
           )}
 
           <Acc onClick={() => window.open(URL_STOCK, '_blank', 'noopener,noreferrer')}
             img="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1000"
             badge="↗ Cesión de venta" badgeClass="stock"
-            titulo="Subir unidades" desc="¿Tienes un coche para vender? Súbelo y lo gestionamos en nuestro stock."
+            titulo="Subir unidades" desc="Sube tu coche y lo gestionamos en venta desde nuestro stock."
             icon={<UploadCloud size={16} />} externo />
         </div>
 
@@ -86,9 +86,11 @@ function Acc({ onClick, img, badge, badgeClass, titulo, desc, icon, externo }) {
       <div className={`acc-grad ${badgeClass}`} />
       <div className="acc-cont">
         <span className={`acc-badge ${badgeClass}`}>{badge}</span>
-        <h2 className="display" style={{ fontSize: 24, marginBottom: 6, color: '#fff' }}>{titulo}</h2>
-        <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,.72)', lineHeight: 1.5, maxWidth: '92%' }}>{desc}</p>
-        <span className="acc-go">{icon} Entrar {externo ? '↗' : <ArrowRight size={15} />}</span>
+        <div className="acc-mid">
+          <h2 className="display" style={{ fontSize: 23, color: '#fff' }}>{titulo}</h2>
+          <p className="acc-desc">{desc}</p>
+          <span className="acc-go">{icon} Entrar {externo ? '↗' : <ArrowRight size={15} />}</span>
+        </div>
       </div>
     </div>
   );
