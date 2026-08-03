@@ -258,8 +258,9 @@ export default function ShowroomVip({ user, perfil, esVip, esAdmin, operacionesI
               <div style={S.sec}>Simula tu inversión</div>
               <div style={S.simRow}>
                 <label style={{ fontSize: 13, color: 'var(--text-soft)', fontWeight: 600 }}>Tu aportación</label>
-                <input type="range" min={minActual} max={Math.min(o.inversion_total, minActual * 12)} step={minActual >= 5000 ? 1000 : 500}
-                  value={aporta} onChange={(e) => setAporta(+e.target.value)} style={{ flex: 1, minWidth: 200, accentColor: 'var(--gold)' }} />
+                <input type="range" className="slider-gpso" min={minActual} max={Math.min(o.inversion_total, minActual * 12)} step={minActual >= 5000 ? 1000 : 500}
+                  value={aporta} onChange={(e) => setAporta(+e.target.value)}
+                  style={{ flex: 1, minWidth: 200, '--p': (() => { const mn = minActual, mx = Math.min(o.inversion_total, minActual * 12); return (mx > mn ? ((aporta - mn) / (mx - mn)) * 100 : 0) + '%'; })() }} />
                 <div style={S.simInput}>{eur(aporta)}</div>
               </div>
               <div style={S.simOut}>
