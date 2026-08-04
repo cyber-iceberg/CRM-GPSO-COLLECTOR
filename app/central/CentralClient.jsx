@@ -224,6 +224,17 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                   <div style={S.crow}><Mail size={14} color="var(--red-soft)" /> {l.email}</div>
                   {l.nota && <div style={S.nota}>{l.nota}</div>}
                 </div>
+                {l.detalles && Object.keys(l.detalles).length > 0 && (
+                  <div style={S.detalles}>
+                    <div style={S.detTit}><Sparkles size={12} /> Lo que pidió</div>
+                    {Object.entries(l.detalles).map(([k, v]) => (
+                      <div key={k} style={S.detRow}>
+                        <span style={S.detK}>{k}</span>
+                        <span style={S.detV}>{String(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {sinContactar ? (
                   <button className="btn-ghost" onClick={() => contactado(l.id)} style={{ borderColor: 'var(--red-bd)', color: 'var(--text)' }}>
                     <Phone size={14} style={{ verticalAlign: -2, marginRight: 6 }} /> Marcar como contactado
@@ -303,6 +314,11 @@ const S = {
   owned: { display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10.5, fontWeight: 700, letterSpacing: .5, color: 'var(--red-soft)', background: 'var(--red-bg)', border: '1px solid var(--red-bd)', borderRadius: 20, padding: '3px 10px' },
   estadoTag: { fontSize: 10.5, fontWeight: 600, color: 'var(--gold)', border: '1px solid rgba(232,163,61,.35)', borderRadius: 20, padding: '3px 9px' },
   crow: { display: 'flex', alignItems: 'center', gap: 9, fontSize: 13.5, fontWeight: 500 },
+  detalles: { background: 'rgba(232,163,61,.06)', border: '1px solid rgba(232,163,61,.22)', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 },
+  detTit: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 2 },
+  detRow: { display: 'flex', flexDirection: 'column', gap: 2, borderTop: '1px solid rgba(232,163,61,.12)', paddingTop: 9 },
+  detK: { fontSize: 11, color: 'var(--gray-mid)', fontWeight: 600 },
+  detV: { fontSize: 14, color: 'var(--text)', fontWeight: 600, lineHeight: 1.35 },
   nota: { fontSize: 12, color: 'var(--text-soft)', borderTop: '1px solid var(--card-bd)', paddingTop: 9, marginTop: 2, lineHeight: 1.5 },
   empty: { gridColumn: '1/-1', textAlign: 'center', padding: '60px 20px', color: 'var(--gray-mid)', fontSize: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, lineHeight: 1.6 },
   rules: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 11.5, marginTop: 30, paddingTop: 18, borderTop: '1px solid var(--card-bd)' },
