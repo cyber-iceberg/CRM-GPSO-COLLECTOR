@@ -2,27 +2,30 @@
 
 // =====================================================================
 //  GPSO COLLECTOR · HOME / Dashboard (cliente)  ·  app/HomeClient.jsx
-//  Saludo + 3 accesos (Central, VIP, Subir unidades) + stats + menú.
+//  6 accesos: Central · VIP · Formación · Recursos · Cesión · NEXOCAR
 // =====================================================================
 
 import { useRouter } from 'next/navigation';
 import MenuDrawer from './components/MenuDrawer';
-import { Target, Gem, UploadCloud, ArrowRight } from 'lucide-react';
+import { Target, Gem, GraduationCap, FolderOpen, UploadCloud, Rocket, ArrowRight } from 'lucide-react';
 
-// URL de la app de Albert (subir unidades). Cambiar aquí cuando esté lista.
+// Enlaces externos (cambiar aquí si cambian)
+const URL_FORMACION = 'https://academy.gpsocollector.com';
 const URL_STOCK = 'https://gpsocollector.com/acceso';
+const URL_NEXOCAR = 'https://nexocar.app';
 
 export default function HomeClient({ email, perfil, stats }) {
   const router = useRouter();
   const esAdmin = perfil && perfil.rol === 'admin';
   const esVip = perfil && perfil.vip;
   const nombre = (perfil?.nombre || email || '').split('@')[0].split(' ')[0];
-
   const eur = (n) => (n || 0).toLocaleString('es-ES') + ' €';
+
+  const abrir = (url) => window.open(url, '_blank', 'noopener,noreferrer');
 
   return (
     <div className="gpso-bg" style={{ minHeight: '100vh' }}>
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '22px 22px 60px' }}>
+      <div style={{ maxWidth: 1060, margin: '0 auto', padding: '22px 22px 60px' }}>
 
         {/* topbar */}
         <div style={S.top}>
@@ -37,14 +40,14 @@ export default function HomeClient({ email, perfil, stats }) {
         </div>
 
         {/* saludo */}
-        <div style={{ marginBottom: 30 }}>
+        <div style={{ marginBottom: 28 }}>
           <div style={{ fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gray-mid)', fontWeight: 700 }}>Bienvenido de nuevo</div>
-          <h1 className="display" style={{ fontSize: 'clamp(28px,5vw,44px)', marginTop: 8, lineHeight: 1.05 }}>
+          <h1 className="display" style={{ fontSize: 'clamp(26px,5vw,42px)', marginTop: 8, lineHeight: 1.05 }}>
             Hola, {nombre}. <span className="acento-serif" style={{ color: 'var(--red-soft)' }}>¿por dónde empezamos?</span>
           </h1>
         </div>
 
-        {/* accesos */}
+        {/* 6 accesos */}
         <div style={S.cards}>
           <Acc onClick={() => router.push('/central')}
             img="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1000"
@@ -60,11 +63,29 @@ export default function HomeClient({ email, perfil, stats }) {
               icon={<Gem size={16} />} />
           )}
 
-          <Acc onClick={() => window.open(URL_STOCK, '_blank', 'noopener,noreferrer')}
+          <Acc onClick={() => abrir(URL_FORMACION)}
+            img="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1000"
+            badge="↗ Tu formación" badgeClass="form"
+            titulo="Formación" desc="Accede a las clases y el programa de la Collector Academy."
+            icon={<GraduationCap size={16} />} externo />
+
+          <Acc onClick={() => router.push('/recursos')}
+            img="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1000"
+            badge="◆ Todo a mano" badgeClass="recursos"
+            titulo="Recursos" desc="Números, PDFs, contactos y contratos de la formación."
+            icon={<FolderOpen size={16} />} />
+
+          <Acc onClick={() => abrir(URL_STOCK)}
             img="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1000"
             badge="↗ Cesión de venta" badgeClass="stock"
             titulo="Subir unidades" desc="Sube tu coche y lo gestionamos en venta desde nuestro stock."
             icon={<UploadCloud size={16} />} externo />
+
+          <Acc onClick={() => abrir(URL_NEXOCAR)}
+            img="https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?w=1000"
+            badge="↗ Software" badgeClass="nexo"
+            titulo="NEXOCAR" desc="El ERP para importadores: calcula, analiza y gestiona tu stock."
+            icon={<Rocket size={16} />} externo />
         </div>
 
         {/* stats */}
@@ -87,7 +108,7 @@ function Acc({ onClick, img, badge, badgeClass, titulo, desc, icon, externo }) {
       <div className="acc-cont">
         <span className={`acc-badge ${badgeClass}`}>{badge}</span>
         <div className="acc-mid">
-          <h2 className="display" style={{ fontSize: 23, color: '#fff' }}>{titulo}</h2>
+          <h2 className="display" style={{ fontSize: 22, color: '#fff' }}>{titulo}</h2>
           <p className="acc-desc">{desc}</p>
           <span className="acc-go">{icon} Entrar {externo ? '↗' : <ArrowRight size={15} />}</span>
         </div>
@@ -106,7 +127,7 @@ function Kpi({ l, v, gold }) {
 }
 
 const S = {
-  top: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 36 },
-  cards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 18 },
+  top: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 34 },
+  cards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 16 },
   quick: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 14, marginTop: 26 },
 };
