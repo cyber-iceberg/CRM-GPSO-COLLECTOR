@@ -31,7 +31,7 @@ export async function middleware(request) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const ruta = request.nextUrl.pathname;
-  const rutasPublicas = ['/login', '/auth'];
+ const rutasPublicas = ['/login', '/auth', '/api'];
   const esPublica = rutasPublicas.some((r) => ruta.startsWith(r));
 
   // Sin sesion en ruta privada -> a login
