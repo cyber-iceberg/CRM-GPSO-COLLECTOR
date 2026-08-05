@@ -113,9 +113,9 @@ export async function POST(request) {
     const m = String(presuBase).replace(/\./g, '').match(/\d{3,}/);
     if (m) presupuesto = parseInt(m[0], 10);
   }
-  // guardamos tambien los "extras" para la tarjeta dentro de detalles
-  if (pago) detalles['Forma de pago'] = pago;
-  if (plazo && !Object.keys(detalles).some(k => norm(k).includes('plazo'))) detalles['Plazo'] = plazo;
+  // NOTA: no añadimos 'Forma de pago' ni 'Plazo' manualmente a detalles,
+  // porque ya vienen como preguntas del formulario (evita duplicados).
+  // 'pago' y 'plazo' se usan solo para los chips de la tarjeta del catalogo.
 
   const calorRaw = (g('calor') || 'medio').toLowerCase();
   const calor = ['alto', 'medio', 'bajo'].includes(calorRaw) ? calorRaw : 'medio';
