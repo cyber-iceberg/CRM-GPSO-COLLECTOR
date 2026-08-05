@@ -13,7 +13,7 @@ import MenuDrawer from '../components/MenuDrawer';
 import {
   Car, MapPin, Wallet, Lock, Unlock, Clock, Phone, Mail, User,
   Trophy, Timer, Users, TrendingUp, X, RotateCcw, XCircle,
-  LogOut, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Circle, ArrowLeft
+  LogOut, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Circle, ArrowLeft, Trash2
 } from 'lucide-react';
 
 const CALOR = {
@@ -105,6 +105,15 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
   }
   async function salir() { await supabase.auth.signOut(); router.push('/login'); router.refresh(); }
 
+  async function borrarLead(lead) {
+    const nombre = lead.nombre || lead.vehiculo || 'este lead';
+    if (!window.confirm(`¿Borrar ${nombre} definitivamente?\n\nEsta acción NO se puede deshacer.`)) return;
+    const { data, error } = await supabase.rpc('admin_borrar_lead', { p_lead_id: lead.id });
+    if (error) { aviso('warn', 'Error de conexión.'); return; }
+    if (!data?.ok) { aviso('warn', data?.error === 'no_admin' ? 'Solo un admin puede borrar.' : 'No se pudo borrar.'); return; }
+    aviso('ok', 'Lead borrado.'); await cargarDatos();
+  }
+
   const totalCerrados = (perfil?.leads_ganados || 0) + (perfil?.leads_perdidos || 0) + (perfil?.leads_expirados || 0);
   const reputacion = totalCerrados > 0 ? Math.round((perfil.leads_ganados / totalCerrados) * 100) : null;
 
@@ -194,7 +203,10 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
               <div key={l.id} className="lead-card">
                 <div style={S.cardTop}>
                   <span style={{ ...S.calor, color: c.color }}><Circle size={7} fill={c.dot} color={c.dot} /> {c.label}</span>
-                  <span style={S.time}><Clock size={11} /> {desde(l.created_at)}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                    <span style={S.time}><Clock size={11} /> {desde(l.created_at)}</span>
+                    {esAdmin && <button onClick={(e) => { e.stopPropagation(); borrarLead(l); }} title="Borrar lead" style={S.trashBtn}><Trash2 size={13} /></button>}
+                  </span>
                 </div>
                 <div className="display" style={S.veh}><Car size={18} color="var(--red-soft)" /> {l.vehiculo}</div>
                 <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
@@ -225,9 +237,12 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
               <div key={l.id} className="lead-card">
                 <div style={S.rowB}>
                   <span style={S.owned}><Unlock size={11} /> DESBLOQUEADO</span>
-                  {sinContactar
-                    ? <span style={S.estadoTag}>Sin contactar · {config.expiracion_sin_contactar_horas}h</span>
-                    : <span style={{ ...S.estadoTag, color: 'var(--green)', borderColor: 'var(--green-bd)' }}>En gestión</span>}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                    {sinContactar
+                      ? <span style={S.estadoTag}>Sin contactar · {config.expiracion_sin_contactar_horas}h</span>
+                      : <span style={{ ...S.estadoTag, color: 'var(--green)', borderColor: 'var(--green-bd)' }}>En gestión</span>}
+                    {esAdmin && <button onClick={(e) => { e.stopPropagation(); borrarLead(l); }} title="Borrar lead" style={S.trashBtn}><Trash2 size={13} /></button>}
+                  </span>
                 </div>
                 <div className="display" style={S.veh}><Car size={18} color="var(--red-soft)" /> {l.vehiculo}</div>
                 <div style={{ display: 'flex', gap: 18 }}>
@@ -297,13 +312,22 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
               <button onClick={() => setDescartando(null)} style={{ background: 'none', border: 'none', color: 'var(--gray-mid)', cursor: 'pointer' }}><X size={18} /></button>
             </div>
             <p style={{ fontSize: 12.5, color: 'var(--gray-mid)', margin: '6px 0 16px' }}>{descartando.vehiculo} · {descartando.nombre}</p>
+            {descartando.gestion === 'contactado' && (
+              <div style={{ fontSize: 12, color: 'var(--red-soft)', background: 'var(--red-bg)', border: '1px solid var(--red-bd)', borderRadius: 10, padding: '9px 12px', marginBottom: 14, lineHeight: 1.4 }}>
+                Ya contactaste a este cliente, así que se <b>cerrará</b> (no vuelve a la bolsa para no llamarle de nuevo).
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {motivos.map((m) => (
-                <button key={m.id} className="motivo" onClick={() => confirmarDescarte(m.id)}>
-                  <span>{m.label}</span>
-                  <span className={`dest ${m.destino}`}>{m.destino === 'bolsa' ? <><RotateCcw size={11} /> Bolsa</> : <><XCircle size={11} /> Cierra</>}</span>
-                </button>
-              ))}
+              {motivos.map((m) => {
+                const contactado = descartando.gestion === 'contactado';
+                const cierra = contactado || m.destino === 'cerrado';
+                return (
+                  <button key={m.id} className="motivo" onClick={() => confirmarDescarte(m.id)}>
+                    <span>{m.label}</span>
+                    <span className={`dest ${cierra ? 'cerrado' : 'bolsa'}`}>{cierra ? <><XCircle size={11} /> Cierra</> : <><RotateCcw size={11} /> Bolsa</>}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -341,6 +365,7 @@ const S = {
   estadoTag: { fontSize: 10.5, fontWeight: 600, color: 'var(--gold)', border: '1px solid rgba(232,163,61,.35)', borderRadius: 20, padding: '3px 9px' },
   crow: { display: 'flex', alignItems: 'center', gap: 9, fontSize: 13.5, fontWeight: 500 },
   chipMini: { display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 600, color: 'var(--text-soft)', background: 'rgba(128,128,128,.08)', border: '1px solid var(--card-bd)', borderRadius: 20, padding: '4px 10px' },
+  trashBtn: { display: 'inline-grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, border: '1px solid var(--red-bd)', background: 'var(--red-bg)', color: 'var(--red-soft)', cursor: 'pointer', padding: 0 },
   detalles: { background: 'rgba(232,163,61,.06)', border: '1px solid rgba(232,163,61,.22)', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 },
   detTit: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 2 },
   detRow: { display: 'flex', flexDirection: 'column', gap: 2, borderTop: '1px solid rgba(232,163,61,.12)', paddingTop: 9 },
