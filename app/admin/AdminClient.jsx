@@ -273,6 +273,15 @@ function SeccionLeads({ supabase, leads, setLeads, aviso }) {
 
   const badge = (e) => ({ disponible: S.tagOk, reservado: S.tagVip, cerrado: S.tagMuted }[e] || S.tagMuted);
 
+  async function borrar(l) {
+    const nombre = l.nombre || l.vehiculo || 'este lead';
+    if (!window.confirm(`¿Borrar ${nombre} definitivamente?\n\nEsta acción NO se puede deshacer.`)) return;
+    const { data, error } = await supabase.rpc('admin_borrar_lead', { p_lead_id: l.id });
+    if (error) { aviso('warn', 'Error de conexión.'); return; }
+    if (!data?.ok) { aviso('warn', data?.error === 'no_admin' ? 'Solo un admin puede borrar.' : 'No se pudo borrar.'); return; }
+    setLeads(prev => prev.filter(x => x.id !== l.id)); aviso('ok', 'Lead borrado.');
+  }
+
   return (
     <div>
       <Head titulo="Leads" sub={`${leads.length} en total`} accion={<button className="btn-de" onClick={() => setForm(!form)} style={{ padding: '10px 16px', fontSize: 13 }}><Plus size={15} /> Nuevo lead</button>} />
@@ -304,6 +313,7 @@ function SeccionLeads({ supabase, leads, setLeads, aviso }) {
               <div style={{ fontSize: 12, color: 'var(--gray-mid)' }}>{l.nombre || 'Sin nombre'} · {eur(l.presupuesto)}</div>
             </div>
             <span style={badge(l.estado)}>{l.estado}</span>
+            <button onClick={() => borrar(l)} title="Borrar definitivamente" style={{ display: 'inline-grid', placeItems: 'center', width: 32, height: 32, borderRadius: 8, border: '1px solid var(--red-bd)', background: 'var(--red-bg)', color: 'var(--red-soft)', cursor: 'pointer', padding: 0, flexShrink: 0 }}><Trash2 size={15} /></button>
           </div>
         ))}
       </div>
