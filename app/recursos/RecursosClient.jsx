@@ -78,6 +78,8 @@ export default function RecursosClient({ email, perfil }) {
           <MenuDrawer perfil={perfil} email={email} />
         </div>
 
+        <div className="construccion">🚧 <span><b>Sección en construcción.</b> Estamos preparando todos los recursos — muy pronto disponible.</span></div>
+
         {/* categorías */}
         <div style={S.cats}>
           {CATS.map(c => (
