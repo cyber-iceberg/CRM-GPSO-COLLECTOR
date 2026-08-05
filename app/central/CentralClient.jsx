@@ -180,6 +180,16 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
           {vista === 'catalogo' && catalogo.map((l) => {
             const c = CALOR[l.calor] || CALOR.medio;
             const off = slotsLibres <= 0 || enCooldown || ocupadoId === l.id;
+            const det = l.detalles && typeof l.detalles === 'object' ? l.detalles : {};
+            const buscaDet = (...frag) => {
+              for (const [k, v] of Object.entries(det)) {
+                const kk = k.toLowerCase();
+                if (frag.some((f) => kk.includes(f))) return String(v);
+              }
+              return null;
+            };
+            const plazo = buscaDet('plazo', 'urgencia', 'cuando');
+            const pago = buscaDet('pago', 'financ', 'contado', 'dinero');
             return (
               <div key={l.id} className="lead-card">
                 <div style={S.cardTop}>
@@ -187,10 +197,16 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                   <span style={S.time}><Clock size={11} /> {desde(l.created_at)}</span>
                 </div>
                 <div className="display" style={S.veh}><Car size={18} color="var(--red-soft)" /> {l.vehiculo}</div>
-                <div style={{ display: 'flex', gap: 18 }}>
-                  <span style={S.meta}><Wallet size={13} color="var(--gray-mid)" /> {euros(l.presupuesto)}</span>
-                  <span style={S.meta}><MapPin size={13} color="var(--gray-mid)" /> {l.ciudad}</span>
+                <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+                  <span style={S.meta}><Wallet size={13} color="var(--gray-mid)" /> {l.presupuesto ? euros(l.presupuesto) : 'Consultar'}</span>
+                  <span style={S.meta}><MapPin size={13} color="var(--gray-mid)" /> {l.ciudad || 'España'}</span>
                 </div>
+                {(plazo || pago) && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {plazo && <span style={S.chipMini}><Clock size={11} /> {plazo}</span>}
+                    {pago && <span style={S.chipMini}><Wallet size={11} /> {pago}</span>}
+                  </div>
+                )}
                 <div style={S.locked}><Lock size={12} /> Contacto oculto hasta reservar</div>
                 <button className={`btn-de ${off ? 'off' : ''}`} disabled={off} onClick={() => reservar(l.id)} style={{ marginTop: 2, fontSize: 13.5 }}>
                   <Lock size={14} /> {ocupadoId === l.id ? 'RESERVANDO…' : 'RESERVAR CLIENTE'}
@@ -224,17 +240,27 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                   <div style={S.crow}><Mail size={14} color="var(--red-soft)" /> {l.email}</div>
                   {l.nota && <div style={S.nota}>{l.nota}</div>}
                 </div>
-                {l.detalles && Object.keys(l.detalles).length > 0 && (
-                  <div style={S.detalles}>
-                    <div style={S.detTit}><Sparkles size={12} /> Lo que pidió</div>
-                    {Object.entries(l.detalles).map(([k, v]) => (
-                      <div key={k} style={S.detRow}>
-                        <span style={S.detK}>{k}</span>
-                        <span style={S.detV}>{String(v)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {l.detalles && Object.keys(l.detalles).length > 0 && (() => {
+                  const BASURA = ['object','tags','contact','country','location','workflow','contactid','contact id','customdata','custom data','triggerdata','trigger data','contacttype','contact type','date created','datecreated','contactsource','contact source','attributionsource','attribution source','full name','fullname','first name','last name','id','user','timezone','dnd','source'];
+                  const limpio = Object.entries(l.detalles).filter(([k, v]) => {
+                    const kk = String(k).toLowerCase();
+                    const vv = String(v).toLowerCase();
+                    if (vv.includes('[object object]') || vv.trim() === '') return false;
+                    return !BASURA.some((b) => kk.includes(b));
+                  });
+                  if (limpio.length === 0) return null;
+                  return (
+                    <div style={S.detalles}>
+                      <div style={S.detTit}><Sparkles size={12} /> Lo que pidió</div>
+                      {limpio.map(([k, v]) => (
+                        <div key={k} style={S.detRow}>
+                          <span style={S.detK}>{k}</span>
+                          <span style={S.detV}>{String(v)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
                 {sinContactar ? (
                   <button className="btn-ghost" onClick={() => contactado(l.id)} style={{ borderColor: 'var(--red-bd)', color: 'var(--text)' }}>
                     <Phone size={14} style={{ verticalAlign: -2, marginRight: 6 }} /> Marcar como contactado
@@ -314,6 +340,7 @@ const S = {
   owned: { display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10.5, fontWeight: 700, letterSpacing: .5, color: 'var(--red-soft)', background: 'var(--red-bg)', border: '1px solid var(--red-bd)', borderRadius: 20, padding: '3px 10px' },
   estadoTag: { fontSize: 10.5, fontWeight: 600, color: 'var(--gold)', border: '1px solid rgba(232,163,61,.35)', borderRadius: 20, padding: '3px 9px' },
   crow: { display: 'flex', alignItems: 'center', gap: 9, fontSize: 13.5, fontWeight: 500 },
+  chipMini: { display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 600, color: 'var(--text-soft)', background: 'rgba(128,128,128,.08)', border: '1px solid var(--card-bd)', borderRadius: 20, padding: '4px 10px' },
   detalles: { background: 'rgba(232,163,61,.06)', border: '1px solid rgba(232,163,61,.22)', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 },
   detTit: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 2 },
   detRow: { display: 'flex', flexDirection: 'column', gap: 2, borderTop: '1px solid rgba(232,163,61,.12)', paddingTop: 9 },
