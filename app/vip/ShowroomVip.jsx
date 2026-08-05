@@ -129,6 +129,13 @@ export default function ShowroomVip({ user, perfil, esVip, esAdmin, operacionesI
         <div style={{ ...S.flash, ...(flash.t === 'ok' ? S.flashOk : S.flashWarn) }}>{flash.m}</div>
       )}
 
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, textAlign: 'center',
+        background: 'linear-gradient(100deg, rgba(232,163,61,.16), rgba(198,26,26,.12))',
+        borderBottom: '1px solid rgba(232,163,61,.35)', backdropFilter: 'blur(10px)',
+        padding: '8px 16px', fontSize: 12.5, fontWeight: 600, color: '#f4c778' }}>
+        🚧 Sección en construcción · puedes explorar, pero aún estamos afinando las operaciones
+      </div>
+
       {/* ===== SHOWROOM ===== */}
       <div style={S.stage}>
         <div style={S.stageGlow} />
