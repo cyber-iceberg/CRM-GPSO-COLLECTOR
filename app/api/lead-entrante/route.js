@@ -1,7 +1,9 @@
 // =====================================================================
 //  GPSO COLLECTOR · Puerta de entrada de leads (webhook)
 //  Ruta EXACTA:  app/api/lead-entrante/route.js
-//  v2 — guarda campos base + TODO lo extra en 'detalles' (JSONB).
+//  v3 — filtra la morralla de GHL, guarda solo las PREGUNTAS reales del
+//  formulario, y rellena columnas base (vehiculo/ciudad/presupuesto +
+//  extras para la tarjeta: marca, pago, plazo).
 // =====================================================================
 
 import { createClient } from '@supabase/supabase-js';
@@ -13,62 +15,111 @@ export async function GET() {
   return NextResponse.json({ ok: true, msg: 'Puerta de leads GPSO activa' });
 }
 
+// claves tecnicas de GHL que NO queremos ver nunca
+const BASURA = new Set([
+  'tags','contact','country','location','workflow','contact id','contactid',
+  'customdata','custom data','triggerdata','trigger data','contact type','contacttype',
+  'date created','datecreated','contact source','contactsource','attribution source',
+  'attributionsource','full name','fullname','first name','last name','email','phone',
+  'id','user','userid','user id','company','businessname','business name','timezone',
+  'dnd','source','datetime','date','time',
+]);
+
+// normaliza para comparar (minusculas, sin acentos raros)
+const norm = (s) => String(s).trim().toLowerCase();
+
+// ¿es una pregunta real del formulario? (contiene ? o ¿) o un campo util conocido
+function esPregunta(clave) {
+  const k = norm(clave);
+  if (BASURA.has(k)) return false;
+  if (k.includes('object')) return false;
+  if (clave.includes('?') || clave.includes('¿')) return true;
+  // campos utiles aunque no lleven ?
+  const utiles = ['marca','modelo','coche','vehiculo','presupuesto','plazo','urgencia','ciudad','provincia','pago','financiacion','financiación','motivo','extras'];
+  return utiles.some((u) => k.includes(u));
+}
+
+// detecta a que "categoria" pertenece una pregunta por su texto
+function clasifica(clave) {
+  const k = norm(clave);
+  if (k.includes('marca')) return 'marca';
+  if (k.includes('presupuesto') || k.includes('budget')) return 'presupuesto';
+  if (k.includes('plazo') || k.includes('urgencia') || k.includes('cuando')) return 'plazo';
+  if (k.includes('pago') || k.includes('financ') || k.includes('contado') || k.includes('dinero')) return 'pago';
+  if (k.includes('ciudad') || k.includes('provincia') || k.includes('localidad') || k.includes('ubicacion')) return 'ciudad';
+  if (k.includes('modelo') || k.includes('coche') || k.includes('vehiculo')) return 'modelo';
+  return null;
+}
+
 export async function POST(request) {
-  // 1) Seguridad
   const token = request.headers.get('x-gpso-token');
   if (!token || token !== process.env.LEADS_WEBHOOK_SECRET) {
     return NextResponse.json({ ok: false, error: 'no_autorizado' }, { status: 401 });
   }
 
-  // 2) Cuerpo
   let body;
   try { body = await request.json(); }
   catch { return NextResponse.json({ ok: false, error: 'json_invalido' }, { status: 400 }); }
 
-  // 3) Campos BASE (con nombres flexibles)
   const g = (...keys) => {
     for (const k of keys) {
-      if (body[k] != null && String(body[k]).trim() !== '') return String(body[k]).trim();
+      if (body[k] != null && String(body[k]).trim() !== '' && norm(body[k]) !== '[object object]') return String(body[k]).trim();
     }
     return null;
   };
+
+  // BASE directos
   const nombre    = g('nombre', 'full_name', 'fullname', 'name', 'nombre_completo', 'first_name');
   const telefono  = g('telefono', 'phone', 'phone_number', 'telefono_movil', 'movil');
   const email     = g('email', 'correo', 'email_address');
-  const vehiculo  = g('vehiculo', 'vehicle', 'car', 'coche', 'modelo', 'marca') || 'Consulta de importación';
-  const ciudad    = g('ciudad', 'city', 'provincia', 'localidad');
-  const nota      = g('nota', 'mensaje', 'message', 'comentarios', 'notes');
-  const calorRaw  = (g('calor') || 'medio').toLowerCase();
-  const calor     = ['alto', 'medio', 'bajo'].includes(calorRaw) ? calorRaw : 'medio';
-  const presuRaw  = g('presupuesto', 'budget', 'precio');
-  const presupuesto = presuRaw ? (parseInt(String(presuRaw).replace(/[^\d]/g, ''), 10) || null) : null;
 
-  // 4) DETALLES: todo lo que NO es un campo base, se guarda tal cual.
-  //    Así cualquier pregunta del formulario (marca, plazo, pago, motivo,
-  //    extras...) aparece en la ficha del cliente sin tocar la base de datos.
-  //    Dos formas de mandar detalles desde GHL:
-  //     a) un objeto: "detalles": { "Marca": "Mercedes", "Plazo": "..." }
-  //     b) campos sueltos con etiqueta legible (los recogemos abajo).
-  const camposBase = new Set([
-    'nombre','full_name','fullname','name','nombre_completo','first_name','last_name',
-    'telefono','phone','phone_number','telefono_movil','movil',
-    'email','correo','email_address','vehiculo','vehicle','car','coche','modelo',
-    'ciudad','city','provincia','localidad','nota','mensaje','message','comentarios','notes',
-    'calor','presupuesto','budget','precio','detalles','x-gpso-token',
-  ]);
-  let detalles = {};
-  // a) si viene un objeto 'detalles', lo tomamos de base
-  if (body.detalles && typeof body.detalles === 'object') detalles = { ...body.detalles };
-  // b) añadimos cualquier otro campo suelto que no sea base
-  for (const [k, v] of Object.entries(body)) {
-    if (camposBase.has(k)) continue;
-    if (v == null || String(v).trim() === '') continue;
-    // clave legible: "marca_interes" -> "Marca interes"
-    const etiqueta = k.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-    detalles[etiqueta] = String(v).trim();
+  // Recorremos TODO el body quedandonos solo con preguntas reales,
+  // y de paso extraemos marca/presupuesto/plazo/pago/ciudad/modelo.
+  const detalles = {};
+  let marca = null, presupuestoTxt = null, plazo = null, pago = null, ciudadForm = null, modelo = null;
+
+  // si viene un objeto 'detalles' anidado, lo aplanamos primero
+  const fuente = {};
+  if (body.detalles && typeof body.detalles === 'object') Object.assign(fuente, body.detalles);
+  Object.assign(fuente, body);
+
+  for (const [k, v] of Object.entries(fuente)) {
+    if (v == null) continue;
+    const valor = String(v).trim();
+    if (valor === '' || norm(valor) === '[object object]') continue;
+    if (!esPregunta(k)) continue;
+
+    detalles[k] = valor; // guardamos la pregunta legible tal cual
+
+    const cat = clasifica(k);
+    if (cat === 'marca' && !marca) marca = valor;
+    else if (cat === 'presupuesto' && !presupuestoTxt) presupuestoTxt = valor;
+    else if (cat === 'plazo' && !plazo) plazo = valor;
+    else if (cat === 'pago' && !pago) pago = valor;
+    else if (cat === 'ciudad' && !ciudadForm) ciudadForm = valor;
+    else if (cat === 'modelo' && !modelo) modelo = valor;
   }
 
-  // 5) Insertar
+  // COLUMNAS BASE para la tarjeta del catalogo
+  // vehiculo = marca (o modelo, o lo que haya); si nada, texto generico
+  const vehiculo = marca || modelo || g('vehiculo','vehicle','car','coche') || 'Consulta de importación';
+  // ciudad: del formulario, o del campo city de GHL si es texto util
+  const ciudadRaw = ciudadForm || g('ciudad','city','provincia','localidad');
+  const ciudad = (ciudadRaw && norm(ciudadRaw) !== '[object object]' && norm(ciudadRaw) !== 'es') ? ciudadRaw : null;
+  // presupuesto: intentamos sacar un numero del texto ("15.000€ - 20.000€" -> 15000)
+  let presupuesto = null;
+  const presuBase = presupuestoTxt || g('presupuesto','budget','precio');
+  if (presuBase) {
+    const m = String(presuBase).replace(/\./g, '').match(/\d{3,}/);
+    if (m) presupuesto = parseInt(m[0], 10);
+  }
+  // guardamos tambien los "extras" para la tarjeta dentro de detalles
+  if (pago) detalles['Forma de pago'] = pago;
+  if (plazo && !Object.keys(detalles).some(k => norm(k).includes('plazo'))) detalles['Plazo'] = plazo;
+
+  const calorRaw = (g('calor') || 'medio').toLowerCase();
+  const calor = ['alto', 'medio', 'bajo'].includes(calorRaw) ? calorRaw : 'medio';
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -77,7 +128,7 @@ export async function POST(request) {
 
   const { data, error } = await supabase
     .from('leads')
-    .insert({ nombre, telefono, email, vehiculo, ciudad, nota, calor, presupuesto, detalles })
+    .insert({ nombre, telefono, email, vehiculo, ciudad, calor, presupuesto, detalles })
     .select('id')
     .single();
 
