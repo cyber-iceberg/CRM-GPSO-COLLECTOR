@@ -106,19 +106,33 @@ export async function POST(request) {
   // ciudad: del formulario, o del campo city de GHL si es texto util
   const ciudadRaw = ciudadForm || g('ciudad','city','provincia','localidad');
   const ciudad = (ciudadRaw && norm(ciudadRaw) !== '[object object]' && norm(ciudadRaw) !== 'es') ? ciudadRaw : null;
-  // presupuesto: intentamos sacar un numero del texto ("15.000€ - 20.000€" -> 15000)
+  // presupuesto: guardamos el TEXTO del rango tal cual ("20.000 € - 40.000 €")
+  // y ademas un numero para ordenar/comparar internamente.
   let presupuesto = null;
   const presuBase = presupuestoTxt || g('presupuesto','budget','precio');
   if (presuBase) {
     const m = String(presuBase).replace(/\./g, '').match(/\d{3,}/);
     if (m) presupuesto = parseInt(m[0], 10);
   }
-  // NOTA: no añadimos 'Forma de pago' ni 'Plazo' manualmente a detalles,
-  // porque ya vienen como preguntas del formulario (evita duplicados).
-  // 'pago' y 'plazo' se usan solo para los chips de la tarjeta del catalogo.
+  // guardamos el rango legible dentro de detalles si no estaba ya
+  if (presuBase && !Object.keys(detalles).some(k => norm(k).includes('presupuesto'))) {
+    detalles['Presupuesto'] = String(presuBase);
+  }
 
-  const calorRaw = (g('calor') || 'medio').toLowerCase();
-  const calor = ['alto', 'medio', 'bajo'].includes(calorRaw) ? calorRaw : 'medio';
+  // CALOR segun la URGENCIA/plazo que puso el cliente:
+  //   "lo antes posible"      -> alto  (CALIENTE)
+  //   "1-3 meses"             -> medio (TEMPLADO)
+  //   "sin prisa / mirando"   -> bajo  (FRIO)
+  let calor = 'medio';
+  if (plazo) {
+    const p = norm(plazo);
+    if (p.includes('antes posible') || p.includes('lo antes') || p.includes('ya') || p.includes('urgente') || p.includes('inmediat')) calor = 'alto';
+    else if (p.includes('sin prisa') || p.includes('mirando') || p.includes('no tengo prisa') || p.includes('futuro')) calor = 'bajo';
+    else if (p.includes('mes')) calor = 'medio';
+  } else {
+    const calorRaw = (g('calor') || 'medio').toLowerCase();
+    calor = ['alto', 'medio', 'bajo'].includes(calorRaw) ? calorRaw : 'medio';
+  }
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
