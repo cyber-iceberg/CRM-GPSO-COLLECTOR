@@ -199,6 +199,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
             };
             const plazo = buscaDet('plazo', 'urgencia', 'cuando');
             const pago = buscaDet('pago', 'financ', 'contado', 'dinero');
+            const presuTxt = buscaDet('presupuesto', 'budget') || (l.presupuesto ? euros(l.presupuesto) : 'Consultar');
             return (
               <div key={l.id} className="lead-card">
                 <div style={S.cardTop}>
@@ -210,7 +211,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                 </div>
                 <div className="display" style={S.veh}><Car size={18} color="var(--red-soft)" /> {l.vehiculo}</div>
                 <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
-                  <span style={S.meta}><Wallet size={13} color="var(--gray-mid)" /> {l.presupuesto ? euros(l.presupuesto) : 'Consultar'}</span>
+                  <span style={S.meta}><Wallet size={13} color="var(--gray-mid)" /> {presuTxt}</span>
                   <span style={S.meta}><MapPin size={13} color="var(--gray-mid)" /> {l.ciudad || 'España'}</span>
                 </div>
                 {(plazo || pago) && (
