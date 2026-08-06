@@ -220,10 +220,12 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                     {pago && <span style={S.chipMini}><Wallet size={11} /> {pago}</span>}
                   </div>
                 )}
-                <div style={S.locked}><Lock size={12} /> Contacto oculto hasta reservar</div>
-                <button className={`btn-de ${off ? 'off' : ''}`} disabled={off} onClick={() => reservar(l.id)} style={{ marginTop: 2, fontSize: 13.5 }}>
-                  <Lock size={14} /> {ocupadoId === l.id ? 'RESERVANDO…' : 'RESERVAR CLIENTE'}
-                </button>
+                <div className="card-foot">
+                  <div style={S.locked}><Lock size={12} /> Contacto oculto hasta reservar</div>
+                  <button className={`btn-de ${off ? 'off' : ''}`} disabled={off} onClick={() => reservar(l.id)} style={{ fontSize: 13.5 }}>
+                    <Lock size={14} /> {ocupadoId === l.id ? 'RESERVANDO…' : 'RESERVAR CLIENTE'}
+                  </button>
+                </div>
               </div>
             );
           })}
