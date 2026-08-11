@@ -9,6 +9,11 @@ import ThemeToggle from './components/ThemeToggle';
 export const metadata = {
   title: 'GPSO Collector · Central de Leads',
   description: 'Reserva y gestiona tus clientes de importación.',
+  icons: {
+    icon: '/collector.jpg',
+    shortcut: '/collector.jpg',
+    apple: '/collector.jpg',
+  },
 };
 
 const scriptAntiParpadeo = `
