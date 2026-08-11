@@ -6,20 +6,31 @@
 //  Reutilizable en cualquier página (Home, Central, VIP...).
 // =====================================================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '../../lib/supabase/client';
-import { Menu, X, Home, Target, Gem, GraduationCap, FolderOpen, UploadCloud, Rocket, User, ShieldCheck, LogOut } from 'lucide-react';
+import { Menu, X, Home, Target, Gem, UploadCloud, User, ShieldCheck, LogOut, Moon, Sun } from 'lucide-react';
 
 // URL de la app de Albert (subir unidades). Cambiar aquí cuando esté lista.
 const URL_STOCK = 'https://gpsocollector.com/acceso';
-const URL_FORMACION = 'https://academy.gpsocollector.com';
-const URL_NEXOCAR = 'https://nexocar.app';
 
 export default function MenuDrawer({ perfil, email }) {
   const router = useRouter();
   const supabase = createClient();
   const [open, setOpen] = useState(false);
+  const [tema, setTema] = useState('dark');
+
+  useEffect(() => {
+    const actual = document.documentElement.getAttribute('data-theme') || 'dark';
+    setTema(actual);
+  }, []);
+
+  function cambiarTema() {
+    const nuevo = tema === 'dark' ? 'light' : 'dark';
+    setTema(nuevo);
+    document.documentElement.setAttribute('data-theme', nuevo);
+    try { localStorage.setItem('gpso-theme', nuevo); } catch (e) {}
+  }
 
   const esAdmin = perfil && perfil.rol === 'admin';
   const esVip = perfil && perfil.vip;
@@ -29,7 +40,7 @@ export default function MenuDrawer({ perfil, email }) {
     router.push('/login'); router.refresh();
   }
   function ir(ruta) { setOpen(false); router.push(ruta); }
-  function irExterno(url) { setOpen(false); window.open(url, '_blank', 'noopener,noreferrer'); }
+  function irStock() { setOpen(false); window.open(URL_STOCK, '_blank', 'noopener,noreferrer'); }
 
   return (
     <>
@@ -49,10 +60,7 @@ export default function MenuDrawer({ perfil, email }) {
         {(esVip || esAdmin) && (
           <a className="mitem vip" onClick={() => ir('/vip')}><span className="ico"><Gem size={18} /></span><div>Inversión VIP<small>Coinversión alta gama</small></div></a>
         )}
-        <a className="mitem" onClick={() => irExterno(URL_FORMACION)}><span className="ico"><GraduationCap size={18} /></span><div>Formación<small>Collector Academy ↗</small></div></a>
-        <a className="mitem" onClick={() => ir('/recursos')}><span className="ico"><FolderOpen size={18} /></span><div>Recursos<small>Números, PDFs, contratos</small></div></a>
-        <a className="mitem" onClick={() => irExterno(URL_STOCK)}><span className="ico"><UploadCloud size={18} /></span><div>Subir unidades<small>Cede tu coche para venta ↗</small></div></a>
-        <a className="mitem" onClick={() => irExterno(URL_NEXOCAR)}><span className="ico"><Rocket size={18} /></span><div>NEXOCAR<small>ERP para importadores ↗</small></div></a>
+        <a className="mitem" onClick={irStock}><span className="ico"><UploadCloud size={18} /></span><div>Subir unidades<small>Cede tu coche para venta ↗</small></div></a>
 
         <div className="dsep" />
         <a className="mitem" onClick={() => ir('/cuenta')}><span className="ico"><User size={18} /></span><div>Mi cuenta<small>Perfil y ajustes</small></div></a>
@@ -62,8 +70,13 @@ export default function MenuDrawer({ perfil, email }) {
 
         <div className="mspacer" />
         <div className="dsep" />
+        <a className="mitem" onClick={cambiarTema}>
+          <span className="ico">{tema === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</span>
+          <div>{tema === 'dark' ? 'Tema claro' : 'Tema oscuro'}<small>Cambiar apariencia</small></div>
+        </a>
         <a className="mitem salir" onClick={salir}><span className="ico"><LogOut size={18} /></span><div>Cerrar sesión</div></a>
       </div>
     </>
   );
 }
+
