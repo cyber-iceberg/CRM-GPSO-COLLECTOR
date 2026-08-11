@@ -96,12 +96,26 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
     aviso('ok', '¡Reservado! Datos desbloqueados en Mis clientes.');
     await cargarDatos(); setVista('mis');
   }
-  async function contactado(id) { const { data } = await supabase.rpc('marcar_contactado', { p_lead_id: id }); if (data?.ok) { aviso('ok', 'Marcado como contactado.'); await cargarDatos(); } }
-  async function ganado(id) { const { data } = await supabase.rpc('marcar_ganado', { p_lead_id: id }); if (data?.ok) { aviso('ok', '¡Venta cerrada! Suma a tu reputación.'); await cargarDatos(); } }
+  async function contactado(id) {
+    const { data, error } = await supabase.rpc('marcar_contactado', { p_lead_id: id });
+    if (error || !data?.ok) { aviso('warn', 'No se pudo marcar como contactado. Vuelve a intentarlo.'); return; }
+    aviso('ok', 'Marcado como contactado.'); await cargarDatos();
+  }
+  async function ganado(id) {
+    const { data, error } = await supabase.rpc('marcar_ganado', { p_lead_id: id });
+    if (error || !data?.ok) { aviso('warn', 'No se pudo cerrar la venta. Vuelve a intentarlo.'); return; }
+    aviso('ok', '¡Venta cerrada! Suma a tu reputación.'); await cargarDatos();
+  }
   async function confirmarDescarte(motivoId) {
     const lead = descartando; setDescartando(null);
-    const { data } = await supabase.rpc('descartar_lead', { p_lead_id: lead.id, p_motivo: motivoId });
-    if (data?.ok) { aviso(data.destino === 'bolsa' ? 'ok' : 'warn', data.destino === 'bolsa' ? 'Liberado: vuelve a la bolsa.' : 'Cerrado: no vuelve al catálogo.'); await cargarDatos(); }
+    const { data, error } = await supabase.rpc('descartar_lead', { p_lead_id: lead.id, p_motivo: motivoId });
+    if (error || !data?.ok) {
+      aviso('warn', 'No se pudo soltar el lead (' + (data?.error || 'error de conexión') + '). Vuelve a intentarlo o avisa al admin.');
+      await cargarDatos();
+      return;
+    }
+    aviso(data.destino === 'bolsa' ? 'ok' : 'warn', data.destino === 'bolsa' ? 'Liberado: vuelve a la bolsa.' : 'Cerrado: no vuelve al catálogo.');
+    await cargarDatos();
   }
   async function salir() { await supabase.auth.signOut(); router.push('/login'); router.refresh(); }
 
