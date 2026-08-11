@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '../../lib/supabase/client';
 import MenuDrawer from '../components/MenuDrawer';
+import BottomNav from '../components/BottomNav';
 import {
   Car, MapPin, Wallet, Lock, Unlock, Clock, Phone, Mail, User,
   Trophy, Timer, Users, TrendingUp, X, RotateCcw, XCircle,
@@ -193,8 +194,8 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
         </div>
 
         {flash && (
-          <div className={`aviso ${flash.t === 'ok' ? 'ok' : 'error'}`} style={{ marginBottom: 10 }}>
-            {flash.t === 'ok' ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />} {flash.m}
+          <div className={`aviso-flotante ${flash.t === 'ok' ? 'ok' : 'error'}`}>
+            {flash.t === 'ok' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />} {flash.m}
           </div>
         )}
 
@@ -294,9 +295,12 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                   );
                 })()}
                 {sinContactar ? (
-                  <button className="btn-ghost" onClick={() => contactado(l.id)} style={{ borderColor: 'var(--red-bd)', color: 'var(--text)' }}>
-                    <Phone size={14} style={{ verticalAlign: -2, marginRight: 6 }} /> Marcar como contactado
-                  </button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn-ghost" onClick={() => contactado(l.id)} style={{ flex: 1, borderColor: 'var(--red-bd)', color: 'var(--text)' }}>
+                      <Phone size={14} style={{ verticalAlign: -2, marginRight: 6 }} /> Marcar como contactado
+                    </button>
+                    <button className="est lose" onClick={() => setDescartando(l)} title="Soltar sin contactar (vuelve a la bolsa)"><XCircle size={13} /></button>
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button className="est win" onClick={() => ganado(l.id)}><Trophy size={13} /> Ganado</button>
@@ -349,6 +353,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
           </div>
         </div>
       )}
+      <BottomNav perfil={perfil} activa="central" />
     </div>
   );
 }
