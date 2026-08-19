@@ -2,16 +2,18 @@
 
 // =====================================================================
 //  GPSO COLLECTOR · HOME / Dashboard (cliente)  ·  app/HomeClient.jsx
-//  Saludo + 3 accesos (Central, VIP, Subir unidades) + stats + menú.
+//  Saludo + 6 accesos (Central, VIP, Subir unidades, Formación, Recursos, NEXOCAR) + stats + menú.
 // =====================================================================
 
 import { useRouter } from 'next/navigation';
 import MenuDrawer from './components/MenuDrawer';
 import BottomNav from './components/BottomNav';
-import { Target, Gem, UploadCloud, ArrowRight } from 'lucide-react';
+import { Target, Gem, UploadCloud, ArrowRight, GraduationCap, FolderOpen, Gauge } from 'lucide-react';
 
 // URL de la app de Albert (subir unidades). Cambiar aquí cuando esté lista.
 const URL_STOCK = 'https://gpsocollector.com/acceso';
+const URL_FORMACION = 'https://academy.gpsocollector.com';
+const URL_NEXOCAR = 'https://nexocar.app';
 
 export default function HomeClient({ email, perfil, stats }) {
   const router = useRouter();
@@ -66,6 +68,24 @@ export default function HomeClient({ email, perfil, stats }) {
             badge="↗ Cesión de venta" badgeClass="stock"
             titulo="Subir unidades" desc="Sube tu coche y lo gestionamos en venta desde nuestro stock."
             icon={<UploadCloud size={16} />} externo />
+
+          <Acc onClick={() => window.open(URL_FORMACION, '_blank', 'noopener,noreferrer')}
+            img="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1000"
+            badge="🎓 Academia" badgeClass="stock"
+            titulo="Formación" desc="Accede a los módulos, vídeos y masterclases de la academia."
+            icon={<GraduationCap size={16} />} externo />
+
+          <Acc onClick={() => router.push('/recursos')}
+            img="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1000"
+            badge="⬡ Guía práctica" badgeClass="stock"
+            titulo="Recursos" desc="Plantillas, documentos y herramientas para ejecutar cada paso."
+            icon={<FolderOpen size={16} />} />
+
+          <Acc onClick={() => window.open(URL_NEXOCAR, '_blank', 'noopener,noreferrer')}
+            img="https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=1000"
+            badge="↗ Herramienta" badgeClass="stock"
+            titulo="NEXOCAR" desc="Calcula importaciones y analiza la rentabilidad de cada coche."
+            icon={<Gauge size={16} />} externo />
         </div>
 
         {/* stats */}
