@@ -5,12 +5,12 @@
 //  Sidebar + 4 secciones: Alumnos · VIP · Leads · Ajustes.
 // =====================================================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '../../lib/supabase/client';
 import {
-  Users, Gem, Target, Settings, ArrowLeft, Check, X, Plus, Trash2,
-  ShieldCheck, Star, Menu
+  Users, Gem, Target, Settings, ArrowLeft, Check, X, Plus, Trash2, RotateCcw,
+  ShieldCheck, Star, Menu, TrendingUp, Trophy, XCircle, Package, Lock
 } from 'lucide-react';
 
 const eur = (n) => (n == null ? '—' : Math.round(n).toLocaleString('es-ES') + ' €');
@@ -18,7 +18,7 @@ const eur = (n) => (n == null ? '—' : Math.round(n).toLocaleString('es-ES') + 
 export default function AdminClient({ email, perfil, alumnos: alumnosIni, operaciones: opsIni, leads: leadsIni, config: configIni, motivos }) {
   const router = useRouter();
   const supabase = createClient();
-  const [sec, setSec] = useState('alumnos');
+  const [sec, setSec] = useState('resumen');
   const [sidebar, setSidebar] = useState(false);
   const [flash, setFlash] = useState(null);
 
@@ -26,10 +26,19 @@ export default function AdminClient({ email, perfil, alumnos: alumnosIni, operac
   const [ops, setOps] = useState(opsIni);
   const [leads, setLeads] = useState(leadsIni);
   const [config, setConfig] = useState(configIni);
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.rpc('admin_stats_leads');
+      if (data?.ok) setStats(data);
+    })();
+  }, []);
 
   function aviso(t, m) { setFlash({ t, m }); setTimeout(() => setFlash(null), 3200); }
 
   const secciones = [
+    { id: 'resumen', label: 'Resumen', icon: <TrendingUp size={17} /> },
     { id: 'alumnos', label: 'Alumnos', icon: <Users size={17} />, badge: alumnos.filter(a => !a.activo).length || null },
     { id: 'vip', label: 'Inversión VIP', icon: <Gem size={17} /> },
     { id: 'leads', label: 'Leads', icon: <Target size={17} /> },
@@ -68,9 +77,13 @@ export default function AdminClient({ email, perfil, alumnos: alumnosIni, operac
       <main style={S.main}>
         <div className="admin-topbar-mob">
           <button className="icobtn" onClick={() => setSidebar(true)}><Menu size={20} /></button>
-          <span className="display" style={{ fontSize: 16 }}>Panel Admin</span>
+          <span className="display" style={{ fontSize: 16, flex: 1 }}>Panel Admin</span>
+          <button className="btn-ghost" onClick={() => router.push('/')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, padding: '7px 12px' }}>
+            <ArrowLeft size={14} /> Salir
+          </button>
         </div>
 
+        {sec === 'resumen' && <SeccionResumen stats={stats} alumnos={alumnos} />}
         {sec === 'alumnos' && <SeccionAlumnos {...{ supabase, alumnos, setAlumnos, aviso }} />}
         {sec === 'vip' && <SeccionVip {...{ supabase, ops, setOps, aviso }} />}
         {sec === 'leads' && <SeccionLeads {...{ supabase, leads, setLeads, aviso }} />}
@@ -78,6 +91,49 @@ export default function AdminClient({ email, perfil, alumnos: alumnosIni, operac
       </main>
 
       {sidebar && <div className="scrim on" onClick={() => setSidebar(false)} style={{ zIndex: 40 }} />}
+    </div>
+  );
+}
+
+// ---------------- RESUMEN (stats) ----------------
+function SeccionResumen({ stats, alumnos }) {
+  const activos = alumnos.filter(a => a.activo).length;
+  const pendientes = alumnos.filter(a => !a.activo).length;
+  const cards = [
+    { lab: 'Leads disponibles', val: stats?.disponibles, icon: <Package size={18} />, col: 'var(--text)' },
+    { lab: 'Cogidos (reservados)', val: stats?.reservados, icon: <Lock size={18} />, col: 'var(--gold)' },
+    { lab: 'Ganados', val: stats?.ganados, icon: <Trophy size={18} />, col: 'var(--green)' },
+    { lab: 'Rechazados', val: stats?.rechazados, icon: <XCircle size={18} />, col: 'var(--red-soft)' },
+  ];
+  return (
+    <div>
+      <h2 className="display" style={{ fontSize: 22, marginBottom: 4 }}>Resumen</h2>
+      <p style={{ fontSize: 13, color: 'var(--gray-mid)', marginBottom: 22 }}>Estado global de la Central de Leads.</p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 14, marginBottom: 26 }}>
+        {cards.map(c => (
+          <div key={c.lab} className="glass" style={{ padding: '18px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: c.col, marginBottom: 8 }}>{c.icon}</div>
+            <div className="display" style={{ fontSize: 30, color: c.col }}>{c.val != null ? c.val : '—'}</div>
+            <div style={{ fontSize: 11.5, color: 'var(--gray-mid)', textTransform: 'uppercase', letterSpacing: .5, fontWeight: 600, marginTop: 2 }}>{c.lab}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 14 }}>
+        <div className="glass" style={{ padding: '18px 20px' }}>
+          <div className="display" style={{ fontSize: 26 }}>{activos}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--gray-mid)', textTransform: 'uppercase', letterSpacing: .5, fontWeight: 600, marginTop: 2 }}>Alumnos activos</div>
+        </div>
+        <div className="glass" style={{ padding: '18px 20px' }}>
+          <div className="display" style={{ fontSize: 26, color: pendientes > 0 ? 'var(--gold)' : 'var(--text)' }}>{pendientes}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--gray-mid)', textTransform: 'uppercase', letterSpacing: .5, fontWeight: 600, marginTop: 2 }}>Pendientes de aprobar</div>
+        </div>
+        <div className="glass" style={{ padding: '18px 20px' }}>
+          <div className="display" style={{ fontSize: 26 }}>{stats?.total != null ? stats.total : '—'}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--gray-mid)', textTransform: 'uppercase', letterSpacing: .5, fontWeight: 600, marginTop: 2 }}>Leads totales</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -282,6 +338,15 @@ function SeccionLeads({ supabase, leads, setLeads, aviso }) {
     setLeads(prev => prev.filter(x => x.id !== l.id)); aviso('ok', 'Lead borrado.');
   }
 
+  async function liberar(l) {
+    if (!window.confirm(`¿Liberar ${l.nombre || l.vehiculo}? Volverá a la bolsa para cualquier alumno.`)) return;
+    const { data, error } = await supabase.rpc('admin_liberar_lead', { p_lead_id: l.id });
+    if (error) { aviso('warn', 'Error de conexión.'); return; }
+    if (!data?.ok) { aviso('warn', 'No se pudo liberar: ' + (data?.error || '')); return; }
+    setLeads(prev => prev.map(x => x.id === l.id ? { ...x, estado: 'disponible', alumno_id: null } : x));
+    aviso('ok', 'Lead liberado, ya está en la bolsa.');
+  }
+
   return (
     <div>
       <Head titulo="Leads" sub={`${leads.length} en total`} accion={<button className="btn-de" onClick={() => setForm(!form)} style={{ padding: '10px 16px', fontSize: 13 }}><Plus size={15} /> Nuevo lead</button>} />
@@ -313,6 +378,9 @@ function SeccionLeads({ supabase, leads, setLeads, aviso }) {
               <div style={{ fontSize: 12, color: 'var(--gray-mid)' }}>{l.nombre || 'Sin nombre'} · {eur(l.presupuesto)}</div>
             </div>
             <span style={badge(l.estado)}>{l.estado}</span>
+            {l.estado === 'reservado' && (
+              <button onClick={() => liberar(l)} title="Liberar (vuelve a la bolsa)" style={{ display: 'inline-grid', placeItems: 'center', width: 32, height: 32, borderRadius: 8, border: '1px solid rgba(232,163,61,.4)', background: 'rgba(232,163,61,.1)', color: 'var(--gold)', cursor: 'pointer', padding: 0, flexShrink: 0 }}><RotateCcw size={15} /></button>
+            )}
             <button onClick={() => borrar(l)} title="Borrar definitivamente" style={{ display: 'inline-grid', placeItems: 'center', width: 32, height: 32, borderRadius: 8, border: '1px solid var(--red-bd)', background: 'var(--red-bg)', color: 'var(--red-soft)', cursor: 'pointer', padding: 0, flexShrink: 0 }}><Trash2 size={15} /></button>
           </div>
         ))}
