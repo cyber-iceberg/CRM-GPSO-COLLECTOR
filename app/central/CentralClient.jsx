@@ -26,6 +26,24 @@ const CALOR = {
 const LOGO = '/collector.jpg'; // sube tu logo a public/collector.jpg
 
 function euros(n) { return n == null ? '—' : n.toLocaleString('es-ES') + ' €'; }
+
+// limpia el texto de presupuesto del super form:
+// "15.000 eur-Hasta 20.000 eur" -> "15.000 € – 20.000 €"
+// "Hasta 25.000 eur" -> "Hasta 25.000 €" ; "25.000€" -> "25.000 €"
+function limpiaPresupuesto(txt) {
+  if (!txt) return null;
+  let s = String(txt);
+  // eur / EUR / euros -> €
+  s = s.replace(/\s*eur(os)?\b/gi, ' €');
+  // separadores tipo "X-Hasta Y" o "X - Y" -> "X – Y"
+  s = s.replace(/\s*-\s*hasta\s*/gi, ' – ');
+  s = s.replace(/\s*-\s*/g, ' – ');
+  // quitar la palabra "Hasta" si quedó suelta al inicio de la segunda parte
+  s = s.replace(/–\s*hasta\s*/gi, '– ');
+  // espacios y € duplicados
+  s = s.replace(/\s*€\s*/g, ' € ').replace(/\s+/g, ' ').replace(/€\s*€/g, '€').trim();
+  return s;
+}
 function desde(iso) {
   if (!iso) return '';
   const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -218,7 +236,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
             const kmMax = buscaDet('km máximos', 'km maximos', 'kilómetros máximos', 'kilometros maximos');
             const plazo = buscaDet('plazo', 'urgencia', 'cuando', 'tiempo');
             const pago = buscaDet('forma de pago', 'pago', 'financ', 'contado', 'dinero');
-            const presuTxt = buscaDet('presupuesto', 'budget') || (l.presupuesto ? euros(l.presupuesto) : 'Consultar');
+            const presuTxt = limpiaPresupuesto(buscaDet('presupuesto', 'budget')) || (l.presupuesto ? euros(l.presupuesto) : 'Consultar');
             return (
               <div key={l.id} className={`lead-card ${esPremium ? 'premium' : ''}`}>
                 <div style={S.cardTop}>
@@ -262,6 +280,14 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
           {vista === 'mis' && misLeads.map((l) => {
             const sinContactar = l.gestion === 'sin_contactar';
             const c = CALOR[l.calor] || CALOR.medio;
+            const detM = l.detalles && typeof l.detalles === 'object' ? l.detalles : {};
+            const buscaDetM = (...frag) => {
+              for (const [k, v] of Object.entries(detM)) {
+                if (frag.some((f) => k.toLowerCase().includes(f))) return String(v);
+              }
+              return null;
+            };
+            const presuM = limpiaPresupuesto(buscaDetM('presupuesto', 'budget')) || (l.presupuesto ? euros(l.presupuesto) : 'Consultar');
             return (
               <div key={l.id} className="lead-card">
                 <div style={S.rowB}>
@@ -275,7 +301,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                 </div>
                 <div className="display" style={S.veh}><Car size={18} color="var(--red-soft)" /> {l.vehiculo}</div>
                 <div style={{ display: 'flex', gap: 18 }}>
-                  <span style={S.meta}><Wallet size={13} color="var(--gray-mid)" /> {euros(l.presupuesto)}</span>
+                  <span style={S.meta}><Wallet size={13} color="var(--gray-mid)" /> {presuM}</span>
                   <span style={S.meta}><MapPin size={13} color="var(--gray-mid)" /> {l.ciudad}</span>
                 </div>
                 <div className="contacto">
@@ -307,7 +333,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                       {limpio.map(([k, v]) => (
                         <div key={k} style={S.detRow}>
                           <span style={S.detK}>{k}</span>
-                          <span style={S.detV}>{String(v)}</span>
+                          <span style={S.detV}>{/presupuesto|precio/i.test(k) ? (limpiaPresupuesto(String(v)) || String(v)) : String(v)}</span>
                         </div>
                       ))}
                     </div>
