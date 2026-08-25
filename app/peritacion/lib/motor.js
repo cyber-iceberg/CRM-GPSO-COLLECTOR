@@ -1,12 +1,10 @@
 // =====================================================================
-//  app/peritacion/lib/motor.js
-//  Puntuación, semáforo y lectura cruzada de la inspección.
-//  Funciones puras: entra la guía + el estado, sale el resultado.
-//  Sin React, sin Supabase. Se puede testear y, el día que haga falta,
-//  portar a una función de Postgres para recalcular en servidor.
+//  app/peritacion/lib/motor.js  ·  v5
+//  Penalización FIJA por ítem. El alumno marca ok/obs/def; si es def,
+//  resta el pen del ítem. Nada de elegir gravedad.
+//  Soporta mediciones (micras por pieza, mm/freno por rueda) que no
+//  puntúan pero alimentan el informe y la lectura cruzada.
 // =====================================================================
-
-export const SEV_LABEL = { leve: 'Leve', medio: 'Medio', grave: 'Grave' };
 
 /* ------------------------------------------------------------ lectura */
 export const bloqueDe = (guia, id) => guia.find((b) => b.id === id);
@@ -15,24 +13,24 @@ export const estadoItem = (est, bid, i) => itemsDe(est, bid)['it_' + i]?.estado 
 
 export function defectosDe(b, est) {
   const items = itemsDe(est, b.id);
-  return b.checklist
-    .map((t, i) => ({ texto: t, idx: i, ...(items['it_' + i] || {}) }))
-    .filter((x) => x.estado === 'def' && x.severidad);
+  return b.items
+    .map((it, i) => ({ ...it, idx: i, ...(items['it_' + i] || {}) }))
+    .filter((x) => x.estado === 'def');
 }
 export function observacionesDe(b, est) {
   const items = itemsDe(est, b.id);
-  return b.checklist
-    .map((t, i) => ({ texto: t, idx: i, ...(items['it_' + i] || {}) }))
+  return b.items
+    .map((it, i) => ({ ...it, idx: i, ...(items['it_' + i] || {}) }))
     .filter((x) => x.estado === 'obs');
 }
 export function evaluadosDe(b, est) {
   const items = itemsDe(est, b.id);
-  return b.checklist.filter((_, i) => items['it_' + i]?.estado).length;
+  return b.items.filter((_, i) => items['it_' + i]?.estado).length;
 }
 
 /* ---------------------------------------------------------- puntuación */
 export function notaBloque(b, est) {
-  const pen = defectosDe(b, est).reduce((a, d) => a + (b.penalizacion[d.severidad] || 0), 0);
+  const pen = defectosDe(b, est).reduce((a, d) => a + (d.pen || 0), 0);
   return Math.max(0, b.max - pen);
 }
 
@@ -41,147 +39,117 @@ export function calcular(guia, est, cierre = {}) {
   guia.forEach((b) => { notas[b.id] = notaBloque(b, est); });
   const total = Object.values(notas).reduce((a, n) => a + n, 0);
 
+  // banderas: un ítem-defecto marcado que además es rojo, o marca manual
   const banderas = [];
   guia.forEach((b) => {
-    const m = est?.[b.id]?.banderas || {};
-    b.banderas.forEach((f, i) => { if (m['bf_' + i]) banderas.push({ bloque: b.nombre, bloque_id: b.id, texto: f }); });
+    defectosDe(b, est).forEach((d) => {
+      if (d.rojo) banderas.push({ bloque: b.nombre, bloque_id: b.id, texto: d.t });
+    });
+    const man = est?.[b.id]?.banderas || {};
+    b.banderas.forEach((f, i) => { if (man['bf_' + i]) banderas.push({ bloque: b.nombre, bloque_id: b.id, texto: f }); });
   });
   if (cierre.recomendacion === 'negativa')
-    banderas.push({ bloque: 'Cierre', bloque_id: 'cierre', texto: 'Recomendación negativa del perito tras la peritación completa' });
+    banderas.push({ bloque: 'Cierre', bloque_id: 'cierre', texto: 'Recomendación negativa del perito tras la peritación' });
+  // dedup por texto+bloque
+  const seen = new Set();
+  const banderasU = banderas.filter((x) => { const k = x.bloque_id + '|' + x.texto; if (seen.has(k)) return false; seen.add(k); return true; });
 
-  const totalItems = guia.reduce((a, b) => a + b.checklist.length, 0);
+  const totalItems = guia.reduce((a, b) => a + b.items.length, 0);
   const evaluados = guia.reduce((a, b) => a + evaluadosDe(b, est), 0);
   const completitud = totalItems ? Math.round((evaluados / totalItems) * 100) : 0;
 
-  const semaforo = banderas.length ? 'ROJO' : total >= 84 ? 'VERDE' : total >= 54 ? 'AMARILLO' : 'ROJO';
+  const semaforo = banderasU.length ? 'ROJO' : total >= 84 ? 'VERDE' : total >= 54 ? 'AMARILLO' : 'ROJO';
 
-  return { notas, total, banderas, completitud, evaluados, totalItems, semaforo, concluyente: completitud >= 70 };
+  return { notas, total, banderas: banderasU, completitud, evaluados, totalItems, semaforo, concluyente: completitud >= 70 };
 }
 
 export const costeTotal = (costes) =>
   Object.values(costes || {}).reduce((a, v) => a + (parseFloat(v) || 0), 0);
 
-/* Texto oficial de la guía para la nota de un bloque ("12 a 14 -> ...") */
+/* Texto de la guía para la nota del bloque, según lectura:[[min,max,txt]] */
 export function leerNota(b, nota) {
-  const l = (b.guia?.lectura_nota || []).find((linea) => {
-    const m = linea.match(/^(\d+)(?:\s*a\s*(\d+))?\s*(?:\/\s*\d+)?\s*->/);
-    if (!m) return false;
-    const a = +m[1], c = m[2] ? +m[2] : a;
-    return nota >= Math.min(a, c) && nota <= Math.max(a, c);
-  });
-  return l ? l.split('->')[1].trim() : 'Sin valorar todavía';
+  const l = (b.lectura || []).find(([a, c]) => nota >= Math.min(a, c) && nota <= Math.max(a, c));
+  return l ? l[2] : 'Sin valorar todavía';
 }
 
-/* ------------------------------------------------ lectura cruzada final
-   Aquí es donde vive el criterio de Collector Academy. Cada patrón que os
-   haya costado dinero alguna vez debería acabar en esta lista.          */
-export function detectarPatrones(guia, est, cierre = {}) {
+/* -------------------------------------------------- lectura cruzada */
+export function detectarPatrones(guia, est, cierre = {}, medic = {}) {
   const P = [];
   const B = (id) => bloqueDe(guia, id);
   const defs = (id) => { const b = B(id); return b ? defectosDe(b, est) : []; };
-  const relevantes = (id) => defs(id).filter((d) => d.severidad !== 'leve');
-  const marcado = (id, i, ests) => ests.includes(estadoItem(est, id, i));
+  const rel = (id) => defs(id).filter((d) => d.pen >= 2);
+  const marc = (id, i, ests) => ests.includes(estadoItem(est, id, i));
   const ev = (id) => { const b = B(id); return b ? evaluadosDe(b, est) : 0; };
   const push = (n, t, d) => P.push({ nivel: n, titulo: t, texto: d });
 
-  if (relevantes('carroceria_y_pintura').length && relevantes('estructura_del_vehiculo').length)
+  if (rel('carroceria_y_pintura').length && rel('estructura_del_vehiculo').length)
     push('alto', 'Señales convergentes de daño no declarado',
-      'Hay defectos relevantes en carrocería y también en estructura. Juntos dejan de ser detalle estético: apuntan a un golpe reparado. Pide el historial de daños y una revisión en taller antes de seguir.');
+      'Defectos relevantes en carrocería y también en estructura. Juntos dejan de ser detalle estético: apuntan a un golpe reparado. Pide el historial de daños y revisión en taller.');
 
-  if (marcado('documentacion_del_vehiculo', 6, ['def', 'obs']) ||
-      marcado('interior_y_equipamiento', 12, ['def', 'obs']) ||
-      marcado('documentacion_del_vehiculo', 4, ['def']))
+  // micras: alguna pieza muy por encima de la media
+  const mic = Object.entries(medic.micras || {}).map(([k, v]) => [k, parseFloat(v)]).filter(([, v]) => v > 0);
+  if (mic.length >= 4) {
+    const vals = mic.map(([, v]) => v);
+    const media = vals.reduce((a, v) => a + v, 0) / vals.length;
+    const altas = mic.filter(([, v]) => v > 250 || v > media * 1.8);
+    if (altas.length)
+      push('alto', 'Espesómetro delata repintado',
+        `${altas.length} pieza(s) muy por encima del resto en micras (media ${Math.round(media)} µm). Por encima de 250 µm suele haber masilla o varias capas: reparación de golpe. Contrástalo con la chapa y las holguras.`);
+  }
+
+  if (marc('documentacion_del_vehiculo', 6, ['def', 'obs']) || marc('interior_y_equipamiento', 0, ['def', 'obs']))
     push('alto', 'Duda sobre el kilometraje real',
-      'El kilometraje, el historial o el desgaste interior no cuadran entre sí. Contrasta los sellos de servicio con las facturas y con la lectura de la centralita antes de aceptar la cifra del anuncio.');
+      'Los km, el historial o el desgaste interior no cuadran entre sí. Contrasta sellos, facturas y lectura de centralita antes de aceptar la cifra del anuncio.');
 
   if (defs('motor').length && defs('diagnosis_y_electronica').length)
     push('alto', 'El síntoma del motor tiene respaldo electrónico',
-      'Lo que has notado en el motor aparece también en la diagnosis. Ya no es una impresión tuya: hay dato. Guarda la captura de los códigos y pide presupuesto antes de negociar.');
+      'Lo que notaste en el motor aparece también en la diagnosis. Ya no es impresión: hay dato. Guarda los códigos y presupuesta antes de negociar.');
 
   if (defs('cambio_y_transmision').length && defs('prueba_dinamica').length)
     push('alto', 'Transmisión confirmada en marcha',
-      'El comportamiento del cambio se repite en la prueba dinámica. Una caja tocada es de las averías que más margen se comen. Trátalo como coste, no como detalle.');
+      'El comportamiento del cambio se repite en la prueba dinámica. Una caja tocada se come el margen. Trátalo como coste, no como detalle.');
 
-  if (defs('suspension_direccion_y_frenos').length &&
-      (marcado('neumaticos_y_llantas', 1, ['def', 'obs']) ||
-       marcado('neumaticos_y_llantas', 2, ['def', 'obs']) ||
-       marcado('neumaticos_y_llantas', 7, ['def', 'obs'])))
+  // desgaste irregular de ruedas + suspensión
+  const desgIrreg = Object.values(medic.ruedas || {}).some((r) => r?.desgaste && r.desgaste !== 'uniforme');
+  if (defs('suspension_direccion_y_frenos').length && (desgIrreg || marc('neumaticos_y_llantas', 1, ['def', 'obs'])))
     push('medio', 'Patrón de geometría o suspensión',
-      'Señales en la parte ciclo más desgaste irregular en neumáticos. Suele ser alineación o un elemento vencido; a veces es el rastro de un golpe. Pide medición de geometría.');
+      'Señales en la parte ciclo más desgaste irregular en neumáticos. Suele ser alineación o un elemento vencido; a veces el rastro de un golpe. Pide medición de geometría.');
+
+  if (defs('mecanica_y_bajos').some((d) => d.t.includes('Correa')))
+    push('alto', 'Distribución sin garantía',
+      'Has marcado la distribución como defecto. Es la avería más cara si rompe. Exige factura del cambio o presupuéstalo entero antes de cerrar precio.');
 
   guia.forEach((b) => {
-    const leves = defectosDe(b, est).filter((d) => d.severidad === 'leve').length;
+    const leves = defectosDe(b, est).filter((d) => d.pen === 1).length;
     if (leves >= 3)
       push('medio', 'Acumulación de señales menores en ' + b.nombre.toLowerCase(),
-        leves + ' defectos leves en el mismo bloque. Por separado no dicen nada; juntos cuentan una historia. Míralos como conjunto antes de darlos por asumibles.');
+        `${leves} defectos leves en el mismo bloque. Por separado no dicen nada; juntos cuentan una historia.`);
   });
 
   if (ev('prueba_dinamica') === 0)
     push('alto', 'Sin prueba dinámica',
-      'No has registrado la prueba en marcha. Sin ella la peritación no es concluyente: motor, cambio, dirección y frenos solo se juzgan rodando.');
-
-  if (marcado('motor', 0, ['def']) || estadoItem(est, 'motor', 0) === null)
-    push('medio', 'Sin arranque en frío verificado',
-      'El arranque en frío enseña lo que un motor caliente esconde. Si llegaste y el coche ya estaba en marcha, vuelve otro día o descuenta esa incertidumbre del precio.');
-
+      'No registraste la prueba en marcha. Sin ella la peritación no es concluyente: motor, cambio, dirección y frenos solo se juzgan rodando.');
   if (ev('diagnosis_y_electronica') === 0)
     push('medio', 'Sin diagnosis',
-      'Falta la lectura de centralitas. Es la comprobación más barata y la que más discusiones cierra. Hazla antes de pagar.');
+      'Falta la lectura de centralitas. Es lo más barato y lo que más discusiones cierra. Hazla antes de pagar.');
+  if (ev('mecanica_y_bajos') === 0)
+    push('medio', 'Sin revisar los bajos',
+      'No registraste el bloque de mecánica y bajos. Amortiguación, distribución y corrosión no se ven desde arriba: busca elevador o foto por debajo.');
 
   const bDoc = B('documentacion_del_vehiculo');
   if (bDoc && ev(bDoc.id) > 0 && notaBloque(bDoc, est) < bDoc.max * 0.6)
     push('alto', 'La base documental no sostiene la operación',
-      'Documentación por debajo del 60%. Un coche puede estar impecable y aun así ser un problema si los papeles no acompañan: la matriculación en España empieza ahí.');
+      'Documentación por debajo del 60%. Un coche impecable con papeles malos sigue siendo un problema: la matriculación en España empieza ahí.');
 
   if (cierre.recomendacion === 'reservas')
     push('medio', 'Recomendación con reservas',
-      'Has cerrado con reservas. Escribe exactamente qué falta por confirmar y ponle plazo; las reservas sin plazo acaban en compra a ciegas.');
+      'Cerraste con reservas. Escribe qué falta por confirmar y ponle plazo; las reservas sin plazo acaban en compra a ciegas.');
 
   return P;
 }
 
-/* --------------------------------------------------------- informe txt */
-export function informeTexto({ guia, ficha, est, cierre, costes, res, patrones }) {
-  const L = [];
-  L.push('PERITACIÓN COLLECTOR ACADEMY');
-  L.push(`Unidad: ${ficha.modelo || '—'}   VIN: ${ficha.vin || '—'}`);
-  L.push(`Km: ${ficha.km || '—'}   Precio pedido: ${ficha.precio ? ficha.precio + ' €' : '—'}`);
-  L.push(`Vendedor: ${ficha.vendedor || '—'} (${ficha.ciudad || '—'})   Fecha: ${ficha.fecha || '—'}`);
-  L.push('');
-  L.push(`RESULTADO: ${res.semaforo}   ${res.total}/100   Cobertura: ${res.completitud}%`);
-  if (!res.concluyente) L.push('AVISO: peritación incompleta, resultado no concluyente.');
-  L.push('');
-  L.push('PUNTUACIÓN POR BLOQUES');
-  guia.forEach((b) => L.push(`  ${b.nombre}: ${res.notas[b.id]}/${b.max}`));
-  if (res.banderas.length) {
-    L.push('', `BANDERAS ROJAS (${res.banderas.length})`);
-    res.banderas.forEach((f) => L.push(`  · ${f.texto} [${f.bloque}]`));
-  }
-  const conDef = guia.filter((b) => defectosDe(b, est).length);
-  if (conDef.length) {
-    L.push('', 'DEFECTOS REGISTRADOS');
-    conDef.forEach((b) => {
-      L.push(`  ${b.nombre}`);
-      defectosDe(b, est).forEach((d) =>
-        L.push(`    · [${SEV_LABEL[d.severidad]} −${b.penalizacion[d.severidad]}] ${d.texto}${d.nota ? ' — ' + d.nota : ''}`));
-    });
-  }
-  if (patrones?.length) {
-    L.push('', 'LECTURA DE LA INSPECCIÓN');
-    patrones.forEach((p) => L.push(`  · ${p.titulo}: ${p.texto}`));
-  }
-  const ct = costeTotal(costes);
-  if (ct > 0) {
-    L.push('', `COSTES ESTIMADOS: ${ct.toLocaleString('es-ES')} €`);
-    Object.entries(costes).forEach(([k, v]) => { if (parseFloat(v) > 0) L.push(`  · ${k}: ${v} €`); });
-    if (ficha.precio) L.push(`  Coste real de entrada: ${((parseFloat(ficha.precio) || 0) + ct).toLocaleString('es-ES')} €`);
-  }
-  if (cierre?.notas) L.push('', 'NOTAS DEL ALUMNO: ' + cierre.notas);
-  return L.join('\n');
-}
-
 export const COSTES = [
-  'Neumáticos a corto plazo', 'Frenos a corto plazo', 'Pintura o estética', 'Llantas',
-  'Interior', 'Mantenimiento próximo', 'Avería mecánica detectada',
+  'Neumáticos a corto plazo', 'Frenos a corto plazo', 'Distribución / correa', 'Pintura o estética',
+  'Llantas', 'Interior', 'Mantenimiento próximo', 'Avería mecánica detectada',
   'Avería electrónica detectada', 'Otros costes probables',
 ];
