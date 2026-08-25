@@ -252,11 +252,13 @@ export default function PeritacionClient({ user, perfil, listaInicial }) {
         </div>
         <div className={'pt-rail' + (res.banderas.length ? ' pt-rail-rojo' : '')}>
           {BLOQUES.map((b, i) => {
-            const tocado = evaluadosDe(b, resp) > 0;
+            const rev = evaluadosDe(b, resp) / b.items.length;   // % revisado del bloque
+            const salud = res.notas[b.id] / b.max;                // 0..1 de nota
+            const c = rev === 0 ? 'transparent' : salud >= .8 ? 'var(--green)' : salud >= .5 ? 'var(--gold)' : 'var(--red-soft)';
             return (
               <button key={b.id} className={'pt-seg' + (paso === i + 1 ? ' on' : '')} style={{ flexGrow: b.max }}
                 onClick={() => setPaso(i + 1)} title={`${b.nombre} · ${res.notas[b.id]}/${b.max}`}>
-                <span className="pt-seg-fill" style={{ height: tocado ? (res.notas[b.id] / b.max) * 100 + '%' : '100%', opacity: tocado ? 1 : .2 }} />
+                <span className="pt-seg-fill" style={{ width: (rev * 100) + '%', background: c }} />
               </button>
             );
           })}
