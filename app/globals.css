@@ -609,3 +609,52 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
 @media(min-width:700px){ .pt-h1{ font-size:36px; } .pt-main{ padding:30px 22px 40px; } }
 @media(prefers-reduced-motion:reduce){ .pt-tip-btn.urge{ animation:none; } .pt-seg-fill{ transition:none; } }
 @media print{ .pt-hdr,.pt-foot,.pt-tip-btn,.bottomnav{ display:none !important; } .pt-app{ background:#fff !important; color:#111 !important; } .pt-card,.pt-veredicto,.pt-hallazgo,.pt-item{ break-inside:avoid; border-color:#ccc !important; background:#fff !important; } }
+
+/* =====================================================================
+   INFORME PRO
+   ===================================================================== */
+.pt-informe{ }
+.pt-inf-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; }
+.pt-inf-sello{ text-align:center; border:1px solid var(--card-bd); border-radius:14px; padding:8px 14px; white-space:nowrap; }
+.pt-inf-sello b{ display:block; font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:14px; letter-spacing:1.5px; }
+.pt-inf-sello span{ font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
+.pt-inf-ficha{ display:flex; gap:12px; flex-wrap:wrap; padding-bottom:14px; border-bottom:1px solid var(--card-bd); }
+.pt-inf-ficha span{ display:inline-flex; align-items:center; gap:5px; font-size:12.5px; color:var(--gray-mid); }
+.pt-inf-banderas{ margin-top:10px; }
+.pt-inf-bandera{ display:flex; justify-content:space-between; gap:10px; font-size:13px; padding:5px 0; border-top:1px solid var(--card-bd); margin:0; }
+.pt-inf-bandera em{ font-style:normal; font-size:11px; color:var(--gray-mid); white-space:nowrap; }
+
+/* ruedas informe */
+.pt-inf-ruedas{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+.pt-inf-rueda{ background:var(--panel2); border:1px solid var(--card-bd); border-radius:10px; padding:10px 12px; }
+.pt-inf-rueda-l{ display:block; font-size:12px; font-weight:700; color:var(--gray-mid); margin-bottom:6px; }
+.pt-inf-rueda-d{ display:flex; gap:10px; flex-wrap:wrap; align-items:baseline; }
+.pt-inf-rueda-d span{ font-size:13px; }
+.pt-inf-rueda-d b{ font-size:16px; font-variant-numeric:tabular-nums; }
+.pt-inf-desg{ font-size:11.5px !important; color:var(--gold); border:1px solid rgba(232,163,61,.35); border-radius:20px; padding:2px 8px; }
+
+/* anotaciones resumidas */
+.pt-anota-bloque{ padding:12px 0; border-bottom:1px solid var(--card-bd); }
+.pt-anota-bloque:last-child{ border-bottom:0; }
+.pt-anota-t{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:13px; margin:0 0 8px; }
+.pt-anota-l{ padding:6px 0 6px 10px; border-left:2px solid var(--card-bd); margin-bottom:6px; }
+.pt-anota-l.a-def{ border-left-color:var(--red-soft); }
+.pt-anota-l.a-obs{ border-left-color:var(--gold); }
+.pt-anota-punto{ display:block; font-size:13.5px; line-height:1.4; }
+.pt-anota-def{ font-size:10px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--red-soft); background:var(--red-bg); border-radius:4px; padding:1px 6px; margin-right:6px; }
+.pt-anota-obs{ font-size:10px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--gold); background:rgba(232,163,61,.12); border-radius:4px; padding:1px 6px; margin-right:6px; }
+.pt-anota-pen{ font-style:normal; font-size:11px; color:var(--red-soft); margin-left:6px; font-variant-numeric:tabular-nums; }
+.pt-anota-nota{ display:block; font-size:12.5px; color:var(--text-soft); margin-top:3px; }
+.pt-anota-campo{ display:inline-block; font-size:11.5px; color:var(--gray-mid); margin-top:3px; }
+.pt-anota-obs-bloque{ font-size:12.5px; color:var(--text-soft); font-style:italic; margin:6px 0 0; padding-left:10px; border-left:2px solid var(--card-bd); }
+
+/* fotos informe */
+.pt-inf-fotos{ display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px; }
+.pt-inf-foto{ margin:0; }
+.pt-inf-foto img{ width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:8px; border:1px solid var(--card-bd); display:block; }
+.pt-inf-foto figcaption{ font-size:10.5px; color:var(--gray-mid); text-align:center; margin-top:4px; line-height:1.2; }
+
+@media print{
+  .pt-informe .btn-ghost{ display:none !important; }
+  .pt-inf-foto img{ border-color:#ccc !important; }
+}
