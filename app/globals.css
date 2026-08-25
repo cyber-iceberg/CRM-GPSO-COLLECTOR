@@ -396,3 +396,20 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
   transform:skewX(-18deg);animation:brillo-oro 5.5s ease-in-out infinite;pointer-events:none;
 }
 @keyframes brillo-oro{0%,100%{left:-60%;}50%{left:120%;}}
+
+/* ===================================================================
+   SPINNERS DE CARGA (login "Entrando…")
+   =================================================================== */
+.spinner-gpso{
+  width:44px;height:44px;border-radius:50%;margin:0 auto;
+  border:3px solid rgba(232,163,61,.18);
+  border-top-color:var(--gold,#E8A33D);
+  animation:girar .8s linear infinite;
+}
+.spinner-mini{
+  width:14px;height:14px;border-radius:50%;display:inline-block;
+  border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;
+  animation:girar .7s linear infinite;
+}
+@keyframes girar{to{transform:rotate(360deg);}}
