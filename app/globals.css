@@ -414,157 +414,165 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
 }
 @keyframes girar{to{transform:rotate(360deg);}}
 /* =====================================================================
-   PERITACIÓN · añadir al final de app/globals.css
-   Todo con prefijo .pt- para no tocar nada de lo que ya tenéis.
-   Usa vuestros tokens AURA: funciona igual en tema claro y oscuro.
+   PERITACIÓN v5 · añadir al final de app/globals.css
+   Reemplaza cualquier bloque .pt- anterior. Todo sobre tokens AURA.
    ===================================================================== */
 
 .pt-app{ min-height:100vh; display:flex; flex-direction:column; }
 
-/* ---------- cabecera fija con el raíl de 100 puntos ---------- */
-.pt-hdr{
-  position:sticky; top:0; z-index:40; padding:10px 14px 8px;
-  background:var(--card-glass); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
-  border-bottom:1px solid var(--card-bd);
-}
-.pt-hdr-top{ display:flex; align-items:center; gap:10px; margin-bottom:9px; }
-.pt-icon{ width:36px; height:36px; border-radius:10px; flex-shrink:0; display:grid; place-items:center;
-  background:transparent; border:1px solid var(--border); color:var(--text-soft); cursor:pointer;
-  transition:border-color .15s, color .15s; }
-.pt-icon:hover{ border-color:var(--red-bd); color:var(--text); }
-.pt-titulo{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; letter-spacing:-.3px;
-  font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* ---- lista ---- */
+.pt-lista-head{ display:flex; align-items:center; gap:14px; margin-bottom:22px; flex-wrap:wrap; }
+.pt-sub{ font-size:10.5px; letter-spacing:2px; font-weight:700; color:var(--gray-mid); text-transform:uppercase; margin-top:3px; }
+.pt-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+.pt-tag{ font-size:10px; font-weight:800; letter-spacing:.8px; border:1px solid var(--card-bd); border-radius:20px; padding:3px 10px; }
+.pt-time{ display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--gray-mid); }
+.pt-meta{ display:inline-flex; align-items:center; gap:6px; font-size:13.5px; color:var(--text-soft); font-weight:500; }
+.pt-bandera-mini{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:var(--red-soft); background:var(--red-bg); border:1px solid var(--red-bd); border-radius:20px; padding:2px 8px; }
+.pt-vacio{ text-align:center; padding:50px 20px; color:var(--gray-mid); font-size:14px; display:flex; flex-direction:column; align-items:center; gap:14px; line-height:1.6; }
+.pt-offline{ display:inline-flex; align-items:center; gap:5px; margin-left:auto; font-size:11px; font-weight:700; color:var(--gold); border:1px solid rgba(232,163,61,.35); border-radius:20px; padding:4px 10px; }
 
-/* El raíl está segmentado por el peso REAL de cada bloque: Estructura
-   ocupa 20 de 100 y Neumáticos 5. De un vistazo se ve dónde se pierde
-   la unidad, y cada segmento es un atajo a su bloque. */
+/* ---- cabecera editor ---- */
+.pt-hdr{ position:sticky; top:0; z-index:40; padding:10px 14px 8px; background:var(--card-glass); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border-bottom:1px solid var(--card-bd); }
+.pt-hdr-top{ display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+.pt-icon{ width:36px; height:36px; border-radius:10px; flex-shrink:0; display:grid; place-items:center; background:transparent; border:1px solid var(--border); color:var(--text-soft); cursor:pointer; }
+.pt-icon:hover{ border-color:var(--red-bd); color:var(--text); }
+.pt-titulo{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; letter-spacing:-.3px; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pt-pend{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:var(--gold); }
 .pt-rail{ display:flex; gap:2px; height:26px; }
-.pt-seg{ flex:1; min-width:6px; padding:0; border:0; border-radius:3px; overflow:hidden;
-  background:rgba(128,128,128,.18); display:flex; align-items:flex-end; cursor:pointer; }
+.pt-seg{ flex:1; min-width:6px; padding:0; border:0; border-radius:3px; overflow:hidden; background:rgba(128,128,128,.18); display:flex; align-items:flex-end; cursor:pointer; }
 .pt-seg-fill{ display:block; width:100%; background:var(--text); transition:height .3s ease; }
 .pt-seg.on{ outline:2px solid var(--text); outline-offset:1px; }
 .pt-rail-rojo .pt-seg-fill{ background:var(--red-soft); }
-
 .pt-hdr-bot{ display:flex; align-items:center; gap:10px; margin-top:8px; flex-wrap:wrap; }
 .pt-pts{ font-family:'Bricolage Grotesque',sans-serif; font-size:12px; color:var(--gray-mid); font-variant-numeric:tabular-nums; }
 .pt-pts b{ font-size:20px; color:var(--text); font-weight:800; }
 .pt-cob{ font-size:12px; color:var(--gray-mid); }
-.pt-pill-rojo{ font-size:10.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase;
-  color:var(--red-soft); background:var(--red-bg); border:1px solid var(--red-bd); border-radius:20px; padding:3px 10px; }
+.pt-pill-rojo{ font-size:10.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--red-soft); background:var(--red-bg); border:1px solid var(--red-bd); border-radius:20px; padding:3px 10px; }
 
-/* ---------- cuerpo ---------- */
+/* ---- cuerpo ---- */
 .pt-main{ flex:1; width:100%; max-width:720px; margin:0 auto; padding:22px 16px 30px; }
-.pt-eyebrow{ font-size:10.5px; letter-spacing:2px; font-weight:700; text-transform:uppercase;
-  color:var(--gray-mid); margin:0 0 6px; }
+.pt-eyebrow{ font-size:10.5px; letter-spacing:2px; font-weight:700; text-transform:uppercase; color:var(--gray-mid); margin:0 0 6px; }
 .pt-h1{ font-size:29px; line-height:1.08; margin:0 0 10px; }
-.pt-h3{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:12px; letter-spacing:1.4px;
-  text-transform:uppercase; color:var(--gray-mid); margin:26px 0 10px; padding-bottom:7px;
-  border-bottom:1px solid var(--card-bd); }
+.pt-h3{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:12px; letter-spacing:1.4px; text-transform:uppercase; color:var(--gray-mid); margin:26px 0 10px; padding-bottom:7px; border-bottom:1px solid var(--card-bd); }
 .pt-lead{ color:var(--text-soft); font-size:14.5px; line-height:1.6; margin:0 0 18px; }
+.pt-intro{ color:var(--text-soft); font-size:14px; line-height:1.6; margin:0 0 16px; padding-left:12px; border-left:2px solid var(--card-bd); }
 .pt-card{ padding:16px; margin-bottom:12px; }
-.pt-k{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:12px; letter-spacing:1px;
-  text-transform:uppercase; margin:0 0 7px; }
-.pt-fila{ display:flex; gap:10px; }
-.pt-fila>*{ flex:1; }
+.pt-k{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:12px; letter-spacing:1px; text-transform:uppercase; margin:0 0 7px; }
+.pt-mini-t{ display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--gray-mid); margin:0 0 12px; }
+.pt-fila{ display:flex; gap:10px; } .pt-fila>*{ flex:1; }
 
-/* ---------- marcador del bloque ---------- */
+/* ---- marcador ---- */
 .pt-marcador{ display:flex; align-items:center; gap:15px; padding:15px; margin-bottom:14px; border-radius:16px; }
 .pt-nota{ line-height:1; white-space:nowrap; font-variant-numeric:tabular-nums; }
-.pt-nota b{ font-size:38px; }
-.pt-nota span{ font-size:15px; color:var(--gray-mid); }
+.pt-nota b{ font-size:38px; } .pt-nota span{ font-size:15px; color:var(--gray-mid); }
 
-/* ---------- guía desplegable ---------- */
-.pt-guia-btn{ width:100%; display:inline-flex; align-items:center; justify-content:center; gap:7px;
-  background:transparent; border:1px dashed var(--card-bd); border-radius:12px; padding:11px;
-  font-size:13px; font-weight:600; color:var(--gray-mid); cursor:pointer; margin-bottom:14px;
-  font-family:inherit; transition:border-color .15s, color .15s; }
-.pt-guia-btn:hover{ border-color:var(--red-bd); color:var(--text); }
-.pt-baremo{ display:flex; gap:8px; border-top:1px solid var(--card-bd); padding-top:13px; }
-.pt-baremo span{ font-size:11.5px; font-weight:600; color:var(--text-soft);
-  border:1px solid var(--card-bd); border-radius:8px; padding:5px 10px; }
-
-/* ---------- ítems del checklist ---------- */
+/* ---- ÍTEM ---- */
 .pt-items{ list-style:none; margin:0 0 14px; padding:0; }
-.pt-item{ background:var(--card-glass); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
-  border:1px solid var(--card-bd); border-left:3px solid var(--card-bd);
-  border-radius:14px; padding:14px; margin-bottom:9px; }
-.pt-item.e-ok{  border-left-color:var(--green); }
+.pt-item{ background:var(--card-glass); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border:1px solid var(--card-bd); border-left:3px solid var(--card-bd); border-radius:14px; padding:13px; margin-bottom:9px; }
+.pt-item.e-ok{ border-left-color:var(--green); }
 .pt-item.e-obs{ border-left-color:var(--gold); }
 .pt-item.e-def{ border-left-color:var(--red-soft); }
-.pt-item-t{ margin:0 0 11px; font-size:14.5px; line-height:1.45; }
+.pt-item-cab{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:9px; }
+.pt-item-t{ margin:0; font-size:14.5px; line-height:1.4; }
+.pt-item-meta{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.pt-pen{ font-size:12px; font-weight:700; color:var(--gray-mid); background:rgba(128,128,128,.12); border-radius:20px; padding:2px 8px; font-variant-numeric:tabular-nums; }
+.pt-item-flag{ color:var(--red-soft); }
 
-/* tres estados, objetivos grandes: esto se usa de pie y con prisa */
+/* botón de tip: discreto; se ilumina si hay defecto y sigue cerrado */
+.pt-tip-btn{ display:flex; align-items:center; gap:6px; width:100%; background:transparent; border:1px dashed var(--card-bd); border-radius:9px; padding:8px 10px; font-family:inherit; font-size:12px; font-weight:600; color:var(--gray-mid); cursor:pointer; margin-bottom:10px; }
+.pt-tip-btn:hover{ color:var(--text); border-color:var(--border); }
+.pt-tip-btn.on{ color:var(--text); border-style:solid; }
+.pt-tip-btn.urge{ color:var(--red-soft); border-color:var(--red-bd); background:var(--red-bg); animation:pt-latido 1.4s ease-in-out 2; }
+.pt-tip-chev{ margin-left:auto; transition:transform .2s; }
+@keyframes pt-latido{ 0%,100%{ box-shadow:0 0 0 0 rgba(198,26,26,0); } 50%{ box-shadow:0 0 0 3px rgba(198,26,26,.18); } }
+
+.pt-tip{ padding:2px 2px 12px; }
+.pt-tip-l{ display:flex; gap:8px; align-items:flex-start; margin:0 0 7px; font-size:13px; line-height:1.5; }
+.pt-tip-l svg{ flex-shrink:0; margin-top:1px; }
+.pt-tip-l.l-hacer{ color:var(--text-soft); }
+.pt-tip-l.l-hacer svg{ color:var(--gray-mid); }
+.pt-tip-l.l-normal{ color:var(--green); }
+.pt-tip-l.l-alerta{ color:var(--red-soft); margin-bottom:0; }
+
+/* tres estados */
 .pt-seg3{ display:flex; gap:6px; }
-.pt-b3{ flex:1; min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:5px;
-  background:transparent; border:1px solid var(--card-bd); border-radius:10px; padding:9px 4px;
-  font-family:inherit; font-size:12px; font-weight:600; color:var(--gray-mid); cursor:pointer;
-  transition:background .15s, border-color .15s, color .15s; }
+.pt-b3{ flex:1; min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid var(--card-bd); border-radius:10px; padding:9px 4px; font-family:inherit; font-size:12px; font-weight:600; color:var(--gray-mid); cursor:pointer; }
 .pt-b3:active{ transform:scale(.97); }
-.pt-b3.b-ok.on{  background:var(--green-bg); border-color:var(--green-bd); color:var(--green); }
+.pt-b3.b-ok.on{ background:var(--green-bg); border-color:var(--green-bd); color:var(--green); }
 .pt-b3.b-obs.on{ background:rgba(232,163,61,.12); border-color:rgba(232,163,61,.4); color:var(--gold); }
 .pt-b3.b-def.on{ background:var(--red-bg); border-color:var(--red-bd); color:var(--red-soft); }
+.pt-nota-in{ margin-top:9px; }
 
-.pt-sev{ margin-top:12px; padding-top:12px; border-top:1px solid var(--card-bd); }
-.pt-sev-t{ font-size:11.5px; color:var(--gray-mid); font-weight:600; margin:0 0 7px; }
-.pt-chips{ display:flex; gap:6px; margin-bottom:9px; }
-.pt-chip{ flex:1; min-height:42px; background:transparent; border:1px solid var(--card-bd); border-radius:10px;
-  padding:7px 4px; font-family:inherit; font-size:12px; font-weight:600; color:var(--gray-mid); cursor:pointer; }
-.pt-chip em{ display:block; font-style:normal; font-size:11px; opacity:.8; font-variant-numeric:tabular-nums; }
-.pt-chip.s-leve.on{  background:rgba(232,163,61,.12); border-color:rgba(232,163,61,.4); color:var(--gold); }
-.pt-chip.s-medio.on,
-.pt-chip.s-grave.on{ background:var(--red-bg); border-color:var(--red-bd); color:var(--red-soft); }
-.pt-aviso-mini{ font-size:11.5px; color:var(--gold); margin:0 0 9px; }
-.pt-sev .campo{ margin-top:0; }
+/* campo de medición del ítem */
+.pt-campo-item{ margin-top:10px; padding-top:10px; border-top:1px solid var(--card-bd); }
+.pt-campo-l{ display:block; font-size:12px; color:var(--gray-mid); margin-bottom:6px; }
+.pt-opts{ display:flex; gap:6px; flex-wrap:wrap; }
+.pt-opt{ background:transparent; border:1px solid var(--card-bd); border-radius:8px; padding:8px 12px; font-family:inherit; font-size:12.5px; font-weight:600; color:var(--gray-mid); cursor:pointer; min-height:40px; }
+.pt-opt.on{ border-color:var(--red-bd); background:var(--red-bg); color:var(--text); }
+.pt-campo-num{ max-width:120px; text-align:center; }
 
-/* ---------- fotos ---------- */
+/* fotos en línea */
 .pt-fotos{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-.pt-foto{ width:62px; height:62px; border-radius:10px; overflow:hidden; border:1px solid var(--card-bd); }
+.pt-foto{ width:56px; height:56px; border-radius:9px; overflow:hidden; border:1px solid var(--card-bd); }
 .pt-foto img{ width:100%; height:100%; object-fit:cover; display:block; }
-.pt-foto-add{ width:62px; height:62px; border-radius:10px; display:grid; place-items:center;
-  background:transparent; border:1px dashed var(--card-bd); color:var(--gray-mid); cursor:pointer; }
+.pt-foto-add{ width:56px; height:56px; border-radius:9px; display:grid; place-items:center; background:transparent; border:1px dashed var(--card-bd); color:var(--gray-mid); cursor:pointer; }
 .pt-foto-add:hover{ border-color:var(--red-bd); color:var(--red-soft); }
 
-/* ---------- banderas rojas ---------- */
-.pt-flags{ border:1px solid var(--red-bd); background:var(--red-bg); border-radius:16px; padding:16px; margin-bottom:14px; }
-.pt-flags-t{ display:inline-flex; align-items:center; gap:7px; font-family:'Bricolage Grotesque',sans-serif;
-  font-weight:800; font-size:12.5px; letter-spacing:1px; text-transform:uppercase; color:var(--red-soft); margin:0 0 5px; }
-.pt-flags-d{ font-size:12.5px; color:var(--text-soft); line-height:1.5; margin:0 0 13px; }
-.pt-flag{ display:flex; gap:11px; align-items:flex-start; padding:11px; border-radius:10px; margin-bottom:7px;
-  border:1px solid var(--card-bd); background:var(--card-glass); font-size:13.5px; line-height:1.45; cursor:pointer; }
-.pt-flag input{ width:21px; height:21px; flex:0 0 21px; margin:0; accent-color:#e8443b; cursor:pointer; }
-.pt-flag.on{ border-color:var(--red-bd); background:rgba(198,26,26,.14); }
+/* fotos de estado (bloque) */
+.pt-fotos-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:10px; }
+.pt-foto-slot{ display:flex; flex-direction:column; align-items:center; gap:5px; }
+.pt-foto-slot-btn{ position:relative; width:100%; aspect-ratio:4/3; border-radius:10px; display:grid; place-items:center; background:var(--panel2); border:1px dashed var(--card-bd); color:var(--gray-mid); cursor:pointer; overflow:hidden; }
+.pt-foto-slot-btn img{ width:100%; height:100%; object-fit:cover; }
+.pt-foto-badge{ position:absolute; top:4px; right:4px; background:var(--red); color:#fff; font-size:10px; font-weight:800; border-radius:20px; padding:1px 6px; }
+.pt-foto-label{ font-size:11px; color:var(--gray-mid); text-align:center; line-height:1.2; }
 
-/* ---------- costes ---------- */
-.pt-coste{ display:flex; justify-content:space-between; align-items:center; gap:12px;
-  padding:10px 0; border-bottom:1px solid var(--card-bd); }
-.pt-coste:last-child{ border-bottom:0; }
-.pt-coste label{ font-size:13.5px; }
+/* espesómetro */
+.pt-espeso{ display:flex; flex-direction:column; align-items:center; }
+.pt-coche{ width:100%; max-width:260px; display:block; margin-bottom:10px; }
+.pt-leyenda{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; font-size:11px; color:var(--gray-mid); margin-bottom:10px; }
+.pt-leyenda span{ display:flex; align-items:center; gap:5px; }
+.pt-leyenda i{ width:11px; height:11px; border-radius:3px; display:inline-block; }
+.pt-pieza-in{ width:100%; background:var(--panel2); border:1px solid var(--card-bd); border-radius:10px; padding:11px; margin-bottom:10px; }
+.pt-pieza-in label{ display:block; font-size:12px; color:var(--gray-mid); margin-bottom:6px; }
+.pt-ref{ font-size:12px; color:var(--gray-mid); line-height:1.5; margin:0; }
+
+/* ruedas */
+.pt-ruedas-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+.pt-rueda{ background:var(--panel2); border:1px solid var(--card-bd); border-radius:12px; padding:12px; }
+.pt-rueda-l{ display:block; font-size:12.5px; font-weight:700; margin-bottom:9px; }
+.pt-rueda-campos{ display:flex; gap:8px; margin-bottom:9px; }
+.pt-rueda-c{ flex:1; }
+.pt-rueda-c .campo{ text-align:center; padding:8px 4px; }
+.pt-rueda-c span{ display:block; font-size:10.5px; color:var(--gray-mid); text-align:center; margin-top:3px; }
+.pt-rueda-desg{ display:flex; gap:4px; flex-wrap:wrap; }
+.pt-desg{ flex:1; min-width:60px; background:transparent; border:1px solid var(--card-bd); border-radius:7px; padding:6px 3px; font-family:inherit; font-size:10.5px; font-weight:600; color:var(--gray-mid); cursor:pointer; }
+.pt-desg.on{ border-color:var(--gold); background:rgba(232,163,61,.12); color:var(--gold); }
+
+/* elevador */
+.pt-elevador{ background:var(--card-glass); border:1px solid var(--card-bd); border-radius:14px; padding:14px; margin-bottom:12px; }
+
+/* costes */
 .pt-euro{ display:flex; align-items:center; gap:7px; }
 .pt-euro .campo{ width:100px; text-align:right; font-variant-numeric:tabular-nums; padding:9px 11px; }
 .pt-euro span{ color:var(--gray-mid); font-size:13.5px; }
 .pt-euro b{ font-size:23px; font-variant-numeric:tabular-nums; }
+.pt-coste{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--card-bd); }
+.pt-coste:last-child{ border-bottom:0; } .pt-coste label{ font-size:13.5px; }
 .pt-coste-total{ border-top:1px solid var(--card-bd); padding-top:13px; margin-top:5px; }
 
-/* ---------- cierre ---------- */
-.pt-opcion{ display:block; width:100%; text-align:left; background:transparent; border:1px solid var(--card-bd);
-  border-radius:12px; padding:14px; margin-bottom:9px; cursor:pointer; font-family:inherit;
-  transition:border-color .15s, background .15s; }
+/* cierre */
+.pt-opcion{ display:block; width:100%; text-align:left; background:transparent; border:1px solid var(--card-bd); border-radius:12px; padding:14px; margin-bottom:9px; cursor:pointer; font-family:inherit; }
 .pt-opcion b{ display:block; font-size:15px; margin-bottom:3px; color:var(--text); }
 .pt-opcion span{ font-size:13px; color:var(--gray-mid); }
 
-/* ---------- resultado ---------- */
+/* resultado */
 .pt-veredicto{ padding:20px; border-radius:18px; margin-bottom:8px; }
 .pt-v-top{ display:flex; align-items:center; gap:10px; margin-bottom:11px; }
 .pt-luz{ width:13px; height:13px; border-radius:50%; }
 .pt-sem{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:13px; letter-spacing:2.5px; }
 .pt-v-pts{ margin-left:auto; font-size:26px; font-variant-numeric:tabular-nums; }
-.pt-v-aviso{ border-left:2px solid var(--red-soft); padding-left:11px; margin:12px 0 0;
-  font-size:13.5px; line-height:1.5; color:var(--text); }
+.pt-v-aviso{ border-left:2px solid var(--red-soft); padding-left:11px; margin:12px 0 0; font-size:13.5px; line-height:1.5; color:var(--text); }
 .pt-hallazgo{ border-left:3px solid var(--gray-mid); border-radius:12px; padding:14px; margin-bottom:9px; }
-.pt-bandera-l{ display:flex; justify-content:space-between; gap:12px; align-items:baseline;
-  padding:9px 0; border-bottom:1px solid var(--card-bd); font-size:13.5px; }
-.pt-bandera-l:last-child{ border-bottom:0; }
-.pt-bandera-l em{ font-style:normal; font-size:11px; color:var(--gray-mid); white-space:nowrap; }
 .pt-barra{ margin-bottom:13px; cursor:pointer; }
 .pt-barra-l{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px; }
 .pt-barra-l b{ color:var(--red-soft); font-variant-numeric:tabular-nums; }
@@ -574,38 +582,12 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
 .pt-kpi:last-of-type{ border-bottom:0; }
 .pt-kpi span{ font-size:13.5px; color:var(--gray-mid); }
 .pt-kpi b{ font-size:18px; font-variant-numeric:tabular-nums; }
-.pt-accion{ font-size:13.5px; line-height:1.5; margin-bottom:8px; color:var(--text-soft); }
 
-/* ---------- pie de navegación ----------
-   Durante la peritación este pie SUSTITUYE al BottomNav: el móvil es una
-   herramienta, no un menú. Por eso el editor no renderiza <BottomNav>.  */
-.pt-foot{
-  position:sticky; bottom:0; z-index:40; display:flex; align-items:center; gap:10px; padding:11px 14px;
-  background:var(--card-glass); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
-  border-top:1px solid var(--card-bd);
-}
+/* pie */
+.pt-foot{ position:sticky; bottom:0; z-index:40; display:flex; align-items:center; gap:10px; padding:11px 14px; background:var(--card-glass); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border-top:1px solid var(--card-bd); }
 .pt-paso{ flex:1; text-align:center; font-size:11.5px; color:var(--gray-mid); font-weight:600; }
 
-/* el body reserva 66px para el BottomNav; en el editor no hace falta */
-@media(max-width:820px){
-  body:has(.pt-app){ padding-bottom:0; }
-}
-
-@media(min-width:700px){
-  .pt-h1{ font-size:36px; }
-  .pt-main{ padding:30px 22px 40px; }
-}
-
-/* ---------- impresión: el informe sale limpio ---------- */
-@media print{
-  .pt-hdr, .pt-foot, .pt-guia-btn, .bottomnav{ display:none !important; }
-  .pt-app{ background:#fff !important; color:#111 !important; }
-  .pt-card, .pt-veredicto, .pt-hallazgo, .pt-item{ break-inside:avoid; border-color:#ccc !important;
-    background:#fff !important; backdrop-filter:none !important; }
-}
-
-/* ---------- tarjeta de acceso en la Home ----------
-   Color propio para la peritación: acero frío. Rojo ya es "leads",
-   dorado es "VIP" y azul es "stock"; peritar no es ninguna de las tres. */
-.acc-badge.perito{ background:rgba(74,92,106,.55); border:1px solid rgba(150,175,195,.7); color:#eaf1f6; }
-.acc-grad.perito{ background:linear-gradient(180deg,rgba(10,14,17,.25) 30%,rgba(10,14,17,.92)); }
+@media(max-width:820px){ body:has(.pt-app){ padding-bottom:0; } }
+@media(min-width:700px){ .pt-h1{ font-size:36px; } .pt-main{ padding:30px 22px 40px; } }
+@media(prefers-reduced-motion:reduce){ .pt-tip-btn.urge{ animation:none; } .pt-seg-fill{ transition:none; } }
+@media print{ .pt-hdr,.pt-foot,.pt-tip-btn,.bottomnav{ display:none !important; } .pt-app{ background:#fff !important; color:#111 !important; } .pt-card,.pt-veredicto,.pt-hallazgo,.pt-item{ break-inside:avoid; border-color:#ccc !important; background:#fff !important; } }
