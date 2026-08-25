@@ -1,9 +1,12 @@
 // =====================================================================
 //  GPSO COLLECTOR · Puerta de entrada de leads (webhook)
 //  Ruta EXACTA:  app/api/lead-entrante/route.js
-//  v3 — filtra la morralla de GHL, guarda solo las PREGUNTAS reales del
-//  formulario, y rellena columnas base (vehiculo/ciudad/presupuesto +
-//  extras para la tarjeta: marca, pago, plazo).
+//  v4 — captura DOS formularios:
+//    · Form simple (Facebook): preguntas con ¿?
+//    · Super form (4 páginas): campos ricos (marca, anio, km, color, iva…)
+//  Regla nueva: descartamos SOLO la basura conocida de GHL y guardamos
+//  TODO lo demás en 'detalles'. Marca como premium (dorado) los leads
+//  que traen ficha completa del super form.
 // =====================================================================
 
 import { createClient } from '@supabase/supabase-js';
@@ -15,40 +18,65 @@ export async function GET() {
   return NextResponse.json({ ok: true, msg: 'Puerta de leads GPSO activa' });
 }
 
-// claves tecnicas de GHL que NO queremos ver nunca
+// claves técnicas de GHL que NO queremos ver nunca en 'detalles'
 const BASURA = new Set([
   'tags','contact','country','location','workflow','contact id','contactid',
   'customdata','custom data','triggerdata','trigger data','contact type','contacttype',
   'date created','datecreated','contact source','contactsource','attribution source',
   'attributionsource','full name','fullname','first name','last name','email','phone',
   'id','user','userid','user id','company','businessname','business name','timezone',
-  'dnd','source','datetime','date','time',
+  'dnd','source','datetime','date','time','contactid','locationid','location id',
+  'accepto','acepto','politica','política','privacidad','consent','consentimiento',
 ]);
 
-// normaliza para comparar (minusculas, sin acentos raros)
 const norm = (s) => String(s).trim().toLowerCase();
 
-// ¿es una pregunta real del formulario? (contiene ? o ¿) o un campo util conocido
-function esPregunta(clave) {
+// etiquetas "bonitas" para las claves técnicas del super form
+const ETIQUETAS = {
+  marca:'Marca', modelo:'Modelo', motorizacion:'Motorización', version:'Versión',
+  combustible:'Combustible', transmision:'Transmisión', traccion:'Tracción',
+  carroceria:'Carrocería', anio_desde:'Año desde', anio_hasta:'Año hasta',
+  año_desde:'Año desde', año_hasta:'Año hasta', ano_desde:'Año desde', ano_hasta:'Año hasta',
+  km_min:'Km mínimos', km_max:'Km máximos', kilometros_min:'Km mínimos', kilometros_max:'Km máximos',
+  precio_min:'Precio mínimo', precio_minimo:'Precio mínimo',
+  presupuesto:'Presupuesto', presupuesto_max:'Presupuesto', presupuesto_maximo:'Presupuesto',
+  color:'Color exterior', color_exterior:'Color exterior',
+  tapiceria:'Tapicería', tapiceria_interior:'Tapicería',
+  extras:'Extras', info_adicional:'Información adicional', informacion_adicional:'Información adicional',
+  comunidad:'Comunidad', comunidad_autonoma:'Comunidad', provincia:'Provincia', ciudad:'Ciudad',
+  iva_deducible:'IVA deducible', iva:'IVA deducible',
+  plazo:'Plazo', urgencia:'Urgencia', pago:'Forma de pago', financiacion:'Financiación', motivo:'Motivo',
+};
+
+// ¿es un campo que debemos guardar? -> todo lo que NO sea basura ni vacío
+function esUtil(clave) {
   const k = norm(clave);
   if (BASURA.has(k)) return false;
   if (k.includes('object')) return false;
-  if (clave.includes('?') || clave.includes('¿')) return true;
-  // campos utiles aunque no lleven ?
-  const utiles = ['marca','modelo','coche','vehiculo','presupuesto','plazo','urgencia','ciudad','provincia','pago','financiacion','financiación','motivo','extras'];
-  return utiles.some((u) => k.includes(u));
+  if (k === '') return false;
+  return true;
 }
 
-// detecta a que "categoria" pertenece una pregunta por su texto
+// clasifica para rellenar columnas base (por nombre de clave O texto de pregunta)
 function clasifica(clave) {
   const k = norm(clave);
   if (k.includes('marca')) return 'marca';
-  if (k.includes('presupuesto') || k.includes('budget')) return 'presupuesto';
+  if (k.includes('modelo') || k.includes('coche') || k.includes('vehiculo')) return 'modelo';
+  if (k.includes('presupuesto') || k.includes('budget') || k.includes('precio_max')) return 'presupuesto';
   if (k.includes('plazo') || k.includes('urgencia') || k.includes('cuando')) return 'plazo';
   if (k.includes('pago') || k.includes('financ') || k.includes('contado') || k.includes('dinero')) return 'pago';
-  if (k.includes('ciudad') || k.includes('provincia') || k.includes('localidad') || k.includes('ubicacion')) return 'ciudad';
-  if (k.includes('modelo') || k.includes('coche') || k.includes('vehiculo')) return 'modelo';
+  if (k.includes('comunidad') || k.includes('ciudad') || k.includes('provincia') || k.includes('localidad') || k.includes('ubicacion')) return 'ciudad';
   return null;
+}
+
+// nombre legible de una clave
+function etiquetar(clave) {
+  const k = norm(clave).replace(/\s+/g,'_');
+  if (ETIQUETAS[k]) return ETIQUETAS[k];
+  // si es una pregunta (lleva ?), la dejamos tal cual
+  if (clave.includes('?') || clave.includes('¿')) return clave.trim();
+  // si no, capitalizamos la clave técnica
+  return clave.trim().replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 export async function POST(request) {
@@ -68,61 +96,52 @@ export async function POST(request) {
     return null;
   };
 
-  // BASE directos
+  // BASE directos (datos estándar del contacto)
   const nombre    = g('nombre', 'full_name', 'fullname', 'name', 'nombre_completo', 'first_name');
   const telefono  = g('telefono', 'phone', 'phone_number', 'telefono_movil', 'movil');
   const email     = g('email', 'correo', 'email_address');
 
-  // Recorremos TODO el body quedandonos solo con preguntas reales,
-  // y de paso extraemos marca/presupuesto/plazo/pago/ciudad/modelo.
-  const detalles = {};
-  let marca = null, presupuestoTxt = null, plazo = null, pago = null, ciudadForm = null, modelo = null;
-
-  // si viene un objeto 'detalles' anidado, lo aplanamos primero
+  // aplanar: si viene 'detalles' anidado, lo mezclamos
   const fuente = {};
   if (body.detalles && typeof body.detalles === 'object') Object.assign(fuente, body.detalles);
   Object.assign(fuente, body);
 
+  const detalles = {};
+  let marca=null, modelo=null, presupuestoTxt=null, plazo=null, pago=null, ciudadForm=null;
+  let camposReales = 0; // para detectar si es super form (ficha rica)
+
   for (const [k, v] of Object.entries(fuente)) {
     if (v == null) continue;
-    const valor = String(v).trim();
+    let valor = Array.isArray(v) ? v.join(', ') : String(v).trim();
     if (valor === '' || norm(valor) === '[object object]') continue;
-    if (!esPregunta(k)) continue;
+    if (!esUtil(k)) continue;
 
-    detalles[k] = valor; // guardamos la pregunta legible tal cual
+    const etiqueta = etiquetar(k);
+    detalles[etiqueta] = valor;
+    camposReales++;
 
     const cat = clasifica(k);
     if (cat === 'marca' && !marca) marca = valor;
+    else if (cat === 'modelo' && !modelo) modelo = valor;
     else if (cat === 'presupuesto' && !presupuestoTxt) presupuestoTxt = valor;
     else if (cat === 'plazo' && !plazo) plazo = valor;
     else if (cat === 'pago' && !pago) pago = valor;
     else if (cat === 'ciudad' && !ciudadForm) ciudadForm = valor;
-    else if (cat === 'modelo' && !modelo) modelo = valor;
   }
 
-  // COLUMNAS BASE para la tarjeta del catalogo
-  // vehiculo = marca (o modelo, o lo que haya); si nada, texto generico
+  // COLUMNAS BASE para la tarjeta
   const vehiculo = marca || modelo || g('vehiculo','vehicle','car','coche') || 'Consulta de importación';
-  // ciudad: del formulario, o del campo city de GHL si es texto util
-  const ciudadRaw = ciudadForm || g('ciudad','city','provincia','localidad');
+  const ciudadRaw = ciudadForm || g('ciudad','city','provincia','localidad','comunidad');
   const ciudad = (ciudadRaw && norm(ciudadRaw) !== '[object object]' && norm(ciudadRaw) !== 'es') ? ciudadRaw : null;
-  // presupuesto: guardamos el TEXTO del rango tal cual ("20.000 € - 40.000 €")
-  // y ademas un numero para ordenar/comparar internamente.
+
   let presupuesto = null;
   const presuBase = presupuestoTxt || g('presupuesto','budget','precio');
   if (presuBase) {
     const m = String(presuBase).replace(/\./g, '').match(/\d{3,}/);
     if (m) presupuesto = parseInt(m[0], 10);
   }
-  // guardamos el rango legible dentro de detalles si no estaba ya
-  if (presuBase && !Object.keys(detalles).some(k => norm(k).includes('presupuesto'))) {
-    detalles['Presupuesto'] = String(presuBase);
-  }
 
-  // CALOR segun la URGENCIA/plazo que puso el cliente:
-  //   "lo antes posible"      -> alto  (CALIENTE)
-  //   "1-3 meses"             -> medio (TEMPLADO)
-  //   "sin prisa / mirando"   -> bajo  (FRIO)
+  // CALOR según urgencia/plazo
   let calor = 'medio';
   if (plazo) {
     const p = norm(plazo);
@@ -133,6 +152,13 @@ export async function POST(request) {
     const calorRaw = (g('calor') || 'medio').toLowerCase();
     calor = ['alto', 'medio', 'bajo'].includes(calorRaw) ? calorRaw : 'medio';
   }
+
+  // PREMIUM (dorado): si trae ficha rica del super form.
+  // criterio: 6+ campos reales, o presencia de campos típicos del super form.
+  const clavesSuper = ['Año desde','Año hasta','Km máximos','Km mínimos','Color exterior','Tapicería','Extras','IVA deducible','Combustible','Carrocería'];
+  const tieneCamposSuper = clavesSuper.some(c => detalles[c] != null);
+  const premium = camposReales >= 6 || tieneCamposSuper;
+  if (premium) detalles.__premium = true;
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -150,5 +176,5 @@ export async function POST(request) {
 
   try { await supabase.from('lead_eventos').insert({ lead_id: data.id, tipo: 'creado' }); } catch (e) {}
 
-  return NextResponse.json({ ok: true, id: data.id });
+  return NextResponse.json({ ok: true, id: data.id, premium });
 }
