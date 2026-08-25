@@ -153,11 +153,11 @@ export async function POST(request) {
     calor = ['alto', 'medio', 'bajo'].includes(calorRaw) ? calorRaw : 'medio';
   }
 
-  // PREMIUM (dorado): si trae ficha rica del super form.
-  // criterio: 6+ campos reales, o presencia de campos típicos del super form.
-  const clavesSuper = ['Año desde','Año hasta','Km máximos','Km mínimos','Color exterior','Tapicería','Extras','IVA deducible','Combustible','Carrocería'];
-  const tieneCamposSuper = clavesSuper.some(c => detalles[c] != null);
-  const premium = camposReales >= 6 || tieneCamposSuper;
+  // PREMIUM (dorado): SOLO si trae campos exclusivos del super form.
+  // El formulario simple (6 preguntas) NO tiene ninguno de estos,
+  // así que nunca se marcará premium por error.
+  const clavesSuper = ['Año desde','Año hasta','Km máximos','Km mínimos','Color exterior','Tapicería','IVA deducible','Carrocería','Transmisión','Tracción','Motorización'];
+  const premium = clavesSuper.some(c => detalles[c] != null);
   if (premium) detalles.__premium = true;
 
   const supabase = createClient(
