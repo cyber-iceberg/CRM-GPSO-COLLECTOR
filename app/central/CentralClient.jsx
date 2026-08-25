@@ -14,7 +14,7 @@ import BottomNav from '../components/BottomNav';
 import {
   Car, MapPin, Wallet, Lock, Unlock, Clock, Phone, Mail, User,
   Trophy, Timer, Users, TrendingUp, X, RotateCcw, XCircle,
-  LogOut, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Circle, ArrowLeft, Trash2
+  LogOut, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Circle, ArrowLeft, Trash2, Calendar, Gauge
 } from 'lucide-react';
 
 const CALOR = {
@@ -212,23 +212,34 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
               }
               return null;
             };
-            const plazo = buscaDet('plazo', 'urgencia', 'cuando');
-            const pago = buscaDet('pago', 'financ', 'contado', 'dinero');
+            const esPremium = det.__premium === true;
+            const motor = buscaDet('motorización', 'motorizacion', 'versión', 'version');
+            const anio = buscaDet('año desde', 'anio desde', 'ano desde') || buscaDet('año', 'anio');
+            const kmMax = buscaDet('km máximos', 'km maximos', 'kilómetros máximos', 'kilometros maximos');
+            const plazo = buscaDet('plazo', 'urgencia', 'cuando', 'tiempo');
+            const pago = buscaDet('forma de pago', 'pago', 'financ', 'contado', 'dinero');
             const presuTxt = buscaDet('presupuesto', 'budget') || (l.presupuesto ? euros(l.presupuesto) : 'Consultar');
             return (
-              <div key={l.id} className="lead-card">
+              <div key={l.id} className={`lead-card ${esPremium ? 'premium' : ''}`}>
                 <div style={S.cardTop}>
                   <span style={{ ...S.calor, color: c.color }}><Circle size={7} fill={c.dot} color={c.dot} /> {c.label}</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                    {esPremium && <span style={S.premiumTag}><Sparkles size={10} /> PREMIUM</span>}
                     <span style={S.time}><Clock size={11} /> {desde(l.created_at)}</span>
                     {esAdmin && <button onClick={(e) => { e.stopPropagation(); borrarLead(l); }} title="Borrar lead" style={S.trashBtn}><Trash2 size={13} /></button>}
                   </span>
                 </div>
-                <div className="display" style={S.veh}><Car size={18} color="var(--red-soft)" /> {l.vehiculo}</div>
+                <div className="display" style={S.veh}><Car size={18} color={esPremium ? 'var(--gold)' : 'var(--red-soft)'} /> {l.vehiculo}{motor ? <span style={S.motor}> · {motor}</span> : null}</div>
                 <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
                   <span style={S.meta}><Wallet size={13} color="var(--gray-mid)" /> {presuTxt}</span>
                   <span style={S.meta}><MapPin size={13} color="var(--gray-mid)" /> {l.ciudad || 'España'}</span>
                 </div>
+                {(anio || kmMax) && (
+                  <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+                    {anio && <span style={S.meta}><Calendar size={13} color="var(--gray-mid)" /> {anio}</span>}
+                    {kmMax && <span style={S.meta}><Gauge size={13} color="var(--gray-mid)" /> hasta {kmMax}</span>}
+                  </div>
+                )}
                 {(plazo || pago) && (
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {plazo && <span style={S.chipMini}><Clock size={11} /> {plazo}</span>}
@@ -274,7 +285,9 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                   {l.nota && <div style={S.nota}>{l.nota}</div>}
                 </div>
                 {l.detalles && Object.keys(l.detalles).length > 0 && (() => {
-                  const BASURA = ['object','tags','contact','country','location','workflow','contactid','contact id','customdata','custom data','triggerdata','trigger data','contacttype','contact type','date created','datecreated','contactsource','contact source','attributionsource','attribution source','full name','fullname','first name','last name','id','user','timezone','dnd','source'];
+                  const BASURA = ['object','tags','contact','country','location','workflow','contactid','contact id','customdata','custom data','triggerdata','trigger data','contacttype','contact type','date created','datecreated','contactsource','contact source','attributionsource','attribution source','full name','fullname','first name','last name','id','user','timezone','dnd','source','__premium','premium','landing','captacion','captación','vsl','registro','politica','política','privacidad','consent'];
+                  // orden lógico de la ficha (los que no estén aquí van al final)
+                  const ORDEN = ['Marca','Modelo','Motorización','Versión','Combustible','Transmisión','Tracción','Carrocería','Año desde','Año hasta','Km mínimos','Km máximos','Precio mínimo','Presupuesto','Color exterior','Tapicería','Forma de pago','Financiación','Plazo','Urgencia','Extras','Información adicional','Comunidad','Provincia','Ciudad','IVA deducible','Motivo'];
                   const limpio = Object.entries(l.detalles).filter(([k, v]) => {
                     const kk = String(k).toLowerCase();
                     const vv = String(v).toLowerCase();
@@ -282,6 +295,12 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                     return !BASURA.some((b) => kk.includes(b));
                   });
                   if (limpio.length === 0) return null;
+                  // ordenar según ORDEN; lo no listado, al final, en su orden original
+                  limpio.sort((a, b) => {
+                    const ia = ORDEN.indexOf(a[0]); const ib = ORDEN.indexOf(b[0]);
+                    const va = ia === -1 ? 999 : ia; const vb = ib === -1 ? 999 : ib;
+                    return va - vb;
+                  });
                   return (
                     <div style={S.detalles}>
                       <div style={S.detTit}><Sparkles size={12} /> Lo que pidió</div>
@@ -380,6 +399,8 @@ const S = {
   calor: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, letterSpacing: .5 },
   time: { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--gray-mid)' },
   veh: { fontSize: 19, display: 'flex', alignItems: 'center', gap: 9 },
+  motor: { fontSize: 14, color: 'var(--gray-mid)', fontWeight: 500 },
+  premiumTag: { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9.5, fontWeight: 800, letterSpacing: .8, color: '#231802', background: 'linear-gradient(100deg,var(--gold),#f2c982)', borderRadius: 20, padding: '3px 9px' },
   meta: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: 'var(--text-soft)', fontWeight: 500 },
   locked: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: 'var(--gray-mid)', background: 'rgba(128,128,128,.06)', border: '1px dashed var(--card-bd)', borderRadius: 9, padding: '8px 11px' },
   rowB: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
