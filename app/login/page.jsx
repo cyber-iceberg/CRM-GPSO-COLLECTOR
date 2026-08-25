@@ -1,8 +1,9 @@
 'use client';
 
 // =====================================================================
-//  GPSO COLLECTOR · LOGIN  ·  app/login/page.jsx  (v4)
-//  Logo UNIFICADO dentro de la tarjeta. Tema claro por defecto.
+//  GPSO COLLECTOR · LOGIN  ·  app/login/page.jsx  (v5)
+//  Logo unificado + FEEDBACK de carga: overlay "Entrando…" a pantalla
+//  completa para que no haya momento en blanco tras pulsar ENTRAR.
 // =====================================================================
 
 import { useState } from 'react';
@@ -20,6 +21,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [entrando, setEntrando] = useState(false); // overlay a pantalla completa
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
 
@@ -32,15 +34,23 @@ export default function LoginPage() {
       if (modo === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
         if (error) throw error;
+        // login correcto: mostramos overlay y NO quitamos el cargando,
+        // así no hay hueco en blanco mientras carga la home.
+        setEntrando(true);
         router.push('/'); router.refresh();
+        return; // dejamos el overlay puesto hasta que la home tome el control
       } else {
         const { error } = await supabase.auth.signUp({ email, password: pass, options: { data: { nombre } } });
         if (error) throw error;
         setOk('Cuenta creada. Un admin la activará antes de que puedas coger leads.');
         setModo('login');
+        setCargando(false);
       }
-    } catch (e) { setError(traducir(e.message)); }
-    finally { setCargando(false); }
+    } catch (e) {
+      setError(traducir(e.message));
+      setCargando(false);
+      setEntrando(false);
+    }
   }
   function traducir(msg) {
     if (!msg) return 'Algo ha fallado. Inténtalo de nuevo.';
@@ -53,9 +63,24 @@ export default function LoginPage() {
 
   return (
     <div className="gpso-bg" style={{ display: 'grid', placeItems: 'center', minHeight: '100vh', padding: 20 }}>
+
+      {/* OVERLAY "ENTRANDO…" a pantalla completa */}
+      {entrando && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 999,
+          background: 'rgba(8,6,9,.92)', backdropFilter: 'blur(6px)',
+          display: 'grid', placeItems: 'center'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="spinner-gpso" />
+            <div style={{ marginTop: 18, fontWeight: 700, fontSize: 16, color: '#f4f4f4' }}>Entrando…</div>
+            <div style={{ marginTop: 4, fontSize: 12.5, color: '#8a8a8a' }}>Preparando tu Central</div>
+          </div>
+        </div>
+      )}
+
       <div className="glass" style={{ width: '100%', maxWidth: 400, overflow: 'hidden' }}>
 
-        {/* CABECERA UNIFICADA: logo + tagline dentro de la misma tarjeta */}
         <div style={{ textAlign: 'center', padding: '32px 26px 20px' }}>
           <div className="hero-logo" style={{ width: 88, height: 88, borderRadius: 20 }}>
             <img src={LOGO} alt="GPSO Collector" />
@@ -67,7 +92,6 @@ export default function LoginPage() {
 
         <div style={{ height: 1, background: 'var(--card-bd)' }} />
 
-        {/* FORMULARIO */}
         <div style={{ padding: '22px 26px 26px' }}>
           <div className="seg" style={{ display: 'flex', width: '100%', marginBottom: 18 }}>
             <button className={`seg-btn ${modo === 'login' ? 'active' : ''}`} style={{ flex: 1, justifyContent: 'center' }}
@@ -96,7 +120,9 @@ export default function LoginPage() {
           {ok && <div className="aviso ok" style={{ marginTop: 4 }}>{ok}</div>}
 
           <button className="btn-de" disabled={cargando} onClick={submit} style={{ width: '100%', marginTop: 16, fontSize: 14 }}>
-            {cargando ? 'Un momento…' : (modo === 'login' ? 'ENTRAR' : 'CREAR CUENTA')}
+            {cargando
+              ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span className="spinner-mini" /> {modo === 'login' ? 'ENTRANDO…' : 'CREANDO…'}</span>
+              : (modo === 'login' ? 'ENTRAR' : 'CREAR CUENTA')}
           </button>
           <p style={{ fontSize: 11.5, color: 'var(--gray-mid)', textAlign: 'center', marginTop: 16, lineHeight: 1.5 }}>
             Acceso exclusivo para alumnos de la formación GPSO Collector.
