@@ -75,6 +75,8 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
   const [refrescando, setRefrescando] = useState(false);
   const [ganados, setGanados] = useState([]);
   const [verGanados, setVerGanados] = useState(false);
+  const [abiertos, setAbiertos] = useState({});
+  const toggleAbierto = (id) => setAbiertos(prev => ({ ...prev, [id]: !prev[id] }));
 
   const activo = perfil && perfil.activo;
   const esAdmin = perfil && perfil.rol === 'admin';
@@ -301,6 +303,8 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
               return null;
             };
             const presuM = limpiaPresupuesto(buscaDetM('presupuesto', 'budget')) || (l.presupuesto ? euros(l.presupuesto) : 'Consultar');
+            const motorM = buscaDetM('motorización', 'motorizacion', 'versión', 'version');
+            const abierto = !!abiertos[l.id];
             return (
               <div key={l.id} className="lead-card">
                 <div style={S.rowB}>
@@ -312,20 +316,29 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                     {esAdmin && <button onClick={(e) => { e.stopPropagation(); borrarLead(l); }} title="Borrar lead" style={S.trashBtn}><Trash2 size={13} /></button>}
                   </span>
                 </div>
-                <div className="display" style={S.veh}><Car size={18} color="var(--red-soft)" /> {l.vehiculo}</div>
-                <div style={{ display: 'flex', gap: 18 }}>
-                  <span style={S.meta}><Wallet size={13} color="var(--gray-mid)" /> {presuM}</span>
-                  <span style={S.meta}><MapPin size={13} color="var(--gray-mid)" /> {l.ciudad}</span>
+
+                {/* CABECERA CLICABLE (compacta) */}
+                <div onClick={() => toggleAbierto(l.id)} style={{ cursor: 'pointer' }}>
+                  <div className="display" style={S.veh}><Car size={18} color="var(--red-soft)" /> {l.vehiculo}{motorM ? <span style={S.motor}> · {motorM}</span> : null}</div>
+                  <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 2 }}>
+                    <span style={S.meta}><Wallet size={13} color="var(--gray-mid)" /> {presuM}</span>
+                    <span style={S.meta}><MapPin size={13} color="var(--gray-mid)" /> {l.ciudad || 'España'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                    <span style={{ ...S.crow, fontWeight: 700 }}><User size={14} color="var(--red-soft)" /> {l.nombre || 'Cliente'}</span>
+                    <span style={S.desplegar}>{abierto ? 'ocultar ▲' : 'ver ficha ▼'}</span>
+                  </div>
                 </div>
-                <div className="contacto">
-                  <div style={S.crow}><User size={14} color="var(--red-soft)" /> {l.nombre}</div>
-                  <div style={S.crow}><Phone size={14} color="var(--red-soft)" /> {l.telefono}</div>
-                  <div style={S.crow}><Mail size={14} color="var(--red-soft)" /> {l.email}</div>
+
+                {/* CUERPO DESPLEGABLE */}
+                {abierto && (<>
+                <div className="contacto" style={{ marginTop: 12 }}>
+                  <div style={S.crow}><Phone size={14} color="var(--red-soft)" /> {l.telefono || '—'}</div>
+                  <div style={S.crow}><Mail size={14} color="var(--red-soft)" /> {l.email || '—'}</div>
                   {l.nota && <div style={S.nota}>{l.nota}</div>}
                 </div>
                 {l.detalles && Object.keys(l.detalles).length > 0 && (() => {
                   const BASURA = ['object','tags','contact','country','location','workflow','contactid','contact id','customdata','custom data','triggerdata','trigger data','contacttype','contact type','date created','datecreated','contactsource','contact source','attributionsource','attribution source','full name','fullname','first name','last name','id','user','timezone','dnd','source','__premium','premium','landing','captacion','captación','vsl','registro','politica','política','privacidad','consent'];
-                  // orden lógico de la ficha (los que no estén aquí van al final)
                   const ORDEN = ['Marca','Modelo','Motorización','Versión','Combustible','Transmisión','Tracción','Carrocería','Año desde','Año hasta','Km mínimos','Km máximos','Precio mínimo','Presupuesto','Color exterior','Tapicería','Forma de pago','Financiación','Plazo','Urgencia','Extras','Información adicional','Comunidad','Provincia','Ciudad','IVA deducible','Motivo'];
                   const limpio = Object.entries(l.detalles).filter(([k, v]) => {
                     const kk = String(k).toLowerCase();
@@ -334,7 +347,6 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                     return !BASURA.some((b) => kk.includes(b));
                   });
                   if (limpio.length === 0) return null;
-                  // ordenar según ORDEN; lo no listado, al final, en su orden original
                   limpio.sort((a, b) => {
                     const ia = ORDEN.indexOf(a[0]); const ib = ORDEN.indexOf(b[0]);
                     const va = ia === -1 ? 999 : ia; const vb = ib === -1 ? 999 : ib;
@@ -365,6 +377,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                     <button className="est lose" onClick={() => setDescartando(l)}><XCircle size={13} /> Descartar</button>
                   </div>
                 )}
+                </>)}
               </div>
             );
           })}
@@ -481,6 +494,7 @@ const S = {
   ganadosCount: { background: 'var(--green-bg)', color: 'var(--green)', border: '1px solid var(--green-bd)', borderRadius: 20, padding: '1px 9px', fontSize: 12, fontWeight: 800 },
   ganadosGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px,1fr))', gap: 12, marginTop: 12 },
   ganadoCard: { display: 'flex', flexDirection: 'column', gap: 9, background: 'linear-gradient(160deg, rgba(70,196,131,.06), var(--card-glass))', border: '1px solid var(--green-bd)', borderRadius: 14, padding: 14 },
+  desplegar: { fontSize: 11.5, color: 'var(--gray-mid)', fontWeight: 600, whiteSpace: 'nowrap' },
   meta: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: 'var(--text-soft)', fontWeight: 500 },
   locked: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: 'var(--gray-mid)', background: 'rgba(128,128,128,.06)', border: '1px dashed var(--card-bd)', borderRadius: 9, padding: '8px 11px' },
   rowB: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
