@@ -376,3 +376,23 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
 .aviso-flotante.ok{ background:rgba(70,196,131,.16); border:1px solid var(--green-bd); color:var(--green); }
 .aviso-flotante.error{ background:rgba(198,26,26,.16); border:1px solid var(--red-bd); color:var(--red-soft); }
 @keyframes aviso-in{ from{ opacity:0; transform:translate(-50%,-16px); } to{ opacity:1; transform:translate(-50%,0); } }
+
+/* ===================================================================
+   LEAD PREMIUM (dorado · billete Willy Wonka) · super form
+   =================================================================== */
+.lead-card.premium{
+  border:1.5px solid rgba(232,163,61,.55);
+  background:
+    linear-gradient(160deg, rgba(232,163,61,.10), rgba(20,17,20,.6) 45%),
+    var(--card-glass);
+  box-shadow:0 14px 44px rgba(232,163,61,.16), inset 0 0 0 1px rgba(232,163,61,.08);
+  position:relative;
+  overflow:hidden;
+}
+/* brillo dorado que recorre la tarjeta premium */
+.lead-card.premium::after{
+  content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,225,150,.14),transparent);
+  transform:skewX(-18deg);animation:brillo-oro 5.5s ease-in-out infinite;pointer-events:none;
+}
+@keyframes brillo-oro{0%,100%{left:-60%;}50%{left:120%;}}
