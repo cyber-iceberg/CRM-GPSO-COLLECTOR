@@ -73,6 +73,8 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
   const [cooldownHasta, setCooldownHasta] = useState(0);
   const [ahora, setAhora] = useState(Date.now());
   const [refrescando, setRefrescando] = useState(false);
+  const [ganados, setGanados] = useState([]);
+  const [verGanados, setVerGanados] = useState(false);
 
   const activo = perfil && perfil.activo;
   const esAdmin = perfil && perfil.rol === 'admin';
@@ -80,6 +82,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
   const enCooldown = cooldownHasta > ahora;
 
   useEffect(() => { const t = setInterval(() => setAhora(Date.now()), 1000); return () => clearInterval(t); }, []);
+  useEffect(() => { cargarGanados(); }, []);
   useEffect(() => { if (!flash) return; const t = setTimeout(() => setFlash(null), 3200); return () => clearTimeout(t); }, [flash]);
 
   const cargarDatos = useCallback(async () => {
@@ -123,7 +126,17 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
   async function ganado(id) {
     const { data, error } = await supabase.rpc('marcar_ganado', { p_lead_id: id });
     if (error || !data?.ok) { aviso('warn', 'No se pudo cerrar la venta. Vuelve a intentarlo.'); return; }
-    aviso('ok', '¡Venta cerrada! Suma a tu reputación.'); await cargarDatos();
+    aviso('ok', '¡Venta cerrada! Suma a tu reputación.'); await cargarDatos(); await cargarGanados();
+  }
+  async function deshacerGanado(id) {
+    if (!window.confirm('¿Deshacer este ganado? El lead volverá a "Mis clientes".')) return;
+    const { data, error } = await supabase.rpc('deshacer_ganado', { p_lead_id: id });
+    if (error || !data?.ok) { aviso('warn', 'No se pudo deshacer. Vuelve a intentarlo.'); return; }
+    aviso('ok', 'Ganado deshecho: el lead vuelve a tus clientes.'); await cargarDatos(); await cargarGanados();
+  }
+  async function cargarGanados() {
+    const { data } = await supabase.from('v_mis_ganados').select('*').eq('alumno_id', user.id).order('cerrado_en', { ascending: false });
+    setGanados(data || []);
   }
   async function confirmarDescarte(motivoId) {
     const lead = descartando; setDescartando(null);
@@ -358,6 +371,43 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
           {vista === 'mis' && misLeads.length === 0 && (
             <div style={S.empty}><Lock size={34} color="var(--gray-dark)" /><p>Aún no has reservado ningún cliente.<br /><span style={{ color: 'var(--gray-mid)' }}>Reserva uno en el catálogo.</span></p></div>
           )}
+
+          {vista === 'mis' && (
+            <div style={{ gridColumn: '1/-1' }}>
+              <button onClick={() => setVerGanados(v => !v)} style={S.ganadosToggle}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Trophy size={15} color="var(--green)" /> Mis ganados <span style={S.ganadosCount}>{ganados.length}</span>
+                </span>
+                <span style={{ color: 'var(--gray-mid)', fontSize: 12 }}>{verGanados ? 'ocultar ▲' : 'ver ▼'}</span>
+              </button>
+              {verGanados && (
+                ganados.length === 0
+                  ? <div style={{ ...S.empty, padding: '24px 0' }}><Trophy size={28} color="var(--gray-dark)" /><p style={{ fontSize: 13 }}>Todavía no tienes ventas ganadas.</p></div>
+                  : <div style={S.ganadosGrid}>
+                      {ganados.map(gl => {
+                        const detG = gl.detalles && typeof gl.detalles === 'object' ? gl.detalles : {};
+                        const presuG = limpiaPresupuesto(Object.entries(detG).find(([k]) => /presupuesto|budget/i.test(k))?.[1]) || (gl.presupuesto ? euros(gl.presupuesto) : '—');
+                        return (
+                          <div key={gl.id} style={S.ganadoCard}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                              <span style={{ ...S.owned, color: 'var(--green)', background: 'var(--green-bg)', borderColor: 'var(--green-bd)' }}><Trophy size={11} /> GANADO</span>
+                              <span style={S.time}>{gl.cerrado_en ? new Date(gl.cerrado_en).toLocaleDateString('es-ES') : ''}</span>
+                            </div>
+                            <div className="display" style={{ ...S.veh, fontSize: 16 }}><Car size={16} color="var(--green)" /> {gl.vehiculo}</div>
+                            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                              <span style={S.meta}><Wallet size={12} color="var(--gray-mid)" /> {presuG}</span>
+                              <span style={S.meta}><MapPin size={12} color="var(--gray-mid)" /> {gl.ciudad || 'España'}</span>
+                            </div>
+                            <button className="btn-ghost" onClick={() => deshacerGanado(gl.id)} style={{ fontSize: 12, padding: '9px', borderColor: 'var(--card-bd)' }}>
+                              <RotateCcw size={12} style={{ verticalAlign: -2, marginRight: 5 }} /> Deshacer ganado
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* REGLAS */}
@@ -427,6 +477,10 @@ const S = {
   veh: { fontSize: 19, display: 'flex', alignItems: 'center', gap: 9 },
   motor: { fontSize: 14, color: 'var(--gray-mid)', fontWeight: 500 },
   premiumTag: { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9.5, fontWeight: 800, letterSpacing: .8, color: '#231802', background: 'linear-gradient(100deg,var(--gold),#f2c982)', borderRadius: 20, padding: '3px 9px' },
+  ganadosToggle: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-glass)', border: '1px solid var(--card-bd)', borderRadius: 12, padding: '13px 16px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, color: 'var(--text)', marginTop: 8 },
+  ganadosCount: { background: 'var(--green-bg)', color: 'var(--green)', border: '1px solid var(--green-bd)', borderRadius: 20, padding: '1px 9px', fontSize: 12, fontWeight: 800 },
+  ganadosGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px,1fr))', gap: 12, marginTop: 12 },
+  ganadoCard: { display: 'flex', flexDirection: 'column', gap: 9, background: 'linear-gradient(160deg, rgba(70,196,131,.06), var(--card-glass))', border: '1px solid var(--green-bd)', borderRadius: 14, padding: 14 },
   meta: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: 'var(--text-soft)', fontWeight: 500 },
   locked: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: 'var(--gray-mid)', background: 'rgba(128,128,128,.06)', border: '1px dashed var(--card-bd)', borderRadius: 9, padding: '8px 11px' },
   rowB: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
