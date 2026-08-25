@@ -7,9 +7,9 @@
 //  líneas. Todo con clases .pt- y variables de globals.css.
 // =====================================================================
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
-  Check, AlertTriangle, XCircle, Eye, Camera, Info, ChevronDown, Flag,
+  Check, AlertTriangle, XCircle, Eye, Camera, Info, ChevronDown, Flag, Loader2,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------- ÍTEM */
@@ -19,6 +19,8 @@ import {
 export function Item({ b, i, it, onEstado, onNota, onFoto, fotos }) {
   const [abierto, setAbierto] = useState(false);
   const item = b.items[i];
+  // al cambiar de bloque, cerrar el tip (evita que quede abierto del anterior)
+  useEffect(() => { setAbierto(false); }, [b.id, i]);
   const esDef = it?.estado === 'def';
   const esObs = it?.estado === 'obs';
 
@@ -103,10 +105,15 @@ function FotoInline({ fotos, onFile, label }) {
   return (
     <div className="pt-fotos">
       {(fotos || []).map((f) => (
-        <div key={f.id} className="pt-foto" style={{ opacity: f.subiendo ? .5 : 1 }}><img src={f.url} alt="" /></div>
+        <div key={f.id} className="pt-foto">
+          <img src={f.url} alt="" style={{ opacity: f.subiendo ? .45 : 1 }} />
+          <span className={'pt-foto-estado ' + (f.subiendo ? 'sub' : 'ok')}>
+            {f.subiendo ? <Loader2 size={13} className="pt-spin" /> : <Check size={13} />}
+          </span>
+        </div>
       ))}
       <button className="pt-foto-add" onClick={() => ref.current?.click()} title={label}>
-        <Camera size={17} />
+        <Camera size={17} /> <span className="pt-foto-add-t">Añadir</span>
       </button>
       <input ref={ref} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
         onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = ''; }} />
@@ -129,8 +136,13 @@ export function FotosEstado({ defs, fotos, onFoto }) {
           return (
             <div key={d.id} className="pt-foto-slot">
               <button className="pt-foto-slot-btn" onClick={() => ref.current[d.id]?.click()}>
-                {arr[0] ? <img src={arr[0].url} alt={d.label} /> : <Camera size={18} />}
+                {arr[0] ? <img src={arr[0].url} alt={d.label} style={{ opacity: arr[0].subiendo ? .5 : 1 }} /> : <Camera size={18} />}
                 {arr.length > 1 && <span className="pt-foto-badge">{arr.length}</span>}
+                {arr[0] && (
+                  <span className={'pt-slot-estado ' + (arr.some(x=>x.subiendo) ? 'sub' : 'ok')}>
+                    {arr.some(x=>x.subiendo) ? <Loader2 size={12} className="pt-spin" /> : <Check size={12} />}
+                  </span>
+                )}
               </button>
               <span className="pt-foto-label">{d.label}</span>
               <input ref={(el) => (ref.current[d.id] = el)} type="file" accept="image/*" capture="environment"
@@ -156,60 +168,73 @@ const COLOR_MIC = (v) => {
 
 export function Espesometro({ piezas, valores, onChange, refTexto }) {
   const [sel, setSel] = useState(null);
-  // layout de la planta: cada pieza con su rect {x,y,w,h}
-  const L = {
-    capo:    { x: 30, y: 12, w: 60, h: 20, t: 'Capó' },
-    techo:   { x: 30, y: 36, w: 60, h: 30, t: 'Techo' },
-    porton:  { x: 30, y: 70, w: 60, h: 18, t: 'Portón' },
-    ad_izq:  { x: 4,  y: 12, w: 22, h: 22, t: 'Al.DI' },
-    ad_der:  { x: 94, y: 12, w: 22, h: 22, t: 'Al.DD' },
-    pd_izq:  { x: 4,  y: 38, w: 22, h: 24, t: 'Pt.DI' },
-    pd_der:  { x: 94, y: 38, w: 22, h: 24, t: 'Pt.DD' },
-    pt_izq:  { x: 4,  y: 64, w: 22, h: 24, t: 'Pt.TI' },
-    pt_der:  { x: 94, y: 64, w: 22, h: 24, t: 'Pt.TD' },
-    at_izq:  { x: 4,  y: 90, w: 22, h: 20, t: 'Al.TI' },
-    at_der:  { x: 94, y: 90, w: 22, h: 20, t: 'Al.TD' },
-    pilar_izq: { x: 30, y: 90, w: 28, h: 20, t: 'Pilar I' },
-    pilar_der: { x: 62, y: 90, w: 28, h: 20, t: 'Pilar D' },
-  };
   const fill = { nada: 'var(--panel2)', ok: 'var(--green)', medio: 'var(--gold)', alto: 'var(--red-soft)' };
+  const col = (id) => fill[COLOR_MIC(valores?.[id])];
+  const op = (id) => (COLOR_MIC(valores?.[id]) === 'nada' ? 0.5 : 0.9);
+  const strk = (id) => (sel === id ? 'var(--text)' : 'rgba(255,255,255,.15)');
+  const sw = (id) => (sel === id ? 1.4 : 0.6);
+  // silueta cenital: cada zona es un path con forma real de esa parte del coche
+  const Z = ({ id, d, cx, cy }) => (
+    <g onClick={() => setSel(id)} style={{ cursor: 'pointer' }}>
+      <path d={d} fill={col(id)} fillOpacity={op(id)} stroke={strk(id)} strokeWidth={sw(id)} strokeLinejoin="round" />
+      <text x={cx} y={cy} textAnchor="middle" fontSize="6.5" fontWeight="600" fill="var(--text)" style={{ pointerEvents: 'none' }}>
+        {valores?.[id] || '·'}
+      </text>
+    </g>
+  );
+  const lbl = piezas.find((p) => p.id === sel)?.label;
   return (
     <div className="pt-espeso">
-      <svg viewBox="0 0 120 116" className="pt-coche" role="img" aria-label="Esquema del coche para el espesómetro">
-        <rect x="1" y="8" width="118" height="104" rx="26" fill="var(--panel)" stroke="var(--card-bd)" />
-        {piezas.map((p) => {
-          const g = L[p.id]; if (!g) return null;
-          const estado = COLOR_MIC(valores?.[p.id]);
-          return (
-            <g key={p.id} onClick={() => setSel(p.id)} style={{ cursor: 'pointer' }}>
-              <rect x={g.x} y={g.y} width={g.w} height={g.h} rx="4"
-                fill={fill[estado]} fillOpacity={estado === 'nada' ? 0.6 : 0.85}
-                stroke={sel === p.id ? 'var(--text)' : 'var(--card-bd)'} strokeWidth={sel === p.id ? 1.2 : 0.4} />
-              <text x={g.x + g.w / 2} y={g.y + g.h / 2 + 1} textAnchor="middle" fontSize="5"
-                fill="var(--text)" style={{ pointerEvents: 'none' }}>
-                {valores?.[p.id] ? valores[p.id] : g.t}
-              </text>
-            </g>
-          );
-        })}
+      <svg viewBox="0 0 150 250" className="pt-coche" role="img" aria-label="Silueta del coche para anotar micras por pieza">
+        {/* contorno del coche visto desde arriba */}
+        <path d="M75 6 C95 6 108 16 112 34 L116 70 C119 90 119 120 118 150 L116 210 C114 232 100 244 75 244 C50 244 36 232 34 210 L32 150 C31 120 31 90 34 70 L38 34 C42 16 55 6 75 6 Z"
+          fill="var(--panel)" stroke="var(--card-bd)" strokeWidth="1.2" />
+        {/* parabrisas y luneta (referencias visuales, no clicables) */}
+        <path d="M46 60 L104 60 L98 78 L52 78 Z" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.08)" strokeWidth="0.5" />
+        <path d="M52 168 L98 168 L104 186 L46 186 Z" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.08)" strokeWidth="0.5" />
+
+        {/* CAPÓ (frente) */}
+        <Z id="capo" cx={75} cy={40} d="M46 20 C50 12 60 10 75 10 C90 10 100 12 104 20 L106 54 L44 54 Z" />
+        {/* TECHO */}
+        <Z id="techo" cx={75} cy={123} d="M52 80 L98 80 L98 166 L52 166 Z" />
+        {/* PORTÓN (trasera) */}
+        <Z id="porton" cx={75} cy={208} d="M44 192 L106 192 L104 226 C100 234 90 236 75 236 C60 236 50 234 46 226 Z" />
+
+        {/* ALETAS Y PUERTAS izquierda */}
+        <Z id="ad_izq" cx={40} cy={44} d="M33 34 L44 34 L44 60 L34 60 Z" />
+        <Z id="pd_izq" cx={40} cy={92} d="M33 66 L50 66 L50 110 L33 106 Z" />
+        <Z id="pt_izq" cx={40} cy={140} d="M33 114 L50 114 L50 158 L33 158 Z" />
+        <Z id="at_izq" cx={40} cy={186} d="M33 164 L44 164 L44 200 L34 196 Z" />
+        {/* derecha */}
+        <Z id="ad_der" cx={110} cy={44} d="M106 34 L117 34 L116 60 L106 60 Z" />
+        <Z id="pd_der" cx={110} cy={92} d="M100 66 L117 66 L117 106 L100 110 Z" />
+        <Z id="pt_der" cx={110} cy={140} d="M100 114 L117 114 L117 158 L100 158 Z" />
+        <Z id="at_der" cx={110} cy={186} d="M106 164 L117 164 L116 196 L106 200 Z" />
+        {/* PILARES (centro, junto al techo) */}
+        <Z id="pilar_izq" cx={60} cy={123} d="M52 80 L60 80 L60 166 L52 166 Z" />
+        <Z id="pilar_der" cx={90} cy={123} d="M90 80 L98 80 L98 166 L90 166 Z" />
       </svg>
 
-      <div className="pt-leyenda">
-        <span><i style={{ background: 'var(--green)' }} /> 80–150</span>
-        <span><i style={{ background: 'var(--gold)' }} /> 150–250</span>
-        <span><i style={{ background: 'var(--red-soft)' }} /> +300</span>
+      <div className="pt-espeso-hint">
+        {sel ? <b>{lbl}</b> : <span>Toca una zona del coche para anotar sus micras</span>}
       </div>
 
       {sel && (
         <div className="pt-pieza-in">
-          <label>{piezas.find((p) => p.id === sel)?.label} · micras</label>
           <div className="pt-euro">
-            <input className="campo" type="number" inputMode="numeric" autoFocus placeholder="µm"
+            <input className="campo pt-num" type="number" inputMode="numeric" autoFocus placeholder="µm"
               value={valores?.[sel] || ''} onChange={(e) => onChange(sel, e.target.value)} />
             <span>µm</span>
+            <button className="pt-pieza-ok" onClick={() => setSel(null)}>Listo</button>
           </div>
         </div>
       )}
+
+      <div className="pt-leyenda">
+        <span><i style={{ background: 'var(--green)' }} /> Fábrica 80–150</span>
+        <span><i style={{ background: 'var(--gold)' }} /> Repintado 150–250</span>
+        <span><i style={{ background: 'var(--red-soft)' }} /> Masilla +300</span>
+      </div>
       <p className="pt-ref">{refTexto}</p>
     </div>
   );
@@ -239,9 +264,16 @@ export function Ruedas({ ruedas, valores, onChange }) {
                 </div>
               </div>
               <div className="pt-rueda-desg">
-                {['uniforme', 'interior', 'exterior', 'escalones'].map((d) => (
-                  <button key={d} className={'pt-desg' + (v.desgaste === d ? ' on' : '')}
-                    onClick={() => onChange(r.id, { ...v, desgaste: v.desgaste === d ? '' : d })}>{d}</button>
+                <span className="pt-desg-t">Cómo está gastado:</span>
+                {[
+                  ['uniforme', 'Parejo', 'Se gasta igual por todo el ancho. Lo normal.'],
+                  ['bordes', 'Por los bordes', 'Más gastado en los dos bordes: presión baja.'],
+                  ['centro', 'Por el centro', 'Más gastado en el centro: presión alta.'],
+                  ['un_lado', 'Solo un lado', 'Un borde mucho más que el otro: geometría o suspensión.'],
+                  ['parches', 'A parches', 'Desgaste en escalones o zonas: amortiguador.'],
+                ].map(([d, lab, ayuda]) => (
+                  <button key={d} className={'pt-desg' + (v.desgaste === d ? ' on' : '')} title={ayuda}
+                    onClick={() => onChange(r.id, { ...v, desgaste: v.desgaste === d ? '' : d })}>{lab}</button>
                 ))}
               </div>
             </div>
