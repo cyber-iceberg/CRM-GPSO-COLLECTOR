@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '../../lib/supabase/client';
 import {
   Users, Gem, Target, Settings, ArrowLeft, Check, X, Plus, Trash2, RotateCcw,
-  ShieldCheck, Star, Menu, TrendingUp, Trophy, XCircle, Package, Lock
+  ShieldCheck, Star, Menu, TrendingUp, Trophy, XCircle, Package, Lock, Eye
 } from 'lucide-react';
 
 const eur = (n) => (n == null ? '—' : Math.round(n).toLocaleString('es-ES') + ' €');
@@ -27,11 +27,14 @@ export default function AdminClient({ email, perfil, alumnos: alumnosIni, operac
   const [leads, setLeads] = useState(leadsIni);
   const [config, setConfig] = useState(configIni);
   const [stats, setStats] = useState(null);
+  const [espia, setEspia] = useState(null);
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase.rpc('admin_stats_leads');
       if (data?.ok) setStats(data);
+      const { data: e } = await supabase.rpc('admin_espia_alumnos');
+      if (e?.ok) setEspia(e.alumnos || []);
     })();
   }, []);
 
@@ -83,7 +86,7 @@ export default function AdminClient({ email, perfil, alumnos: alumnosIni, operac
           </button>
         </div>
 
-        {sec === 'resumen' && <SeccionResumen stats={stats} alumnos={alumnos} />}
+        {sec === 'resumen' && <SeccionResumen stats={stats} alumnos={alumnos} espia={espia} />}
         {sec === 'alumnos' && <SeccionAlumnos {...{ supabase, alumnos, setAlumnos, aviso }} />}
         {sec === 'vip' && <SeccionVip {...{ supabase, ops, setOps, aviso }} />}
         {sec === 'leads' && <SeccionLeads {...{ supabase, leads, setLeads, aviso }} />}
@@ -96,7 +99,7 @@ export default function AdminClient({ email, perfil, alumnos: alumnosIni, operac
 }
 
 // ---------------- RESUMEN (stats) ----------------
-function SeccionResumen({ stats, alumnos }) {
+function SeccionResumen({ stats, alumnos, espia }) {
   const activos = alumnos.filter(a => a.activo).length;
   const pendientes = alumnos.filter(a => !a.activo).length;
   const cards = [
@@ -133,6 +136,41 @@ function SeccionResumen({ stats, alumnos }) {
           <div className="display" style={{ fontSize: 26 }}>{stats?.total != null ? stats.total : '—'}</div>
           <div style={{ fontSize: 11.5, color: 'var(--gray-mid)', textTransform: 'uppercase', letterSpacing: .5, fontWeight: 600, marginTop: 2 }}>Leads totales</div>
         </div>
+      </div>
+
+      {/* ZONA ESPÍA · rendimiento por alumno */}
+      <div style={{ marginTop: 30 }}>
+        <h3 className="display" style={{ fontSize: 17, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <Eye size={17} color="var(--gold)" /> Zona espía · quién trabaja
+        </h3>
+        <p style={{ fontSize: 12.5, color: 'var(--gray-mid)', marginBottom: 16 }}>Rendimiento por alumno. Ordenado por ganados.</p>
+
+        {!espia ? (
+          <div style={{ fontSize: 13, color: 'var(--gray-mid)' }}>Cargando…</div>
+        ) : espia.length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--gray-mid)' }}>Todavía no hay actividad de alumnos.</div>
+        ) : (
+          <div className="glass" style={{ padding: 0, overflow: 'hidden' }}>
+            {/* cabecera */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 10, padding: '12px 16px', borderBottom: '1px solid var(--card-bd)', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color: 'var(--gray-mid)' }}>
+              <span>Alumno</span>
+              <span style={{ textAlign: 'center', minWidth: 60 }}>Cogidos</span>
+              <span style={{ textAlign: 'center', minWidth: 60 }}>Ganados</span>
+              <span style={{ textAlign: 'center', minWidth: 60 }}>Rechaz.</span>
+            </div>
+            {espia.map((a, i) => (
+              <div key={a.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 10, padding: '13px 16px', borderBottom: i < espia.length - 1 ? '1px solid var(--card-bd)' : 'none', alignItems: 'center' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: 13.5 }}>
+                  {i === 0 && a.ganados > 0 && <Trophy size={14} color="var(--gold)" />}
+                  {a.nombre}
+                </span>
+                <span style={{ textAlign: 'center', minWidth: 60, fontWeight: 700, color: a.reservados > 0 ? 'var(--gold)' : 'var(--gray-mid)' }}>{a.reservados}</span>
+                <span style={{ textAlign: 'center', minWidth: 60, fontWeight: 700, color: a.ganados > 0 ? 'var(--green)' : 'var(--gray-mid)' }}>{a.ganados}</span>
+                <span style={{ textAlign: 'center', minWidth: 60, fontWeight: 700, color: 'var(--gray-mid)' }}>{a.rechazados}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
