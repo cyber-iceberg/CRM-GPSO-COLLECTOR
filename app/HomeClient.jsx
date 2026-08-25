@@ -2,13 +2,14 @@
 
 // =====================================================================
 //  GPSO COLLECTOR · HOME / Dashboard (cliente)  ·  app/HomeClient.jsx
-//  Saludo + 6 accesos (Central, VIP, Subir unidades, Formación, Recursos, NEXOCAR) + stats + menú.
+//  Saludo + 7 accesos (Central, Peritación, VIP, Subir unidades,
+//  Formación, Recursos, NEXOCAR) + stats + menú.
 // =====================================================================
 
 import { useRouter } from 'next/navigation';
 import MenuDrawer from './components/MenuDrawer';
 import BottomNav from './components/BottomNav';
-import { Target, Gem, UploadCloud, ArrowRight, GraduationCap, FolderOpen, Gauge } from 'lucide-react';
+import { Target, Gem, UploadCloud, ArrowRight, GraduationCap, FolderOpen, Gauge, ClipboardCheck } from 'lucide-react';
 
 // URL de la app de Albert (subir unidades). Cambiar aquí cuando esté lista.
 const URL_STOCK = 'https://gpsocollector.com/acceso';
@@ -55,6 +56,15 @@ export default function HomeClient({ email, perfil, stats }) {
             titulo="Central de Leads" desc="Reserva y gestiona tus clientes de importación en tiempo real."
             icon={<Target size={16} />} />
 
+          {/* NUEVO · sube una foto a public/peritacion.jpg (un coche en un taller
+              o alguien revisando bajos funciona bien). Mientras no exista, la
+              tarjeta se ve con el degradado sin imagen: no rompe nada. */}
+          <Acc onClick={() => router.push('/peritacion')}
+            img="/peritacion.jpg"
+            badge="⬢ Inspección guiada" badgeClass="perito"
+            titulo="Peritación" desc="Revisa la unidad paso a paso y sabe si hay algo de lo que preocuparse."
+            icon={<ClipboardCheck size={16} />} />
+
           {(esVip || esAdmin) && (
             <Acc onClick={() => router.push('/vip')}
               img="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1000"
@@ -92,6 +102,7 @@ export default function HomeClient({ email, perfil, stats }) {
         <div style={S.quick}>
           <Kpi l="Leads disponibles" v={stats.leadsDisp} />
           <Kpi l="Tus clientes activos" v={stats.misClientes} />
+          {stats.peritaciones != null && <Kpi l="Unidades peritadas" v={stats.peritaciones} />}
           {(esVip || esAdmin) && <Kpi l="Operaciones VIP" v={stats.opsVip} />}
           {(esVip || esAdmin) && <Kpi l="Tu inversión activa" v={eur(stats.inversionActiva)} gold />}
         </div>
