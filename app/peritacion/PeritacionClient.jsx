@@ -26,6 +26,7 @@ import {
   comprimirImagen, encolarFoto, subirPendientes, nuevoId,
 } from './lib/almacen';
 import { Item, FotosEstado, Espesometro, Ruedas, Elevador } from './componentes';
+import { Informe } from './Informe';
 
 const SEM = {
   VERDE:    { c: 'var(--green)',    bg: 'var(--green-bg)', bd: 'var(--green-bd)', t: 'Compra recomendable',
@@ -240,6 +241,36 @@ export default function PeritacionClient({ user, perfil, listaInicial }) {
     );
   }
 
+
+  function informeTexto() {
+    const L = [];
+    L.push(`PERITACIÓN COLLECTOR · ${META.puntos_comprobacion} PUNTOS`);
+    L.push(`${ficha.modelo || '—'}  ·  VIN ${ficha.vin || '—'}  ·  ${ficha.km || '—'} km`);
+    L.push(`${ficha.vendedor || '—'} (${ficha.ciudad || '—'})  ·  ${ficha.fecha || '—'}`);
+    L.push('');
+    L.push(`RESULTADO: ${res.semaforo}  ${res.total}/100  ·  ${res.completitud}% revisado`);
+    if (!res.concluyente) L.push('AVISO: no concluyente (menos del 70% revisado).');
+    if (res.banderas.length) { L.push(''); L.push(`BANDERAS ROJAS (${res.banderas.length}):`); res.banderas.forEach((f) => L.push(`  · ${f.texto} [${f.bloque}]`)); }
+    if (patrones.length) { L.push(''); L.push('QUÉ HA PASADO:'); patrones.forEach((p) => L.push(`  · ${p.titulo}: ${p.texto}`)); }
+    L.push(''); L.push('ANOTADO:');
+    BLOQUES.forEach((b) => {
+      const items = resp[b.id]?.items || {};
+      const ps = b.items.map((it, i) => ({ it, ...(items['it_' + i] || {}) })).filter((x) => x.estado === 'def' || x.estado === 'obs' || x.nota);
+      if (!ps.length && !resp[b.id]?.obs) return;
+      L.push(`  ${b.nombre}:`);
+      ps.forEach((p) => L.push(`    ${p.estado === 'def' ? '[DEFECTO −' + p.it.pen + ']' : p.estado === 'obs' ? '[observar]' : ''} ${p.it.t}${p.nota ? ' — ' + p.nota : ''}${p.campo ? ' (' + p.campo + ')' : ''}`));
+      if (resp[b.id]?.obs) L.push(`    · ${resp[b.id].obs}`);
+    });
+    const mic = medic?.micras || {};
+    if (Object.values(mic).some((v) => parseFloat(v) > 0)) { L.push(''); L.push('MICRAS:'); PIEZAS_PINTURA.forEach((p) => { if (mic[p.id]) L.push(`    ${p.label}: ${mic[p.id]} µm`); }); }
+    if (ct > 0) { L.push(''); L.push(`COSTES: ${ct.toLocaleString('es-ES')} €`); if (ficha.precio) L.push(`ENTRADA REAL: ${((parseFloat(ficha.precio)||0)+ct).toLocaleString('es-ES')} €`); }
+    if (cierre.notas) { L.push(''); L.push('NOTAS: ' + cierre.notas); }
+    return L.join('\\n');
+  }
+  function copiarTexto() {
+    navigator.clipboard?.writeText(informeTexto()).then(() => aviso('ok', 'Informe copiado.')).catch(() => aviso('warn', 'No se pudo copiar.'));
+  }
+
   /* =========================================================== EDITOR */
   return (
     <div className="gpso-bg pt-app">
@@ -407,7 +438,7 @@ export default function PeritacionClient({ user, perfil, listaInicial }) {
         )}
 
         {paso === N + 3 && (
-          <Resultado {...{ res, patrones, resp, medic, ficha, costes, ct, cierre, setPaso, aviso, fotos }} />
+          <Informe {...{ res, patrones, resp, medic, ficha, costes, ct, cierre, fotos, setPaso, aviso, copiarTexto }} />
         )}
       </main>
 
@@ -432,58 +463,5 @@ function Campo({ l, v, on, ph, num, tipo }) {
       <label className="etiqueta">{l}</label>
       <input className="campo" type={tipo || (num ? 'number' : 'text')} inputMode={num ? 'numeric' : undefined} placeholder={ph || ''} value={v} onChange={(e) => on(e.target.value)} />
     </div>
-  );
-}
-
-/* El informe pro se construye en el siguiente paso; de momento un
-   resultado funcional para poder probar el flujo completo. */
-function Resultado({ res, patrones, resp, medic, ficha, costes, ct, cierre, setPaso, aviso }) {
-  const s = SEM[res.semaforo];
-  const ranking = BLOQUES.map((b) => ({ b, perd: b.max - res.notas[b.id], pct: res.notas[b.id] / b.max })).filter((x) => x.perd > 0).sort((a, b) => b.perd - a.perd);
-  const nDef = BLOQUES.reduce((a, b) => a + defectosDe(b, resp).length, 0);
-  const nObs = BLOQUES.reduce((a, b) => a + observacionesDe(b, resp).length, 0);
-  return (
-    <>
-      <p className="pt-eyebrow">Resultado</p>
-      <div className="glass pt-veredicto" style={{ borderColor: s.bd, background: s.bg }}>
-        <div className="pt-v-top"><span className="pt-luz" style={{ background: s.c }} /><span className="pt-sem" style={{ color: s.c }}>{res.semaforo}</span><span className="display pt-v-pts">{res.total}/100</span></div>
-        <h2 className="display" style={{ fontSize: 23, margin: '0 0 8px', lineHeight: 1.15 }}>{s.t}</h2>
-        <p style={{ color: 'var(--text-soft)', fontSize: 14, margin: 0 }}>{s.d}</p>
-        {!res.concluyente && <p className="pt-v-aviso">Solo revisaste el {res.completitud}%. No es concluyente: aviso, no decisión.</p>}
-        {res.banderas.length > 0 && <p className="pt-v-aviso">{res.banderas.length === 1 ? 'Hay una bandera roja' : `Hay ${res.banderas.length} banderas rojas`}. Manda sobre la nota.</p>}
-      </div>
-
-      <h3 className="pt-h3">Qué ha pasado en la inspección</h3>
-      {patrones.length === 0 && <div className="glass pt-card"><p style={{ margin: 0, color: 'var(--text-soft)', fontSize: 14 }}>Sin patrones preocupantes cruzando los bloques.</p></div>}
-      {patrones.map((p, i) => (
-        <div key={i} className="glass pt-hallazgo" style={{ borderLeftColor: p.nivel === 'alto' ? 'var(--red-soft)' : 'var(--gold)' }}>
-          <p className="pt-k">{p.titulo}</p><p style={{ margin: '5px 0 0', color: 'var(--text-soft)', fontSize: 14 }}>{p.texto}</p>
-        </div>
-      ))}
-
-      <h3 className="pt-h3">Dónde has perdido puntos</h3>
-      <div className="glass pt-card">
-        {ranking.length === 0 && <p style={{ margin: 0, fontSize: 14 }}>No has restado puntos.</p>}
-        {ranking.map(({ b, perd, pct }) => (
-          <div key={b.id} className="pt-barra" onClick={() => setPaso(BLOQUES.indexOf(b) + 1)}>
-            <div className="pt-barra-l"><span>{b.nombre}</span><b>−{perd}</b></div>
-            <div className="pt-barra-t"><span style={{ width: pct * 100 + '%', background: pct < .5 ? 'var(--red-soft)' : pct < .8 ? 'var(--gold)' : 'var(--green)' }} /></div>
-          </div>
-        ))}
-        <p className="pt-cob" style={{ marginTop: 12 }}>{nDef} defectos y {nObs} observaciones sobre {res.completitud}% del checklist.</p>
-      </div>
-
-      <h3 className="pt-h3">Números</h3>
-      <div className="glass pt-card">
-        <div className="pt-kpi"><span>Precio pedido</span><b className="display">{ficha.precio ? parseFloat(ficha.precio).toLocaleString('es-ES') + ' €' : '—'}</b></div>
-        <div className="pt-kpi"><span>Costes detectados</span><b className="display">{ct.toLocaleString('es-ES')} €</b></div>
-        <div className="pt-kpi"><span>Coste real de entrada</span><b className="display" style={{ fontSize: 24 }}>{((parseFloat(ficha.precio) || 0) + ct).toLocaleString('es-ES')} €</b></div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 20 }}>
-        <button className="btn-ghost" onClick={() => window.print()} style={{ flex: 1, minWidth: 140 }}><Printer size={14} style={{ verticalAlign: -2, marginRight: 6 }} /> Imprimir</button>
-      </div>
-      <p className="pt-cob" style={{ textAlign: 'center', marginTop: 14 }}>El informe visual con el coche y el resumen de anotaciones es el siguiente paso.</p>
-    </>
   );
 }
