@@ -215,19 +215,19 @@ export function Espesometro({ piezas, valores, onChange, refTexto }) {
         <Z id="pilar_der" cx={90} cy={123} d="M90 80 L98 80 L98 166 L90 166 Z" />
       </svg>
 
-      <div className="pt-espeso-hint">
-        {sel ? <b>{lbl}</b> : <span>Toca una zona del coche para anotar sus micras</span>}
-      </div>
-
-      {sel && (
+      {sel ? (
         <div className="pt-pieza-in">
+          <span className="pt-pieza-nombre">{lbl}</span>
           <div className="pt-euro">
             <input className="campo pt-num" type="number" inputMode="numeric" autoFocus placeholder="µm"
-              value={valores?.[sel] || ''} onChange={(e) => onChange(sel, e.target.value)} />
+              value={valores?.[sel] || ''} onChange={(e) => onChange(sel, e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') setSel(null); }} />
             <span>µm</span>
             <button className="pt-pieza-ok" onClick={() => setSel(null)}>Listo</button>
           </div>
         </div>
+      ) : (
+        <p className="pt-espeso-hint">Toca una zona del coche para anotar sus micras</p>
       )}
 
       <div className="pt-leyenda">
