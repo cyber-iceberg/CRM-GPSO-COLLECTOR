@@ -30,7 +30,14 @@ export function evaluadosDe(b, est) {
 
 /* ---------------------------------------------------------- puntuación */
 export function notaBloque(b, est) {
-  const pen = defectosDe(b, est).reduce((a, d) => a + (d.pen || 0), 0);
+  const defs = defectosDe(b, est);
+  let pen = defs.reduce((a, d) => a + (d.pen || 0), 0);
+  // acumulación: varios defectos en el mismo bloque penalizan extra.
+  // Un fallo suelto es un fallo; cuatro cuentan una historia.
+  const n = defs.length;
+  if (n >= 4) pen = Math.round(pen * 1.6);
+  else if (n >= 3) pen = Math.round(pen * 1.35);
+  else if (n >= 2) pen = Math.round(pen * 1.15);
   return Math.max(0, b.max - pen);
 }
 
@@ -58,7 +65,7 @@ export function calcular(guia, est, cierre = {}) {
   const evaluados = guia.reduce((a, b) => a + evaluadosDe(b, est), 0);
   const completitud = totalItems ? Math.round((evaluados / totalItems) * 100) : 0;
 
-  const semaforo = banderasU.length ? 'ROJO' : total >= 84 ? 'VERDE' : total >= 54 ? 'AMARILLO' : 'ROJO';
+  const semaforo = banderasU.length ? 'ROJO' : total >= 90 ? 'VERDE' : total >= 70 ? 'AMARILLO' : 'ROJO';
 
   return { notas, total, banderas: banderasU, completitud, evaluados, totalItems, semaforo, concluyente: completitud >= 70 };
 }
