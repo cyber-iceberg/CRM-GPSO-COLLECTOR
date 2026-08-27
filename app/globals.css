@@ -548,8 +548,10 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
 .pt-leyenda{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; font-size:11px; color:var(--gray-mid); margin-top:12px; margin-bottom:10px; }
 .pt-leyenda span{ display:flex; align-items:center; gap:5px; }
 .pt-leyenda i{ width:11px; height:11px; border-radius:3px; display:inline-block; }
-.pt-pieza-in{ width:100%; background:var(--panel2); border:1px solid var(--card-bd); border-radius:10px; padding:11px; margin-bottom:6px; }
-.pt-pieza-ok{ background:var(--text); color:var(--bg); border:0; border-radius:8px; padding:9px 16px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; }
+.pt-pieza-in{ width:100%; background:var(--panel2); border:1px solid var(--card-bd); border-radius:12px; padding:12px; margin-bottom:6px; text-align:center; }
+.pt-pieza-nombre{ display:block; font-size:13px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.pt-pieza-in .pt-euro{ justify-content:center; }
+.pt-pieza-ok{ background:var(--text); color:var(--bg); border:0; border-radius:8px; padding:10px 18px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; }
 .pt-num{ text-align:center; font-variant-numeric:tabular-nums; }
 .pt-ref{ font-size:12px; color:var(--gray-mid); line-height:1.5; margin:0; }
 
@@ -657,4 +659,34 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
 @media print{
   .pt-informe .btn-ghost{ display:none !important; }
   .pt-inf-foto img{ border-color:#ccc !important; }
+}
+
+/* =====================================================================
+   IMPRESIÓN / PDF · sencillo, limpio y pro
+   Solo se imprime el informe; fondo blanco, tipografía legible.
+   ===================================================================== */
+@media print{
+  @page { margin: 14mm; }
+  html, body { background:#fff !important; }
+  /* ocultar todo salvo el informe */
+  .pt-hdr, .pt-foot, .bottomnav, .theme-toggle { display:none !important; }
+  .pt-app { background:#fff !important; }
+  .pt-main { padding:0 !important; max-width:none !important; }
+  .pt-informe { color:#111 !important; font-size:11pt; }
+  .pt-informe .btn-de, .pt-informe .btn-ghost { display:none !important; }
+  .pt-informe .glass, .pt-informe .pt-card, .pt-informe .pt-veredicto,
+  .pt-informe .pt-hallazgo { background:#fff !important; border:1px solid #ddd !important;
+    box-shadow:none !important; backdrop-filter:none !important; break-inside:avoid; }
+  .pt-informe .display, .pt-informe h1, .pt-informe h2, .pt-informe h3,
+  .pt-informe .pt-anota-t, .pt-informe .pt-k { color:#111 !important; }
+  .pt-informe .pt-h3 { border-bottom:1px solid #ccc !important; color:#555 !important; }
+  .pt-informe .pt-eyebrow, .pt-informe .pt-cob, .pt-informe .pt-inf-ficha span,
+  .pt-informe .pt-anota-nota, .pt-informe .pt-inf-rueda-l { color:#666 !important; }
+  .pt-informe .pt-anota-punto, .pt-informe .pt-kpi span, .pt-informe .pt-kpi b { color:#111 !important; }
+  /* colores de estado se mantienen para que el semáforo se lea */
+  .pt-informe .pt-inf-sello, .pt-informe .pt-anota-def, .pt-informe .pt-inf-bandera,
+  .pt-informe .pt-anota-obs, .pt-informe .pt-inf-desg { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .pt-informe .pt-coche { max-width:150px !important; }
+  .pt-inf-foto img { border:1px solid #ccc !important; }
+  h3.pt-h3 { break-after:avoid; }
 }
