@@ -9,7 +9,7 @@
 //  · Fotos de estado juntas · números · patrones
 // =====================================================================
 
-import { Flag, Car, Camera, Gauge, MapPin, Calendar, Wallet, Printer, Copy } from 'lucide-react';
+import { Flag, Car, Camera, Gauge, MapPin, Calendar, Printer } from 'lucide-react';
 import { BLOQUES, META, PIEZAS_PINTURA, RUEDAS } from './lib/contenido';
 import { defectosDe, observacionesDe } from './lib/motor';
 
@@ -22,7 +22,19 @@ const SEM = {
 };
 const DESG = { uniforme: 'Parejo', bordes: 'Por los bordes', centro: 'Por el centro', un_lado: 'Solo un lado', parches: 'A parches' };
 
-export function Informe({ res, patrones, resp, medic, ficha, costes, ct, cierre, fotos, setPaso, aviso, copiarTexto }) {
+
+/* las banderas de item vienen con el texto del checklist; lo pasamos a la
+   frase de hallazgo si existe, para que no diga "Sin testigos encendidos" */
+function fraseBandera(f) {
+  for (const b of BLOQUES) {
+    if (b.id !== f.bloque_id) continue;
+    const it = b.items.find((x) => x.t === f.texto);
+    if (it?.mal) return it.mal;
+  }
+  return f.texto;
+}
+
+export function Informe({ res, patrones, resp, medic, ficha, costes, ct, cierre, fotos, setPaso, aviso }) {
   const s = SEM[res.semaforo];
 
   // anotaciones: recoge todo lo escrito en cada punto + obs de bloque
@@ -79,7 +91,7 @@ export function Informe({ res, patrones, resp, medic, ficha, costes, ct, cierre,
         {res.banderas.length > 0 && (
           <div className="pt-inf-banderas">
             <p className="pt-k" style={{ color: 'var(--red-soft)', display: 'flex', alignItems: 'center', gap: 6 }}><Flag size={13} /> {res.banderas.length} bandera{res.banderas.length > 1 ? 's' : ''} roja{res.banderas.length > 1 ? 's' : ''}</p>
-            {res.banderas.map((f, i) => <p key={i} className="pt-inf-bandera">{f.texto} <em>{f.bloque}</em></p>)}
+            {res.banderas.map((f, i) => <p key={i} className="pt-inf-bandera">{fraseBandera(f)} <em>{f.bloque}</em></p>)}
           </div>
         )}
       </div>
@@ -135,18 +147,24 @@ export function Informe({ res, patrones, resp, medic, ficha, costes, ct, cierre,
           {anotaciones.map(({ b, puntos, obs }) => (
             <div key={b.id} className="pt-anota-bloque">
               <p className="pt-anota-t">{b.nombre}</p>
-              {puntos.map((p) => (
-                <div key={p.i} className={'pt-anota-l a-' + (p.estado || 'nota')}>
-                  <span className="pt-anota-punto">
-                    {p.estado === 'def' && <b className="pt-anota-def">Defecto</b>}
-                    {p.estado === 'obs' && <b className="pt-anota-obs">Observar</b>}
-                    {p.it.t}
-                    {p.estado === 'def' && <em className="pt-anota-pen">−{p.it.pen}</em>}
-                  </span>
-                  {p.nota && <span className="pt-anota-nota">{p.nota}</span>}
-                  {p.campo && <span className="pt-anota-campo">{p.campo}</span>}
-                </div>
-              ))}
+              {puntos.map((p) => {
+                // el informe redacta: usa la frase de hallazgo, no la etiqueta del checklist
+                const frase = p.estado === 'def' ? (p.it.mal || p.it.t)
+                            : p.estado === 'obs' ? (p.it.obs || p.it.t)
+                            : p.it.t;
+                return (
+                  <div key={p.i} className={'pt-anota-l a-' + (p.estado || 'nota')}>
+                    <span className="pt-anota-punto">
+                      {p.estado === 'def' && <b className="pt-anota-def">Defecto</b>}
+                      {p.estado === 'obs' && <b className="pt-anota-obs">A vigilar</b>}
+                      {frase}
+                      {p.estado === 'def' && <em className="pt-anota-pen">−{p.it.pen}</em>}
+                    </span>
+                    {p.nota && <span className="pt-anota-nota">“{p.nota}”</span>}
+                    {p.campo && <span className="pt-anota-campo">{p.campo}</span>}
+                  </div>
+                );
+              })}
               {obs && <p className="pt-anota-obs-bloque">{obs}</p>}
             </div>
           ))}
@@ -187,9 +205,9 @@ export function Informe({ res, patrones, resp, medic, ficha, costes, ct, cierre,
       </p>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 18 }}>
-        <button className="btn-ghost" onClick={copiarTexto} style={{ flex: 1, minWidth: 140 }}><Copy size={14} style={{ verticalAlign: -2, marginRight: 6 }} /> Copiar informe</button>
-        <button className="btn-ghost" onClick={() => window.print()} style={{ flex: 1, minWidth: 140 }}><Printer size={14} style={{ verticalAlign: -2, marginRight: 6 }} /> Imprimir / PDF</button>
+        <button className="btn-de" onClick={() => window.print()} style={{ flex: 1, minWidth: 180, padding: '14px' }}><Printer size={15} style={{ verticalAlign: -2, marginRight: 7 }} /> DESCARGAR PDF</button>
       </div>
+      <p className="pt-cob" style={{ textAlign: 'center', marginTop: 8 }}>Se abre el diálogo de impresión: elige “Guardar como PDF”.</p>
     </div>
   );
 }
