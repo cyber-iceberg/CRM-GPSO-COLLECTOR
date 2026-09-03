@@ -1,19 +1,19 @@
 'use client';
 
 // =====================================================================
-//  GPSO COLLECTOR · Fiscalidad del Importador (cliente) · v5
+//  GPSO COLLECTOR · Fiscalidad del Importador (cliente) · v6
 //  app/recursos/fiscalidad/FiscalidadClient.jsx
-//  Cambios v5:
-//  · El PARTICULAR tiene su propio camino completo: stock y a la carta,
-//    sin pasar por REBU/IVA — todo acaba en la declaración de la renta.
-//  · Caso real nuevo: Golf VII GTI Performance (alumno), 21.750 € venta,
-//    3.500 € de ganancia declarada.
-//  · Nodo "El límite: 2 al año" compartido por las dos rutas del particular.
-//  · Textos del camino particular en lenguaje sencillo.
+//  Cambios v6:
+//  · Líneas al "límite" ahora SÓLIDAS y visibles (no discontinuas tenues).
+//  · Quitada la frase del mínimo de mercado en el Audi Q3.
+//  · NODO COMPARADOR: panel ancho con (a) calculadora REBU en vivo y
+//    (b) comparativa del Z4 por las 3 vías (REBU / IVA general / servicios).
 // =====================================================================
 
 import { useState, useEffect, useRef } from 'react';
 import MenuDrawer from '../../components/MenuDrawer';
+
+const fmt = (n) => (Math.round(n * 100) / 100).toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 // ---------------------------------------------------------------------
 //  DATOS · revealBy = qué nodos, al expandirse, hacen brotar este nodo
@@ -22,7 +22,7 @@ const NODES = {
   origen: { x: 170, y: 500, t: 'La operación', s: 'toca para abrir el mapa', origen: true,
     body: `<p>Toda operación de importación se describe respondiendo <strong>tres preguntas en orden</strong>: quién la hace, qué tipo de operación es, y cómo se factura.</p><p>No existe "la forma correcta" — existen varias formas de hacerlo, cada una con su lógica, su gasto y su tributación. Elegir la que toca es lo que separa a un importador que gana dinero de uno que se lo regala a Hacienda.</p>` },
 
-  // ---------------- CAMINO DEL PARTICULAR (sin REBU / sin IVA) ----------------
+  // ---------------- CAMINO DEL PARTICULAR ----------------
   particular: { x: 520, y: 230, t: 'Particular', s: 'sin darte de alta en nada', revealBy: ['origen'],
     body: `<p>Compras y vendes coches <strong>a tu nombre, como cualquier persona</strong>. Aquí no existen el REBU, el IVA ni las facturas de venta — tu camino es otro: lo que ganes se declara en <strong>tu declaración de la renta</strong>, y punto.</p><p>Tienes tus propias dos rutas (stock y a la carta) y un único límite: que sea algo <strong>puntual</strong>, no tu forma de ganarte la vida.</p>` },
   p_stock: { x: 880, y: 105, t: 'Stock como particular', s: 'compras, disfrutas, vendes', revealBy: ['particular'],
@@ -31,7 +31,7 @@ Se declara en la renta del año siguiente
 <b>En ganancias de hasta 6.000 € pagas el 19%</b></div><div class="hookline">Sí: puedes ganar dinero vendiendo coches sin ser autónomo ni empresa. La condición es que sea algo puntual — mira el nodo del límite.</div>` },
   p_carta: { x: 880, y: 295, t: 'A la carta como particular', s: 'traes un coche por encargo', revealBy: ['particular'],
     body: `<p>Alguien te pide que le busques y le traigas un coche concreto, y tú cobras algo por la gestión. Al ser algo <strong>puntual</strong>, la ley te permite hacerlo sin darte de alta — incluso emitir una factura suelta con IVA si te la piden.</p><p>Lo que cobres lo declaras igualmente en tu renta. Y si esto se convierte en tu día a día, deja de ser "puntual" y toca darse de alta.</p>` },
-  limite: { x: 1180, y: 285, t: 'El límite: 2 al año', s: 'la regla de la ocasionalidad', sat: true, clip: true, revealBy: ['p_stock', 'p_carta'],
+  limite: { x: 1180, y: 200, t: 'El límite: 2 al año', s: 'la regla de la ocasionalidad', sat: true, clip: true, revealBy: ['p_stock', 'p_carta'],
     chips: ['Concepto', '🎬 clip'],
     body: `<p>Las dos rutas del particular funcionan porque son cosas <strong>puntuales</strong>. La ley no dice un número exacto — habla de "habitualidad" — pero si Hacienda ve que te entra dinero por coches de forma seguida, deja de verte como particular y te exige darte de alta, con efecto retroactivo y sanciones.</p><div class="hookline">Nuestro criterio de seguridad en la academia: máximo 2 operaciones al año. No porque la ley diga ese número, sino para no acercarse nunca a la frontera.</div>` },
   golf: { x: 1240, y: 105, t: 'Golf VII GTI', s: 'stock como particular', esCaso: true, clip: true, revealBy: ['p_stock'],
@@ -81,7 +81,7 @@ Margen REBU = 10.990 € → base 9.082,64 €
     body: `<p>Operación calculada <strong>antes de comprar</strong> — así se decide una importación a la carta.</p><div class="formula">Compra negociada: <b>15.249 €</b> (rebaja −750 €)
 Importación: <b>2.420 €</b> → invertido 17.669 €
 Venta pactada: <b>20.900 €</b>
-Margen REBU 5.651 € → <b>IVA: 981 €</b></div><div class="kpi"><span class="k">Beneficio neto previsto</span><span class="v">2.250 €</span></div><div class="hookline">20.900 € está POR DEBAJO del mínimo de mercado (21.500 €). Nadie pone ese precio a un stock — solo tiene sentido si ya sabes a quién se lo vendes.</div><div class="fotos">Fotos de la operación — pendiente de encajar</div>` },
+Margen REBU 5.651 € → <b>IVA: 981 €</b></div><div class="kpi"><span class="k">Beneficio neto previsto</span><span class="v">2.250 €</span></div><div class="fotos">Fotos de la operación — pendiente de encajar</div>` },
   b218: { x: 1620, y: 625, t: 'BMW 218 GC', s: 'stock · Régimen General', esCaso: true, revealBy: ['rg'],
     chips: ['Stock', 'Régimen General', 'Financiación'],
     body: `<p>Comprado con IVA deducible y vendido con el 21% desglosado en factura.</p><div class="formula">Compra: <b>16.798 €</b> · Gastos: <b>3.088,19 €</b>
@@ -98,20 +98,22 @@ Factura: <b>36.500 €</b> = base 30.165,29 + IVA 6.334,71</div><div class="kpi"
     body: `<p>El coche nunca fue de GPSO fiscalmente: coche y trámites a precio cerrado, honorarios aparte con su IVA.</p><div class="formula">Coche y trámites: <b>41.342 €</b>
 Honorarios: <b>1.823 €</b> + IVA <b>383 €</b>
 Total cliente: <b>43.548 €</b></div><div class="kpi"><span class="k">Margen real de la operación</span><span class="v">~2.700 €</span></div><div class="hookline">Con un coche de más de 40.000 €, el IVA ingresado a Hacienda fue de 383 €. No es un truco: la base imponible son tus honorarios, porque el coche jamás fue tuyo.</div><div class="fotos">Fotos de la operación — pendiente de encajar</div>` },
+
+  // ---------------- NODO ESPECIAL: COMPARADOR + CALCULADORA ----------------
+  comparador: { x: 1980, y: 960, t: 'Comparador', s: 'REBU vs IVA vs servicios', esCaso: true, clip: true, comparador: true, revealBy: ['z4'],
+    chips: ['Herramienta', '🎬 clip'] },
 };
 
 const EDGES = [
   ['origen', 'particular'], ['origen', 'profesional'], ['origen', 'intermediario'],
-  // camino particular
   ['particular', 'p_stock'], ['particular', 'p_carta'],
   ['p_stock', 'golf'],
-  ['p_stock', 'limite', 1], ['p_carta', 'limite', 1],
-  // camino profesional / intermediario
+  ['p_stock', 'limite'], ['p_carta', 'limite'],   // ahora SÓLIDAS (sin flag dashed)
   ['profesional', 'stock'], ['profesional', 'carta'], ['intermediario', 'carta'],
   ['stock', 'rebu'], ['stock', 'rg'],
   ['carta', 'rebu'], ['carta', 'rg'], ['carta', 'serv'],
   ['rebu', 'a45s'], ['rebu', 'q3'], ['rg', 'b218'], ['rg', 'c300'], ['serv', 'z4'],
-  // capas transversales
+  ['z4', 'comparador'],
   ['nifiva', 'rg', 1], ['nifiva', 'c300', 1],
   ['ded', 'rg', 1], ['ded', 'b218', 1],
 ];
@@ -139,6 +141,99 @@ const esVisible = (id, exp) => {
   return (n.revealBy || []).some(p => exp.has(p));
 };
 
+// ---------------------------------------------------------------------
+//  CALCULADORA REBU (componente del panel comparador)
+// ---------------------------------------------------------------------
+function CalculadoraREBU() {
+  const [compra, setCompra] = useState('43000');
+  const [venta, setVenta] = useState('53990');
+  const [gastos, setGastos] = useState('6016.55');
+
+  const c = parseFloat(compra) || 0;
+  const v = parseFloat(venta) || 0;
+  const g = parseFloat(gastos) || 0;
+  const margen = Math.max(0, v - c);
+  const base = margen / 1.21;
+  const iva = margen - base;
+  const beneficio = v - c - g - iva;
+
+  return (
+    <div className="calc">
+      <div className="calc-row">
+        <label>Precio de compra
+          <input inputMode="decimal" value={compra} onChange={e => setCompra(e.target.value)} placeholder="0" /><span className="eur">€</span>
+        </label>
+        <label>Precio de venta
+          <input inputMode="decimal" value={venta} onChange={e => setVenta(e.target.value)} placeholder="0" /><span className="eur">€</span>
+        </label>
+        <label>Gastos de importación
+          <input inputMode="decimal" value={gastos} onChange={e => setGastos(e.target.value)} placeholder="0" /><span className="eur">€</span>
+        </label>
+      </div>
+      <div className="calc-out">
+        <div className="co"><span>Margen (venta − compra)</span><b>{fmt(margen)} €</b></div>
+        <div className="co"><span>Base imponible (margen ÷ 1,21)</span><b>{fmt(base)} €</b></div>
+        <div className="co destaca"><span>IVA REBU a ingresar</span><b>{fmt(iva)} €</b></div>
+        <div className="co final"><span>Beneficio neto (menos gastos e IVA)</span><b>{fmt(beneficio)} €</b></div>
+      </div>
+      <p className="calc-nota">El IVA del REBU se calcula solo sobre tu margen y sale de tu bolsillo. Cambia los números y verás cuánto se lleva Hacienda en cada operación.</p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+//  COMPARATIVA Z4 por las 3 vías (números reales)
+//  Datos: coche en Alemania 36.650 € (con 19% dentro), gastos importación
+//  4.692 €, precio final al cliente 43.548 €, ahorro de ejecución ~900 €
+//  (esos ~900 € son ahorro operativo: aplican igual a las tres vías).
+// ---------------------------------------------------------------------
+function ComparativaZ4() {
+  const cocheBruto = 36650;      // coche en Alemania, 19% alemán incluido
+  const cocheNeto = cocheBruto / 1.19;         // 30.798,32 (neto, si recuperas el 19%)
+  const ivaAleman = cocheBruto - cocheNeto;    // 5.851,68 recuperable en la vía IVA
+  const gastos = 4692;           // transporte + trámites + IEDMT (suplidos/costes)
+  const totalCliente = 43548;    // lo que pagó el cliente en la operación real
+  const ahorro = 900;            // optimización de gastos (igual en las 3 vías)
+
+  // --- SERVICIOS (lo real): honorarios 1.823 + IVA 383. El coche es suplido. ---
+  const serv = { iva: 383, margen: 1823 + ahorro };
+
+  // --- REBU: margen = venta − precio de compra del COCHE (no los gastos). ---
+  const margenRebu = totalCliente - cocheBruto;          // 6.898
+  const ivaRebu = margenRebu - margenRebu / 1.21;        // 1.197,32
+  const rebu = { iva: ivaRebu, margen: margenRebu - ivaRebu - gastos + ahorro };
+
+  // --- IVA GENERAL: recuperas el 19% alemán y repercutes 21% español.
+  //     Mismo precio final al cliente (43.548) → base = total/1,21. ---
+  const baseIva = totalCliente / 1.21;                   // 35.990,08
+  const ivaRepercutido = totalCliente - baseIva;         // 7.557,92
+  const ivaNeto = ivaRepercutido - ivaAleman;            // 1.706,24 (a Hacienda)
+  const ivaVia = { iva: ivaNeto, margen: baseIva - cocheNeto - gastos + ahorro };
+
+  const filas = [
+    { k: 'Servicios + suplido', sub: 'lo que hicimos', d: serv, real: true },
+    { k: 'REBU', sub: 'lo compras y lo revendes', d: rebu },
+    { k: 'IVA general', sub: 'recuperas el 19% DE y repercutes 21% ES', d: ivaVia },
+  ];
+
+  return (
+    <div className="comp">
+      <p className="comp-intro">Mismo BMW Z4, mismo precio final para el cliente (<b>43.548 €</b>). Lo único que cambia es <b>cómo lo facturas</b> — y mira lo que le pasa a tu bolsillo:</p>
+      <div className="comp-grid">
+        <div className="comp-head"><span>Vía</span><span>IVA a Hacienda</span><span>Tu margen</span></div>
+        {filas.map((f, i) => (
+          <div className={'comp-fila' + (f.real ? ' real' : '')} key={i}>
+            <span className="via">{f.k}<em className="viasub">{f.sub}</em>{f.real && <em>REAL</em>}</span>
+            <span className="iva">{fmt(f.d.iva)} €</span>
+            <span className="mar">{fmt(f.d.margen)} €</span>
+          </div>
+        ))}
+      </div>
+      <div className="comp-hook">El mismo coche, el mismo cliente, el mismo precio — y tres resultados distintos: <b>2.723 € por servicios, 1.909 € por REBU, 1.400 € por IVA general</b>. Casi la mitad de diferencia entre la mejor vía y la peor, sin cambiar nada más que la forma de facturar. Elegir bien la vía no es un detalle: es la mitad de tu beneficio.</div>
+    </div>
+  );
+}
+
 export default function FiscalidadClient({ email, perfil }) {
   const [expandidos, setExpandidos] = useState(() => new Set());
   const [cerrando, setCerrando] = useState(() => new Set());
@@ -153,9 +248,9 @@ export default function FiscalidadClient({ email, perfil }) {
   useEffect(() => {
     reduceRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const dots = [];
-    for (let i = 0; i < 170; i++) {
+    for (let i = 0; i < 180; i++) {
       dots.push({
-        x: Math.random() * 1900, y: Math.random() * 1180,
+        x: Math.random() * 2280, y: Math.random() * 1180,
         r: Math.random() * 1.6 + 0.5,
         d: (Math.random() * 28 + 14).toFixed(0),
         tw: (Math.random() * 5 + 2.5).toFixed(1),
@@ -163,7 +258,7 @@ export default function FiscalidadClient({ email, perfil }) {
       });
     }
     const links = [];
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 95; i++) {
       const a = dots[Math.floor(Math.random() * dots.length)];
       const b = dots[Math.floor(Math.random() * dots.length)];
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
@@ -226,10 +321,7 @@ export default function FiscalidadClient({ email, perfil }) {
       const fuera = Object.keys(NODES).filter(k => visible(k) && !esVisible(k, nx));
       if (fuera.length) {
         setCerrando(new Set(fuera));
-        setTimeout(() => {
-          setExpandidos(nx);
-          setCerrando(new Set());
-        }, 430);
+        setTimeout(() => { setExpandidos(nx); setCerrando(new Set()); }, 430);
       }
       setSel(id);
       setLit(iluminar(id, nx));
@@ -249,6 +341,7 @@ export default function FiscalidadClient({ email, perfil }) {
 
   const cerrar = () => { setSel(null); setLit(null); };
   const n = sel ? NODES[sel] : null;
+  const esComp = n && n.comparador;
 
   const nodosVisibles = Object.entries(NODES).filter(([id]) => visible(id));
   const edgesVisibles = EDGES.map((e, i) => ({ e, i })).filter(({ e }) => visible(e[0]) && visible(e[1]));
@@ -271,32 +364,26 @@ export default function FiscalidadClient({ email, perfil }) {
         </div>
       </header>
 
-      <div className={'viewport' + (n ? ' conPanel' : '')} ref={viewRef}>
+      <div className={'viewport' + (n ? (esComp ? ' conPanelAncho' : ' conPanel') : '')} ref={viewRef}>
         <div className={'canvas' + (lit ? ' dim' : '')}>
 
-          <svg className="cosmos" ref={cosmosRef} viewBox="0 0 1900 1180" aria-hidden="true">
+          <svg className="cosmos" ref={cosmosRef} viewBox="0 0 2280 1180" aria-hidden="true">
             {cosmos && cosmos.links.map((l, i) => (
               <line key={'l' + i} x1={l.a.x} y1={l.a.y} x2={l.b.x} y2={l.b.y} />
             ))}
             {cosmos && cosmos.dots.map((d, i) => (
               <circle key={'d' + i} cx={d.x} cy={d.y} r={d.r}
-                style={{
-                  opacity: d.o,
-                  animationDuration: d.d + 's, ' + d.tw + 's',
-                  animationDelay: (i % 9) + 's, ' + (i % 5) + 's',
-                }} />
+                style={{ opacity: d.o, animationDuration: d.d + 's, ' + d.tw + 's', animationDelay: (i % 9) + 's, ' + (i % 5) + 's' }} />
             ))}
           </svg>
 
-          <svg className="wires" viewBox="0 0 1900 1180">
+          <svg className="wires" viewBox="0 0 2280 1180">
             {edgesVisibles.map(({ e, i }) => {
               const on = lit && lit.has(e[0]) && lit.has(e[1]);
               const seva = cerrando.has(e[0]) || cerrando.has(e[1]);
               return (
                 <g key={i} className={seva ? 'seva' : ''}>
-                  {on && !e[2] && (
-                    <path d={edgePath(e)} className="glow" pathLength="1" />
-                  )}
+                  {on && !e[2] && (<path d={edgePath(e)} className="glow" pathLength="1" />)}
                   <path id={'w' + i} d={edgePath(e)} pathLength="1"
                     className={'wire' + (e[2] ? ' dashed' : '') + (on ? ' on' : '')} />
                   {!e[2] && !reduceRef.current && (
@@ -315,6 +402,7 @@ export default function FiscalidadClient({ email, perfil }) {
             <button key={id}
               className={
                 'nodo' + (nd.esCaso ? ' caso' : '') + (nd.sat ? ' sat' : '') + (nd.origen ? ' raiz' : '') +
+                (nd.comparador ? ' comp' : '') +
                 (lit && lit.has(id) ? ' litnode' : '') + (sel === id ? ' activo' : '') +
                 (cerrando.has(id) ? ' seva' : '')
               }
@@ -330,19 +418,31 @@ export default function FiscalidadClient({ email, perfil }) {
         </div>
       </div>
 
-      <aside className={'panel' + (n ? ' open' : '')} aria-live="polite">
+      <aside className={'panel' + (n ? ' open' : '') + (esComp ? ' ancho' : '')} aria-live="polite">
         <button className="cerrar" onClick={cerrar} aria-label="Cerrar nota">✕</button>
         {n && (
           <>
             <div className="phead">
               <div className="chips">
                 {(n.chips || []).map((c, i) => (
-                  <span key={i} className={'chip' + (/REBU|General|suplido|clip|Particular/.test(c) ? ' gold' : '')}>{c}</span>
+                  <span key={i} className={'chip' + (/REBU|General|suplido|clip|Particular|Herramienta/.test(c) ? ' gold' : '')}>{c}</span>
                 ))}
               </div>
               <h2>{n.t}</h2>
             </div>
-            <div className="pbody" dangerouslySetInnerHTML={{ __html: n.body }} />
+            <div className="pbody">
+              {esComp ? (
+                <>
+                  <p className="lead">Calcula el REBU de cualquier coche al instante, y mira cómo cambia lo que ganas según la vía que elijas.</p>
+                  <h3 className="sec">Calculadora REBU</h3>
+                  <CalculadoraREBU />
+                  <h3 className="sec">El mismo Z4, por las 3 vías</h3>
+                  <ComparativaZ4 />
+                </>
+              ) : (
+                <div dangerouslySetInnerHTML={{ __html: n.body }} />
+              )}
+            </div>
           </>
         )}
       </aside>
@@ -350,7 +450,7 @@ export default function FiscalidadClient({ email, perfil }) {
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap');
         .pbody p{font-size:14px;line-height:1.65;color:#e9e6df;margin:0 0 14px}
-        .pbody p strong{font-weight:500;color:#ecdcae}
+        .pbody p strong,.pbody p b{font-weight:500;color:#ecdcae}
         .pbody .formula{border:1px solid #232833;border-left:2px solid #c9a14d;border-radius:0 8px 8px 0;padding:14px 16px;margin:16px 0;font-size:12.5px;line-height:1.8;color:#8b93a3;white-space:pre-line}
         .pbody .formula b{color:#e9e6df;font-weight:500}
         .pbody .kpi{display:flex;align-items:baseline;justify-content:space-between;border-top:1px solid #232833;padding:14px 2px 0;margin-top:18px}
@@ -362,7 +462,6 @@ export default function FiscalidadClient({ email, perfil }) {
 
       <style jsx>{`
         .fisc-bg{position:fixed;inset:0;background:radial-gradient(1300px 760px at 42% 45%, #0e1118 0%, #0a0c10 60%);color:#e9e6df;font-family:'Space Grotesk',sans-serif;font-weight:300;overflow:hidden}
-
         .halo{position:fixed;top:0;left:0;width:520px;height:520px;pointer-events:none;z-index:2;border-radius:50%;background:radial-gradient(circle, rgba(201,161,77,.14) 0%, rgba(201,161,77,.05) 38%, transparent 68%);mix-blend-mode:screen;will-change:transform}
         @media (prefers-reduced-motion: reduce){.halo{display:none}}
 
@@ -375,7 +474,8 @@ export default function FiscalidadClient({ email, perfil }) {
 
         .viewport{position:absolute;inset:0;overflow:auto;padding:90px 40px 40px;transition:right .38s cubic-bezier(.22,.9,.3,1)}
         .viewport.conPanel{right:420px}
-        .canvas{position:relative;width:1900px;height:1180px}
+        .viewport.conPanelAncho{right:560px}
+        .canvas{position:relative;width:2280px;height:1180px}
 
         .cosmos{position:absolute;inset:-40px;width:calc(100% + 80px);height:calc(100% + 80px);will-change:transform}
         .cosmos line{stroke:rgba(139,147,163,.09);stroke-width:.6}
@@ -388,16 +488,15 @@ export default function FiscalidadClient({ email, perfil }) {
         .wires :global(.glow){fill:none;stroke:rgba(227,201,135,.22);stroke-width:7;stroke-linecap:round}
         .wires :global(.wire){fill:none;stroke:rgba(201,161,77,.32);stroke-width:1.2;stroke-dasharray:1;stroke-dashoffset:0;animation:traza .9s ease both;transition:stroke .35s,opacity .35s}
         @keyframes traza{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
-        .wires :global(.wire.dashed){stroke:rgba(139,147,163,.35);stroke-dasharray:.012 .014;animation:none}
+        .wires :global(.wire.dashed){stroke:rgba(139,147,163,.4);stroke-dasharray:5 6;animation:none}
         .wires :global(.wire.on){stroke:#e9d194;stroke-width:1.7}
-        .canvas.dim .wires :global(.wire:not(.on)){opacity:.14}
+        .canvas.dim .wires :global(.wire:not(.on)){opacity:.16}
         .wires :global(.spark){fill:#c9a14d;opacity:.5;transition:opacity .35s}
         .wires :global(.spark.on){opacity:1;fill:#f0e2b6}
         .canvas.dim .wires :global(.spark:not(.on)){opacity:.05}
         .wires :global(g.seva){opacity:0;transition:opacity .4s ease}
         @media (prefers-reduced-motion: reduce){.wires :global(.wire){animation:none}}
 
-        /* ---------- nodos orbe ---------- */
         .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:11px;background:none;border:none;padding:8px;cursor:pointer;color:#e9e6df;font-family:'Space Grotesk',sans-serif;animation:brota .55s cubic-bezier(.2,.9,.3,1.4) both;transition:opacity .35s;z-index:3}
         @keyframes brota{from{opacity:0;transform:translate(-50%,-50%) scale(.25)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
         .nodo.seva{animation:sevaAnim .43s cubic-bezier(.6,-.3,.8,.6) both;pointer-events:none}
@@ -409,28 +508,26 @@ export default function FiscalidadClient({ email, perfil }) {
         .orbe.cerrado::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:1px dashed rgba(201,161,77,.55);animation:girar 14s linear infinite}
         @keyframes girar{to{transform:rotate(360deg)}}
         @media (prefers-reduced-motion: reduce){.orbe.cerrado::after{animation:none}}
-
         .nodo:hover .orbe{box-shadow:0 0 24px rgba(201,161,77,.85), 0 0 70px rgba(201,161,77,.32);transform:scale(1.1)}
         .nodo.activo .orbe{box-shadow:0 0 28px rgba(240,226,182,.95), 0 0 80px rgba(201,161,77,.45)}
-
         .nodo.raiz .orbe{width:48px;height:48px;animation:latido 3.2s ease-in-out infinite}
         @keyframes latido{0%,100%{box-shadow:0 0 18px rgba(201,161,77,.55),0 0 50px rgba(201,161,77,.2)}50%{box-shadow:0 0 34px rgba(201,161,77,.95),0 0 95px rgba(201,161,77,.38)}}
         @media (prefers-reduced-motion: reduce){.nodo.raiz .orbe{animation:none}}
-
         .nodo.caso .orbe{width:40px;height:40px;background:radial-gradient(circle at 35% 30%, #fdf6e0 0%, #e3c987 40%, #8a6d2f 100%)}
+        .nodo.comp .orbe{width:44px;height:44px;background:radial-gradient(circle at 35% 30%, #fff 0%, #f0e2b6 30%, #c9a14d 65%, #6b5526 100%);animation:latido 2.6s ease-in-out infinite}
         .nodo.sat .orbe{width:22px;height:22px;background:transparent;border:1.5px dashed rgba(201,161,77,.7);box-shadow:none}
         .nodo.sat:hover .orbe{box-shadow:0 0 16px rgba(201,161,77,.4)}
 
         .etq{text-align:center;max-width:210px}
         .etq .t{display:block;font-weight:600;font-size:15px;letter-spacing:1.1px;text-transform:uppercase;text-shadow:0 2px 12px rgba(10,12,16,.95)}
         .nodo.caso .etq .t{color:#ecdcae;font-size:16px}
-        .nodo.raiz .etq .t{font-size:17px;color:#ecdcae}
+        .nodo.raiz .etq .t,.nodo.comp .etq .t{font-size:17px;color:#ecdcae}
         .etq .s{display:block;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#8b93a3;margin-top:4px;text-shadow:0 2px 8px rgba(10,12,16,.95)}
         .clipb{display:inline-block;font-size:9px;letter-spacing:.5px;color:#0a0c10;background:#c9a14d;border-radius:4px;padding:1px 5px;margin-left:7px;font-weight:600;vertical-align:2px}
         .canvas.dim .nodo:not(.litnode){opacity:.18}
 
-        /* ---------- panel ---------- */
         .panel{position:fixed;top:0;right:0;bottom:0;width:420px;z-index:50;background:#12151c;border-left:1px solid #232833;transform:translateX(102%);transition:transform .38s cubic-bezier(.22,.9,.3,1);display:flex;flex-direction:column}
+        .panel.ancho{width:560px}
         .panel.open{transform:translateX(0)}
         .phead{padding:26px 28px 18px;border-bottom:1px solid #232833}
         .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
@@ -441,11 +538,45 @@ export default function FiscalidadClient({ email, perfil }) {
         .cerrar{position:absolute;top:20px;right:20px;background:none;border:1px solid #232833;border-radius:50%;width:32px;height:32px;color:#8b93a3;cursor:pointer;font-size:15px;transition:border-color .2s,color .2s;z-index:2}
         .cerrar:hover{border-color:#c9a14d;color:#c9a14d}
 
+        /* ---- panel comparador ---- */
+        .lead{font-size:14px;line-height:1.6;color:#e9e6df;margin:0 0 20px}
+        .sec{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:20px;color:#ecdcae;margin:24px 0 14px;padding-bottom:8px;border-bottom:1px solid #232833}
+        .calc-row{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+        .calc-row label{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#8b93a3;position:relative}
+        .calc-row input{flex:1;background:#0d1017;border:1px solid #232833;border-radius:8px;padding:10px 30px 10px 12px;color:#ecdcae;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:500;width:100%}
+        .calc-row input:focus{outline:none;border-color:#c9a14d}
+        .calc-row .eur{position:absolute;right:12px;bottom:11px;color:#8b93a3;font-size:13px}
+        .calc-out{border:1px solid #232833;border-radius:10px;overflow:hidden}
+        .co{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;font-size:12.5px;color:#8b93a3;border-bottom:1px solid #1a1e26}
+        .co b{color:#e9e6df;font-weight:500;font-size:14px}
+        .co.destaca{background:rgba(201,161,77,.07)}
+        .co.destaca b{color:#c9a14d}
+        .co.final{background:rgba(61,220,151,.06);border-bottom:none}
+        .co.final b{color:#3ddc97;font-family:'Cormorant Garamond',serif;font-size:22px}
+        .calc-nota{font-size:12px;line-height:1.5;color:#8b93a3;margin:12px 2px 0}
+
+        .comp-intro{font-size:13.5px;line-height:1.6;color:#e9e6df;margin:0 0 16px}
+        .comp-intro b{color:#ecdcae;font-weight:500}
+        .comp-grid{border:1px solid #232833;border-radius:10px;overflow:hidden}
+        .comp-head,.comp-fila{display:grid;grid-template-columns:1.5fr 1fr 1fr;align-items:center;gap:8px;padding:11px 14px}
+        .comp-head{background:#0d1017;font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:#8b93a3}
+        .comp-head span:not(:first-child),.comp-fila span:not(.via){text-align:right}
+        .comp-fila{border-top:1px solid #1a1e26;font-size:12px}
+        .comp-fila .via{color:#c8ccd4;line-height:1.35;display:flex;flex-direction:column;gap:2px}
+        .comp-fila .via em{font-style:normal}
+        .comp-fila .via .viasub{font-size:9.5px;letter-spacing:.3px;color:#6a7180;text-transform:none}
+        .comp-fila .via em:not(.viasub){display:inline-block;width:fit-content;font-size:8.5px;letter-spacing:.5px;background:#3ddc97;color:#04140d;border-radius:3px;padding:1px 5px;margin-top:2px;font-weight:600}
+        .comp-fila .iva{color:#e0876a;font-weight:500}
+        .comp-fila .mar{color:#3ddc97;font-weight:500}
+        .comp-fila.real{background:rgba(61,220,151,.06)}
+        .comp-hook{margin-top:16px;padding:14px 16px;border-radius:8px;background:rgba(201,161,77,.08);border:1px solid rgba(201,161,77,.35);font-size:13px;line-height:1.55;color:#ecdcae}
+        .comp-hook b{color:#f0e2b6;font-weight:600}
+
         @media (max-width:900px){
-          .panel{top:auto;left:0;right:0;width:auto;max-height:62vh;border-left:none;border-top:1px solid #232833;border-radius:16px 16px 0 0;transform:translateY(105%)}
+          .panel,.panel.ancho{top:auto;left:0;right:0;width:auto;max-height:70vh;border-left:none;border-top:1px solid #232833;border-radius:16px 16px 0 0;transform:translateY(105%)}
           .panel.open{transform:translateY(0)}
           .viewport{padding:84px 16px 30px}
-          .viewport.conPanel{right:0}
+          .viewport.conPanel,.viewport.conPanelAncho{right:0}
         }
       `}</style>
     </div>
