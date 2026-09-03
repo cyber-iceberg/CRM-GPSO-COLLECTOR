@@ -1,15 +1,15 @@
 'use client';
 
 // =====================================================================
-//  GPSO COLLECTOR · Fiscalidad del Importador (cliente) · v4
+//  GPSO COLLECTOR · Fiscalidad del Importador (cliente) · v5
 //  app/recursos/fiscalidad/FiscalidadClient.jsx
-//  Cambios v4:
-//  · El panel de nota ya no tapa el grafo: el lienzo se comprime y
-//    hace scroll automático para mantener el nodo elegido a la vista.
-//  · Click en un nodo ya abierto = COLAPSA sus destinos con la misma
-//    animación con la que brotaron (retirada hacia atrás).
-//  · Fondo con más vida: más estrellas, parpadeo, parallax con el ratón.
-//  · Halo de luz que sigue al cursor y hace brillar lo que toca.
+//  Cambios v5:
+//  · El PARTICULAR tiene su propio camino completo: stock y a la carta,
+//    sin pasar por REBU/IVA — todo acaba en la declaración de la renta.
+//  · Caso real nuevo: Golf VII GTI Performance (alumno), 21.750 € venta,
+//    3.500 € de ganancia declarada.
+//  · Nodo "El límite: 2 al año" compartido por las dos rutas del particular.
+//  · Textos del camino particular en lenguaje sencillo.
 // =====================================================================
 
 import { useState, useEffect, useRef } from 'react';
@@ -19,69 +19,81 @@ import MenuDrawer from '../../components/MenuDrawer';
 //  DATOS · revealBy = qué nodos, al expandirse, hacen brotar este nodo
 // ---------------------------------------------------------------------
 const NODES = {
-  origen: { x: 170, y: 480, t: 'La operación', s: 'toca para abrir el mapa', origen: true,
-    body: `<p>Toda operación de importación se describe respondiendo <strong>tres preguntas en orden</strong>: quién la hace, qué tipo de operación es, y cómo se factura.</p><p>No existe "la forma correcta" — existen tres formas de facturar, cada una con su lógica, su gasto y su tributación. Elegir la que toca es lo que separa a un importador que gana dinero de uno que se lo regala a Hacienda.</p>` },
+  origen: { x: 170, y: 500, t: 'La operación', s: 'toca para abrir el mapa', origen: true,
+    body: `<p>Toda operación de importación se describe respondiendo <strong>tres preguntas en orden</strong>: quién la hace, qué tipo de operación es, y cómo se factura.</p><p>No existe "la forma correcta" — existen varias formas de hacerlo, cada una con su lógica, su gasto y su tributación. Elegir la que toca es lo que separa a un importador que gana dinero de uno que se lo regala a Hacienda.</p>` },
 
-  particular: { x: 520, y: 235, t: 'Particular', s: 'sin alta de actividad', revealBy: ['origen'],
-    block: ['stock', 'rebu', 'rg', 'a45s', 'q3', 'b218', 'c300'],
-    body: `<p>Por defecto <strong>no puede repercutir IVA ni aplicar REBU</strong>. Solo tiene dos puertas: cobrar una comisión de servicios de forma puntual, o la figura de la <strong>entrega ocasional de medios de transporte</strong> — válida para una operación concreta, sin convertirse en empresario.</p><p>La palabra clave es <strong>ocasional</strong>. Si se repite de forma organizada, Hacienda lo reclasifica como actividad económica no declarada.</p><div class="hookline">La ley no pone un número exacto — habla de "habitualidad". Nuestro criterio de seguridad en la academia: máximo 2 al año.</div>` },
-  profesional: { x: 520, y: 480, t: 'Profesional', s: 'autónomo o empresa', revealBy: ['origen'],
+  // ---------------- CAMINO DEL PARTICULAR (sin REBU / sin IVA) ----------------
+  particular: { x: 520, y: 230, t: 'Particular', s: 'sin darte de alta en nada', revealBy: ['origen'],
+    body: `<p>Compras y vendes coches <strong>a tu nombre, como cualquier persona</strong>. Aquí no existen el REBU, el IVA ni las facturas de venta — tu camino es otro: lo que ganes se declara en <strong>tu declaración de la renta</strong>, y punto.</p><p>Tienes tus propias dos rutas (stock y a la carta) y un único límite: que sea algo <strong>puntual</strong>, no tu forma de ganarte la vida.</p>` },
+  p_stock: { x: 880, y: 105, t: 'Stock como particular', s: 'compras, disfrutas, vendes', revealBy: ['particular'],
+    body: `<p>Compras un coche a tu nombre y, cuando lo vendes más caro, esa ganancia es un <strong>incremento de patrimonio</strong>. No haces factura de nada: simplemente, en la renta del año siguiente declaras lo que ganaste y pagas el porcentaje que te toque.</p><div class="formula">Ganancia = venta − (compra + gastos)
+Se declara en la renta del año siguiente
+<b>En ganancias de hasta 6.000 € pagas el 19%</b></div><div class="hookline">Sí: puedes ganar dinero vendiendo coches sin ser autónomo ni empresa. La condición es que sea algo puntual — mira el nodo del límite.</div>` },
+  p_carta: { x: 880, y: 295, t: 'A la carta como particular', s: 'traes un coche por encargo', revealBy: ['particular'],
+    body: `<p>Alguien te pide que le busques y le traigas un coche concreto, y tú cobras algo por la gestión. Al ser algo <strong>puntual</strong>, la ley te permite hacerlo sin darte de alta — incluso emitir una factura suelta con IVA si te la piden.</p><p>Lo que cobres lo declaras igualmente en tu renta. Y si esto se convierte en tu día a día, deja de ser "puntual" y toca darse de alta.</p>` },
+  limite: { x: 1180, y: 285, t: 'El límite: 2 al año', s: 'la regla de la ocasionalidad', sat: true, clip: true, revealBy: ['p_stock', 'p_carta'],
+    chips: ['Concepto', '🎬 clip'],
+    body: `<p>Las dos rutas del particular funcionan porque son cosas <strong>puntuales</strong>. La ley no dice un número exacto — habla de "habitualidad" — pero si Hacienda ve que te entra dinero por coches de forma seguida, deja de verte como particular y te exige darte de alta, con efecto retroactivo y sanciones.</p><div class="hookline">Nuestro criterio de seguridad en la academia: máximo 2 operaciones al año. No porque la ley diga ese número, sino para no acercarse nunca a la frontera.</div>` },
+  golf: { x: 1240, y: 105, t: 'Golf VII GTI', s: 'stock como particular', esCaso: true, clip: true, revealBy: ['p_stock'],
+    chips: ['Particular', 'Stock', '🎬 clip'],
+    body: `<p>Coche real de un alumno, vendido como particular — sin factura, sin REBU, sin IVA.</p><div class="formula">Compra + gastos ≈ <b>18.250 €</b> (ajustar con la cifra exacta)
+Venta: <b>21.750 €</b>
+<b>Ganancia declarada: 3.500 €</b></div><div class="kpi"><span class="k">Neto tras renta (19% de 3.500 = 665 €)</span><span class="v">2.835 €</span></div><div class="hookline">Golf GTI Performance 2014, 80.000 km. La ganancia va a la renta del año siguiente como incremento de patrimonio y se paga el tramo que toque — aquí, el 19%. Nada más.</div><div class="fotos">Fotos de la operación — pendiente de encajar</div>` },
+
+  // ---------------- CAMINO DEL PROFESIONAL / INTERMEDIARIO ----------------
+  profesional: { x: 520, y: 545, t: 'Profesional', s: 'autónomo o empresa', revealBy: ['origen'],
     body: `<p>Dado de alta en la actividad de compraventa. Tiene <strong>las tres vías abiertas</strong>: REBU, Régimen General y servicios + suplido — y elegir la que toca en cada operación es lo que separa a un importador que gana dinero de uno que se lo regala a Hacienda.</p><p>Con el <strong>NIF-IVA (alta en el ROI)</strong> puede además comprar en la UE con exención.</p>` },
-  intermediario: { x: 520, y: 725, t: 'Intermediario', s: 'nunca toca la propiedad', revealBy: ['origen'],
+  intermediario: { x: 520, y: 790, t: 'Intermediario', s: 'nunca toca la propiedad', revealBy: ['origen'],
     block: ['stock', 'rebu', 'rg', 'a45s', 'q3', 'b218', 'c300'],
-    body: `<p>El coche va <strong>directo del vendedor al comprador final</strong> — nunca pasa por su titularidad ni su tesorería. Solo factura honorarios de gestión (con IVA 21%) y suplidos si adelantó importes de terceros.</p><p>Es un <strong>rol</strong>, no una forma jurídica: cualquiera de los tres operadores puede actuar así en una operación concreta.</p>` },
+    body: `<p>El coche va <strong>directo del vendedor al comprador final</strong> — nunca pasa por su titularidad ni su tesorería. Solo factura honorarios de gestión (con IVA 21%) y suplidos si adelantó importes de terceros.</p><p>Es un <strong>rol</strong>, no una forma jurídica: cualquiera puede actuar así en una operación concreta.</p>` },
 
-  limite: { x: 850, y: 115, t: 'Límite del particular', s: 'la ocasionalidad', sat: true, revealBy: ['particular'],
-    chips: ['Concepto'],
-    body: `<p>La figura de la entrega ocasional permite a un particular actuar como sujeto pasivo <strong>para una operación concreta</strong>. Si se repite de forma organizada, deja de ser ocasional.</p><div class="hookline">Criterio de seguridad de la academia: máximo 2 al año — no porque la ley diga "2", sino para no acercarse nunca a la frontera de la habitualidad.</div>` },
-
-  stock: { x: 860, y: 360, t: 'Compra de stock', s: 'compras sin cliente esperando', revealBy: ['profesional'],
+  stock: { x: 880, y: 470, t: 'Compra de stock', s: 'compras sin cliente esperando', revealBy: ['profesional'],
     body: `<p>El coche se compra <strong>para el escaparate</strong>: capital propio inmovilizado y riesgo de rotación. La forma de facturar la venta futura queda determinada por <strong>cómo entró el coche</strong> — no por lo que te convenga después.</p>` },
-  carta: { x: 860, y: 610, t: 'Importación a la carta', s: 'el cliente ya existe', revealBy: ['particular', 'profesional', 'intermediario'],
+  carta: { x: 880, y: 690, t: 'Importación a la carta', s: 'el cliente ya existe', revealBy: ['profesional', 'intermediario'],
     body: `<p>Se busca, negocia e importa <strong>un coche concreto para un cliente concreto</strong>. Menos riesgo de stock muerto, margen más ajustado — y por eso aquí la elección entre REBU, Régimen General o servicios <strong>importa mucho más</strong>.</p>` },
 
-  rebu: { x: 1210, y: 295, t: 'REBU', s: 'IVA solo sobre el margen', revealBy: ['stock', 'carta'],
+  rebu: { x: 1240, y: 440, t: 'REBU', s: 'IVA solo sobre el margen', revealBy: ['stock', 'carta'],
     body: `<p>Solo si el coche se adquirió <strong>sin IVA deducible</strong> (particular, otro REBU, operación exenta). En la factura al cliente el IVA no se desglosa — va dentro del precio — y por eso <strong>el cliente nunca puede deducírselo</strong>.</p><div class="formula">Margen = venta (IVA incl.) − compra (IVA incl.)
 Base imponible = margen × 100 / 121
 <b>IVA a ingresar = margen − base</b></div><div class="hookline">El IVA del REBU sale de TU margen. Es la partida que casi nadie resta cuando calcula su ROI.</div>` },
-  rg: { x: 1210, y: 530, t: 'Régimen General', s: 'IVA deducible · sobre el total', revealBy: ['stock', 'carta'],
+  rg: { x: 1240, y: 640, t: 'Régimen General', s: 'IVA deducible · sobre el total', revealBy: ['stock', 'carta'],
     body: `<p>El coche entró <strong>con IVA deducible</strong> (concesionario, o intracomunitaria exenta con tu NIF-IVA). Repercutes el 21% sobre el precio total de venta, desglosado en factura — <strong>si el cliente es empresa, se lo deduce</strong>.</p><p>Matiz que casi todo el mundo confunde: cuando el coche es <strong>mercancía para revender</strong>, su IVA se deduce al 100% — la presunción del 50% es solo para coches de uso propio de la empresa.</p><div class="formula">Base = precio de venta pactado
 IVA repercutido = base × 21% <b>(lo paga el cliente aparte)</b>
 Tu margen = base − coste total</div>` },
-  serv: { x: 1210, y: 765, t: 'Servicios + suplido', s: 'el coche no es tuyo fiscalmente', revealBy: ['carta'],
+  serv: { x: 1240, y: 855, t: 'Servicios + suplido', s: 'el coche no es tuyo fiscalmente', revealBy: ['carta'],
     body: `<p>No compras ni vendes el coche: cobras <strong>honorarios de gestión</strong> (con IVA 21%) y repercutes como <strong>suplido</strong> los importes exactos de terceros pagados en nombre del cliente.</p><p><strong>Suplido real = importe fijado por un tercero que no puedes negociar</strong> (impuestos, tasas). Lo que sí negocias y ejecutas más barato (transporte, gestoría) es parte de tu precio de servicio cerrado — y lo que ahorras ejecutándolo, es tuyo.</p><div class="hookline">Tu base imponible es solo tus honorarios — no el valor del coche. Por eso con un coche de 40.000 € puedes estar ingresando 383 € de IVA, no 6.000.</div>` },
 
-  nifiva: { x: 1230, y: 105, t: 'NIF-IVA / ROI', s: 'capa · quién compra en la UE', sat: true, clip: true, revealBy: ['rg'],
+  nifiva: { x: 1450, y: 160, t: 'NIF-IVA / ROI', s: 'capa · quién compra en la UE', sat: true, clip: true, revealBy: ['rg'],
     chips: ['Concepto', '🎬 clip'],
     body: `<p>Para comprar en la UE <strong>con exención</strong>, el comprador necesita un NIF-IVA válido en el VIES. Si tu cliente empresa no lo tiene, el proveedor alemán le cobraría su 19% — y recuperarlo desde España es lento y farragoso.</p><p>La solución: <strong>compras tú con tu NIF-IVA y revendes en España con factura normal</strong> — ese IVA español sí se lo deduce sin problema.</p><div class="hookline">Si tu cliente no tiene NIF-IVA: o lo tienes tú y compras por él, o va a pagar un IVA extranjero que casi nunca recupera.</div>` },
-  ded: { x: 1230, y: 950, t: 'Deducción 50/100', s: 'capa · cuánto deduce el comprador', sat: true, revealBy: ['rg'],
+  ded: { x: 1450, y: 1100, t: 'Deducción 50/100', s: 'capa · cuánto deduce el comprador', sat: true, revealBy: ['rg'],
     chips: ['Concepto'],
     body: `<p>Un turismo de uso mixto afecto a la empresa se presume deducible al <strong>50%</strong> (art. 95.Tres LIVA). Deducir más exige probarlo — y la jurisprudencia suele respaldar a Hacienda salvo prueba sólida.</p><p>El <strong>100% automático</strong> es solo para una lista cerrada: agentes comerciales, autoescuelas, transporte de mercancías o viajeros, vigilancia.</p><p>Y el matiz clave para vosotros: el coche que es <strong>stock para revender se deduce al 100% siempre</strong> — esta presunción no le aplica.</p>` },
 
-  a45s: { x: 1600, y: 180, t: 'Mercedes A45 S', s: 'stock · REBU', esCaso: true, clip: true, revealBy: ['rebu'],
+  a45s: { x: 1620, y: 300, t: 'Mercedes A45 S', s: 'stock · REBU', esCaso: true, clip: true, revealBy: ['rebu'],
     chips: ['Stock', 'REBU', '🎬 clip'],
     body: `<p>Comprado en Alemania y vendido en España como stock puro, facturado por REBU.</p><div class="formula">Compra: <b>43.000 €</b> · Gastos reales: <b>6.016,55 €</b>
 Venta: <b>53.990 €</b> (IVA no desglosado)
 Margen REBU = 10.990 € → base 9.082,64 €
 <b>IVA a ingresar: 1.907,36 €</b></div><div class="kpi"><span class="k">Margen real neto</span><span class="v">3.066 €</span></div><div class="hookline">La hoja de cálculo marcaba un ROI del 10,15%. El real, tras restar el IVA REBU, es del 6,26%. Casi 4 puntos que se esfuman cuando llega el modelo 303.</div><div class="fotos">Fotos de la operación — pendiente de encajar</div>` },
-  q3: { x: 1600, y: 365, t: 'Audi Q3', s: 'a la carta · REBU', esCaso: true, clip: true, revealBy: ['rebu'],
+  q3: { x: 1620, y: 465, t: 'Audi Q3', s: 'a la carta · REBU', esCaso: true, clip: true, revealBy: ['rebu'],
     chips: ['A la carta', 'REBU', '🎬 clip'],
     body: `<p>Operación calculada <strong>antes de comprar</strong> — así se decide una importación a la carta.</p><div class="formula">Compra negociada: <b>15.249 €</b> (rebaja −750 €)
 Importación: <b>2.420 €</b> → invertido 17.669 €
 Venta pactada: <b>20.900 €</b>
 Margen REBU 5.651 € → <b>IVA: 981 €</b></div><div class="kpi"><span class="k">Beneficio neto previsto</span><span class="v">2.250 €</span></div><div class="hookline">20.900 € está POR DEBAJO del mínimo de mercado (21.500 €). Nadie pone ese precio a un stock — solo tiene sentido si ya sabes a quién se lo vendes.</div><div class="fotos">Fotos de la operación — pendiente de encajar</div>` },
-  b218: { x: 1600, y: 550, t: 'BMW 218 GC', s: 'stock · Régimen General', esCaso: true, revealBy: ['rg'],
+  b218: { x: 1620, y: 625, t: 'BMW 218 GC', s: 'stock · Régimen General', esCaso: true, revealBy: ['rg'],
     chips: ['Stock', 'Régimen General', 'Financiación'],
     body: `<p>Comprado con IVA deducible y vendido con el 21% desglosado en factura.</p><div class="formula">Compra: <b>16.798 €</b> · Gastos: <b>3.088,19 €</b>
 Base venta: <b>20.652 €</b> + IVA 4.338 €
 Total factura cliente: <b>24.990 €</b></div><div class="kpi"><span class="k">Margen (1.515,81 + 750 financiación)</span><span class="v">2.265 €</span></div><div class="hookline">Aquí el IVA no toca tu margen — lo paga el cliente aparte y tú solo lo pasas a Hacienda. Compara con el A45S: mismo negocio, dos matemáticas distintas.</div><div class="fotos">Fotos de la operación — pendiente de encajar</div>` },
-  c300: { x: 1600, y: 735, t: 'Mercedes C300', s: 'a la carta · Régimen General', esCaso: true, clip: true, revealBy: ['rg'],
+  c300: { x: 1620, y: 790, t: 'Mercedes C300', s: 'a la carta · Régimen General', esCaso: true, clip: true, revealBy: ['rg'],
     chips: ['A la carta', 'Régimen General', '🎬 clip'],
     body: `<p>Compra con el <strong>19% alemán por delante</strong> — pagado, reclamado y devuelto.</p><div class="formula">Pagado en Alemania: 31.880 € → neto <b>26.789,92 €</b>
 (19% alemán devuelto: <b>5.090,08 €</b>)
 Gastos: 582,50 € → coste total 27.372,42 €
 Factura: <b>36.500 €</b> = base 30.165,29 + IVA 6.334,71</div><div class="kpi"><span class="k">Margen real · ROI 10,2%</span><span class="v">2.793 €</span></div><div class="hookline">5.090 € de IVA extranjero parados en tesorería hasta que llega el reembolso. El coste oculto del que nadie habla al comprar en concesionario alemán.</div><div class="fotos">Fotos de la operación — pendiente de encajar</div>` },
-  z4: { x: 1600, y: 920, t: 'BMW Z4', s: 'a la carta · servicios + suplido', esCaso: true, clip: true, revealBy: ['serv'],
+  z4: { x: 1620, y: 960, t: 'BMW Z4', s: 'a la carta · servicios + suplido', esCaso: true, clip: true, revealBy: ['serv'],
     chips: ['A la carta', 'Servicios + suplido', '🎬 clip'],
     body: `<p>El coche nunca fue de GPSO fiscalmente: coche y trámites a precio cerrado, honorarios aparte con su IVA.</p><div class="formula">Coche y trámites: <b>41.342 €</b>
 Honorarios: <b>1.823 €</b> + IVA <b>383 €</b>
@@ -90,11 +102,16 @@ Total cliente: <b>43.548 €</b></div><div class="kpi"><span class="k">Margen re
 
 const EDGES = [
   ['origen', 'particular'], ['origen', 'profesional'], ['origen', 'intermediario'],
-  ['particular', 'carta'], ['profesional', 'stock'], ['profesional', 'carta'], ['intermediario', 'carta'],
+  // camino particular
+  ['particular', 'p_stock'], ['particular', 'p_carta'],
+  ['p_stock', 'golf'],
+  ['p_stock', 'limite', 1], ['p_carta', 'limite', 1],
+  // camino profesional / intermediario
+  ['profesional', 'stock'], ['profesional', 'carta'], ['intermediario', 'carta'],
   ['stock', 'rebu'], ['stock', 'rg'],
   ['carta', 'rebu'], ['carta', 'rg'], ['carta', 'serv'],
   ['rebu', 'a45s'], ['rebu', 'q3'], ['rg', 'b218'], ['rg', 'c300'], ['serv', 'z4'],
-  ['particular', 'limite', 1],
+  // capas transversales
   ['nifiva', 'rg', 1], ['nifiva', 'c300', 1],
   ['ded', 'rg', 1], ['ded', 'b218', 1],
 ];
@@ -136,9 +153,9 @@ export default function FiscalidadClient({ email, perfil }) {
   useEffect(() => {
     reduceRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const dots = [];
-    for (let i = 0; i < 160; i++) {
+    for (let i = 0; i < 170; i++) {
       dots.push({
-        x: Math.random() * 1860, y: Math.random() * 1060,
+        x: Math.random() * 1900, y: Math.random() * 1180,
         r: Math.random() * 1.6 + 0.5,
         d: (Math.random() * 28 + 14).toFixed(0),
         tw: (Math.random() * 5 + 2.5).toFixed(1),
@@ -146,16 +163,15 @@ export default function FiscalidadClient({ email, perfil }) {
       });
     }
     const links = [];
-    for (let i = 0; i < 85; i++) {
+    for (let i = 0; i < 90; i++) {
       const a = dots[Math.floor(Math.random() * dots.length)];
       const b = dots[Math.floor(Math.random() * dots.length)];
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
       if (dist > 40 && dist < 240) links.push({ a, b });
     }
     setCosmos({ dots, links });
-    if (viewRef.current) viewRef.current.scrollTo({ left: 0, top: 200 });
+    if (viewRef.current) viewRef.current.scrollTo({ left: 0, top: 180 });
 
-    // halo que sigue al ratón + parallax del cosmos
     if (reduceRef.current) return;
     let mx = -600, my = -600, hx = -600, hy = -600, raf;
     const onMove = (e) => { mx = e.clientX; my = e.clientY; };
@@ -196,10 +212,9 @@ export default function FiscalidadClient({ email, perfil }) {
   };
 
   const clickNodo = (id) => {
-    if (cerrando.size) return; // esperar a que termine una retirada en curso
+    if (cerrando.size) return;
 
     if (expandidos.has(id)) {
-      // ------- COLAPSAR: retirar hacia atrás lo que brotó de aquí -------
       const nx = new Set(expandidos); nx.delete(id);
       let cambio = true;
       while (cambio) {
@@ -221,7 +236,6 @@ export default function FiscalidadClient({ email, perfil }) {
       return;
     }
 
-    // ------- EXPANDIR: hacer brotar los destinos -------
     const nx = new Set(expandidos); nx.add(id);
     setExpandidos(nx);
     setSel(id);
@@ -260,7 +274,7 @@ export default function FiscalidadClient({ email, perfil }) {
       <div className={'viewport' + (n ? ' conPanel' : '')} ref={viewRef}>
         <div className={'canvas' + (lit ? ' dim' : '')}>
 
-          <svg className="cosmos" ref={cosmosRef} viewBox="0 0 1860 1060" aria-hidden="true">
+          <svg className="cosmos" ref={cosmosRef} viewBox="0 0 1900 1180" aria-hidden="true">
             {cosmos && cosmos.links.map((l, i) => (
               <line key={'l' + i} x1={l.a.x} y1={l.a.y} x2={l.b.x} y2={l.b.y} />
             ))}
@@ -274,7 +288,7 @@ export default function FiscalidadClient({ email, perfil }) {
             ))}
           </svg>
 
-          <svg className="wires" viewBox="0 0 1860 1060">
+          <svg className="wires" viewBox="0 0 1900 1180">
             {edgesVisibles.map(({ e, i }) => {
               const on = lit && lit.has(e[0]) && lit.has(e[1]);
               const seva = cerrando.has(e[0]) || cerrando.has(e[1]);
@@ -323,7 +337,7 @@ export default function FiscalidadClient({ email, perfil }) {
             <div className="phead">
               <div className="chips">
                 {(n.chips || []).map((c, i) => (
-                  <span key={i} className={'chip' + (/REBU|General|suplido|clip/.test(c) ? ' gold' : '')}>{c}</span>
+                  <span key={i} className={'chip' + (/REBU|General|suplido|clip|Particular/.test(c) ? ' gold' : '')}>{c}</span>
                 ))}
               </div>
               <h2>{n.t}</h2>
@@ -361,7 +375,7 @@ export default function FiscalidadClient({ email, perfil }) {
 
         .viewport{position:absolute;inset:0;overflow:auto;padding:90px 40px 40px;transition:right .38s cubic-bezier(.22,.9,.3,1)}
         .viewport.conPanel{right:420px}
-        .canvas{position:relative;width:1860px;height:1060px}
+        .canvas{position:relative;width:1900px;height:1180px}
 
         .cosmos{position:absolute;inset:-40px;width:calc(100% + 80px);height:calc(100% + 80px);will-change:transform}
         .cosmos line{stroke:rgba(139,147,163,.09);stroke-width:.6}
