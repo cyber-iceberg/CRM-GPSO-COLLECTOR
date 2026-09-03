@@ -1,11 +1,15 @@
 'use client';
 
 // =====================================================================
-//  GPSO COLLECTOR · Fiscalidad del Importador (cliente) · v3
+//  GPSO COLLECTOR · Fiscalidad del Importador (cliente) · v4
 //  app/recursos/fiscalidad/FiscalidadClient.jsx
-//  Cambios v3: fix conexión horizontal (glow sin filtro SVG),
-//  etiquetas en MAYÚSCULAS, escala general más grande,
-//  cabecera con brand-tile + marca de central (/collector.jpg).
+//  Cambios v4:
+//  · El panel de nota ya no tapa el grafo: el lienzo se comprime y
+//    hace scroll automático para mantener el nodo elegido a la vista.
+//  · Click en un nodo ya abierto = COLAPSA sus destinos con la misma
+//    animación con la que brotaron (retirada hacia atrás).
+//  · Fondo con más vida: más estrellas, parpadeo, parallax con el ratón.
+//  · Halo de luz que sigue al cursor y hace brillar lo que toca.
 // =====================================================================
 
 import { useState, useEffect, useRef } from 'react';
@@ -112,27 +116,37 @@ function edgePath([a, b]) {
   return `M ${p1[0]} ${p1[1]} C ${mx} ${p1[1]}, ${mx} ${p2[1]}, ${p2[0]} ${p2[1]}`;
 }
 
+const esVisible = (id, exp) => {
+  const n = NODES[id];
+  if (n.origen) return true;
+  return (n.revealBy || []).some(p => exp.has(p));
+};
+
 export default function FiscalidadClient({ email, perfil }) {
   const [expandidos, setExpandidos] = useState(() => new Set());
+  const [cerrando, setCerrando] = useState(() => new Set());
   const [sel, setSel] = useState(null);
   const [lit, setLit] = useState(null);
   const [cosmos, setCosmos] = useState(null);
   const viewRef = useRef(null);
+  const cosmosRef = useRef(null);
+  const haloRef = useRef(null);
   const reduceRef = useRef(false);
 
   useEffect(() => {
     reduceRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const dots = [];
-    for (let i = 0; i < 110; i++) {
+    for (let i = 0; i < 160; i++) {
       dots.push({
         x: Math.random() * 1860, y: Math.random() * 1060,
-        r: Math.random() * 1.5 + 0.5,
-        d: (Math.random() * 30 + 16).toFixed(0),
-        o: (Math.random() * 0.22 + 0.06).toFixed(2),
+        r: Math.random() * 1.6 + 0.5,
+        d: (Math.random() * 28 + 14).toFixed(0),
+        tw: (Math.random() * 5 + 2.5).toFixed(1),
+        o: (Math.random() * 0.3 + 0.08).toFixed(2),
       });
     }
     const links = [];
-    for (let i = 0; i < 70; i++) {
+    for (let i = 0; i < 85; i++) {
       const a = dots[Math.floor(Math.random() * dots.length)];
       const b = dots[Math.floor(Math.random() * dots.length)];
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
@@ -140,38 +154,83 @@ export default function FiscalidadClient({ email, perfil }) {
     }
     setCosmos({ dots, links });
     if (viewRef.current) viewRef.current.scrollTo({ left: 0, top: 200 });
+
+    // halo que sigue al ratón + parallax del cosmos
+    if (reduceRef.current) return;
+    let mx = -600, my = -600, hx = -600, hy = -600, raf;
+    const onMove = (e) => { mx = e.clientX; my = e.clientY; };
+    const loop = () => {
+      hx += (mx - hx) * 0.09;
+      hy += (my - hy) * 0.09;
+      if (haloRef.current) haloRef.current.style.transform = `translate(${hx - 260}px, ${hy - 260}px)`;
+      if (cosmosRef.current) {
+        const dx = (mx / window.innerWidth - 0.5) * -26;
+        const dy = (my / window.innerHeight - 0.5) * -18;
+        cosmosRef.current.style.transform = `translate(${dx}px, ${dy}px)`;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    window.addEventListener('mousemove', onMove);
+    raf = requestAnimationFrame(loop);
+    return () => { window.removeEventListener('mousemove', onMove); cancelAnimationFrame(raf); };
   }, []);
 
-  const visible = (id) => {
-    const n = NODES[id];
-    if (n.origen) return true;
-    return (n.revealBy || []).some(p => expandidos.has(p));
-  };
+  const visible = (id) => esVisible(id, expandidos);
   const tieneOcultos = (id) =>
     Object.entries(NODES).some(([k, n]) => (n.revealBy || []).includes(id) && !visible(k));
 
   const vecinos = (id, dir) =>
     EDGES.filter(e => !e[2] && e[dir === 'down' ? 0 : 1] === id).map(e => e[dir === 'down' ? 1 : 0]);
 
-  const clickNodo = (id) => {
-    if (!expandidos.has(id)) {
-      const nx = new Set(expandidos); nx.add(id);
-      setExpandidos(nx);
-      if (viewRef.current) {
-        const destino = Math.max(0, NODES[id].x - 320);
-        viewRef.current.scrollTo({ left: destino, behavior: 'smooth' });
-      }
-    }
+  const iluminar = (id, exp) => {
     const s = new Set([id]);
     const block = new Set(NODES[id].block || []);
     const walk = (cur, dir) => {
       for (const nx of vecinos(cur, dir)) {
-        if (block.has(nx) || s.has(nx)) continue;
+        if (block.has(nx) || s.has(nx) || !esVisible(nx, exp)) continue;
         s.add(nx); walk(nx, dir);
       }
     };
     walk(id, 'down'); walk(id, 'up');
-    setSel(id); setLit(s);
+    return s;
+  };
+
+  const clickNodo = (id) => {
+    if (cerrando.size) return; // esperar a que termine una retirada en curso
+
+    if (expandidos.has(id)) {
+      // ------- COLAPSAR: retirar hacia atrás lo que brotó de aquí -------
+      const nx = new Set(expandidos); nx.delete(id);
+      let cambio = true;
+      while (cambio) {
+        cambio = false;
+        for (const e of [...nx]) {
+          if (!esVisible(e, nx)) { nx.delete(e); cambio = true; }
+        }
+      }
+      const fuera = Object.keys(NODES).filter(k => visible(k) && !esVisible(k, nx));
+      if (fuera.length) {
+        setCerrando(new Set(fuera));
+        setTimeout(() => {
+          setExpandidos(nx);
+          setCerrando(new Set());
+        }, 430);
+      }
+      setSel(id);
+      setLit(iluminar(id, nx));
+      return;
+    }
+
+    // ------- EXPANDIR: hacer brotar los destinos -------
+    const nx = new Set(expandidos); nx.add(id);
+    setExpandidos(nx);
+    setSel(id);
+    setLit(iluminar(id, nx));
+    if (viewRef.current) {
+      const anchoUtil = viewRef.current.clientWidth;
+      const destino = Math.max(0, NODES[id].x + 380 - anchoUtil * 0.62);
+      viewRef.current.scrollTo({ left: destino, behavior: 'smooth' });
+    }
   };
 
   const cerrar = () => { setSel(null); setLit(null); };
@@ -182,6 +241,8 @@ export default function FiscalidadClient({ email, perfil }) {
 
   return (
     <div className="fisc-bg">
+      <div className="halo" ref={haloRef} aria-hidden="true" />
+
       <header className="fisc-top">
         <div className="brand-wrap">
           <div className="brand-tile" style={{ width: 46, height: 46 }}><img src="/collector.jpg" alt="GPSO" /></div>
@@ -196,24 +257,29 @@ export default function FiscalidadClient({ email, perfil }) {
         </div>
       </header>
 
-      <div className="viewport" ref={viewRef}>
+      <div className={'viewport' + (n ? ' conPanel' : '')} ref={viewRef}>
         <div className={'canvas' + (lit ? ' dim' : '')}>
 
-          <svg className="cosmos" viewBox="0 0 1860 1060" aria-hidden="true">
+          <svg className="cosmos" ref={cosmosRef} viewBox="0 0 1860 1060" aria-hidden="true">
             {cosmos && cosmos.links.map((l, i) => (
               <line key={'l' + i} x1={l.a.x} y1={l.a.y} x2={l.b.x} y2={l.b.y} />
             ))}
             {cosmos && cosmos.dots.map((d, i) => (
               <circle key={'d' + i} cx={d.x} cy={d.y} r={d.r}
-                style={{ opacity: d.o, animationDuration: d.d + 's', animationDelay: (i % 9) + 's' }} />
+                style={{
+                  opacity: d.o,
+                  animationDuration: d.d + 's, ' + d.tw + 's',
+                  animationDelay: (i % 9) + 's, ' + (i % 5) + 's',
+                }} />
             ))}
           </svg>
 
           <svg className="wires" viewBox="0 0 1860 1060">
             {edgesVisibles.map(({ e, i }) => {
               const on = lit && lit.has(e[0]) && lit.has(e[1]);
+              const seva = cerrando.has(e[0]) || cerrando.has(e[1]);
               return (
-                <g key={i}>
+                <g key={i} className={seva ? 'seva' : ''}>
                   {on && !e[2] && (
                     <path d={edgePath(e)} className="glow" pathLength="1" />
                   )}
@@ -235,7 +301,8 @@ export default function FiscalidadClient({ email, perfil }) {
             <button key={id}
               className={
                 'nodo' + (nd.esCaso ? ' caso' : '') + (nd.sat ? ' sat' : '') + (nd.origen ? ' raiz' : '') +
-                (lit && lit.has(id) ? ' litnode' : '') + (sel === id ? ' activo' : '')
+                (lit && lit.has(id) ? ' litnode' : '') + (sel === id ? ' activo' : '') +
+                (cerrando.has(id) ? ' seva' : '')
               }
               style={{ left: nd.x, top: nd.y }}
               onClick={() => clickNodo(id)}>
@@ -282,6 +349,9 @@ export default function FiscalidadClient({ email, perfil }) {
       <style jsx>{`
         .fisc-bg{position:fixed;inset:0;background:radial-gradient(1300px 760px at 42% 45%, #0e1118 0%, #0a0c10 60%);color:#e9e6df;font-family:'Space Grotesk',sans-serif;font-weight:300;overflow:hidden}
 
+        .halo{position:fixed;top:0;left:0;width:520px;height:520px;pointer-events:none;z-index:2;border-radius:50%;background:radial-gradient(circle, rgba(201,161,77,.14) 0%, rgba(201,161,77,.05) 38%, transparent 68%);mix-blend-mode:screen;will-change:transform}
+        @media (prefers-reduced-motion: reduce){.halo{display:none}}
+
         .fisc-top{position:absolute;top:0;left:0;right:0;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:16px 28px 12px;background:linear-gradient(to bottom,rgba(10,12,16,.94) 55%,rgba(10,12,16,0))}
         .brand-wrap{display:flex;align-items:center;gap:12px}
         .sublabel{font-size:9.5px;letter-spacing:2.5px;color:#8b93a3;font-weight:700;text-transform:uppercase;margin-top:3px}
@@ -289,13 +359,15 @@ export default function FiscalidadClient({ email, perfil }) {
         .volver{font-size:13px;color:#8b93a3;text-decoration:none;text-transform:uppercase;letter-spacing:1px}
         .volver:hover{color:#c9a14d}
 
-        .viewport{position:absolute;inset:0;overflow:auto;padding:90px 40px 40px}
+        .viewport{position:absolute;inset:0;overflow:auto;padding:90px 40px 40px;transition:right .38s cubic-bezier(.22,.9,.3,1)}
+        .viewport.conPanel{right:420px}
         .canvas{position:relative;width:1860px;height:1060px}
 
-        .cosmos{position:absolute;inset:0;width:100%;height:100%}
+        .cosmos{position:absolute;inset:-40px;width:calc(100% + 80px);height:calc(100% + 80px);will-change:transform}
         .cosmos line{stroke:rgba(139,147,163,.09);stroke-width:.6}
-        .cosmos circle{fill:#8b93a3;animation:deriva linear infinite alternate}
-        @keyframes deriva{from{transform:translate(0,0)}to{transform:translate(16px,-12px)}}
+        .cosmos circle{fill:#8b93a3;animation:deriva linear infinite alternate, brillo ease-in-out infinite alternate}
+        @keyframes deriva{from{transform:translate(0,0)}to{transform:translate(18px,-14px)}}
+        @keyframes brillo{from{fill-opacity:.35}to{fill-opacity:1}}
         @media (prefers-reduced-motion: reduce){.cosmos circle{animation:none}}
 
         .wires{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
@@ -308,12 +380,15 @@ export default function FiscalidadClient({ email, perfil }) {
         .wires :global(.spark){fill:#c9a14d;opacity:.5;transition:opacity .35s}
         .wires :global(.spark.on){opacity:1;fill:#f0e2b6}
         .canvas.dim .wires :global(.spark:not(.on)){opacity:.05}
+        .wires :global(g.seva){opacity:0;transition:opacity .4s ease}
         @media (prefers-reduced-motion: reduce){.wires :global(.wire){animation:none}}
 
         /* ---------- nodos orbe ---------- */
-        .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:11px;background:none;border:none;padding:8px;cursor:pointer;color:#e9e6df;font-family:'Space Grotesk',sans-serif;animation:brota .55s cubic-bezier(.2,.9,.3,1.4) both;transition:opacity .35s}
+        .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:11px;background:none;border:none;padding:8px;cursor:pointer;color:#e9e6df;font-family:'Space Grotesk',sans-serif;animation:brota .55s cubic-bezier(.2,.9,.3,1.4) both;transition:opacity .35s;z-index:3}
         @keyframes brota{from{opacity:0;transform:translate(-50%,-50%) scale(.25)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
-        @media (prefers-reduced-motion: reduce){.nodo{animation:none}}
+        .nodo.seva{animation:sevaAnim .43s cubic-bezier(.6,-.3,.8,.6) both;pointer-events:none}
+        @keyframes sevaAnim{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-50%) scale(.2)}}
+        @media (prefers-reduced-motion: reduce){.nodo{animation:none}.nodo.seva{animation:none;opacity:0}}
         .nodo:focus-visible{outline:2px solid #ecdcae;outline-offset:4px;border-radius:10px}
 
         .orbe{width:32px;height:32px;border-radius:50%;position:relative;background:radial-gradient(circle at 35% 30%, #f0e2b6 0%, #c9a14d 45%, #6b5526 100%);box-shadow:0 0 16px rgba(201,161,77,.5), 0 0 44px rgba(201,161,77,.16);transition:box-shadow .3s, transform .3s;flex:none}
@@ -356,6 +431,7 @@ export default function FiscalidadClient({ email, perfil }) {
           .panel{top:auto;left:0;right:0;width:auto;max-height:62vh;border-left:none;border-top:1px solid #232833;border-radius:16px 16px 0 0;transform:translateY(105%)}
           .panel.open{transform:translateY(0)}
           .viewport{padding:84px 16px 30px}
+          .viewport.conPanel{right:0}
         }
       `}</style>
     </div>
