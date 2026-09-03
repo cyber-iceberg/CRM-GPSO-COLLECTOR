@@ -82,7 +82,7 @@ const NODES = {
       punto('Con NIF-IVA', 'compra en la UE con exención') +
       hook('Elegir bien la vía en cada operación es donde está el dinero.') },
   intermediario: { x: 520, y: 790, t: 'Intermediario', s: 'nunca toca la propiedad', revealBy: ['origen'],
-    block: ['stock', 'rebu', 'rg', 'a45s', 'q3', 'b218', 'c300'],
+    block: ['stock', 'rebu_s', 'rg_s', 'a45s', 'b218'],
     body:
       lead('El coche va directo del vendedor al comprador final.') +
       punto('No toca', 'ni la titularidad ni tu tesorería') +
@@ -94,27 +94,43 @@ const NODES = {
       lead('Compras para el escaparate, sin cliente todavía.') +
       punto('Riesgo', 'capital parado hasta que rote') +
       punto('La vía la marca', 'cómo entró el coche, no lo que te convenga') },
-  carta: { x: 880, y: 690, t: 'Importación a la carta', s: 'el cliente ya existe', revealBy: ['profesional', 'intermediario'],
+  carta: { x: 880, y: 780, t: 'Importación a la carta', s: 'el cliente ya existe', revealBy: ['profesional', 'intermediario'],
     body:
       lead('Importas un coche concreto para un cliente concreto.') +
       punto('Ventaja', 'sin riesgo de stock muerto') +
       punto('Reto', 'margen ajustado → la vía importa mucho más') },
 
-  rebu: { x: 1240, y: 440, t: 'REBU', s: 'IVA solo sobre el margen', revealBy: ['stock', 'carta'],
+  // --- vías de la rama STOCK ---
+  rebu_s: { x: 1240, y: 380, t: 'REBU', s: 'stock · IVA sobre el margen', revealBy: ['stock'],
     body:
-      lead('Para coches comprados sin IVA deducible (a particular).') +
+      lead('Stock comprado sin IVA deducible (a particular).') +
       punto('En factura', 'el IVA no se desglosa, va dentro') +
       punto('El cliente', 'no puede deducírselo') +
       datos([['Margen', 'venta − compra (coche)'], ['Base', 'margen ÷ 1,21'], ['IVA a ingresar', 'margen − base']]) +
       hook('El IVA del REBU sale de TU margen. Es lo que casi nadie resta al calcular su ROI.') },
-  rg: { x: 1240, y: 640, t: 'Régimen General', s: 'IVA deducible · sobre el total', revealBy: ['stock', 'carta'],
+  rg_s: { x: 1240, y: 560, t: 'Régimen General', s: 'stock · IVA sobre el total', revealBy: ['stock'],
     body:
-      lead('Para coches con IVA deducible (concesionario o UE exento).') +
+      lead('Stock comprado con IVA deducible (concesionario / UE exento).') +
       punto('Repercutes', '21% sobre el total, desglosado') +
       punto('Si el cliente es empresa', 'se lo deduce') +
-      punto('Ojo', 'como stock para revender → deduces el 100%') +
+      punto('Como stock', 'deduces el 100% del IVA de compra') +
       hook('La presunción del 50% es solo para coches de uso propio de la empresa, no para el stock.') },
-  serv: { x: 1240, y: 855, t: 'Servicios + suplido', s: 'el coche no es tuyo fiscalmente', revealBy: ['carta'],
+
+  // --- vías de la rama A LA CARTA ---
+  rebu_c: { x: 1240, y: 700, t: 'REBU', s: 'a la carta · IVA sobre el margen', revealBy: ['carta'],
+    body:
+      lead('Encargo comprado sin IVA deducible (a particular).') +
+      punto('En factura', 'el IVA no se desglosa, va dentro') +
+      punto('El cliente', 'no puede deducírselo') +
+      datos([['Margen', 'venta − compra (coche)'], ['Base', 'margen ÷ 1,21'], ['IVA a ingresar', 'margen − base']]) +
+      hook('El IVA del REBU sale de TU margen. Es lo que casi nadie resta al calcular su ROI.') },
+  rg_c: { x: 1240, y: 860, t: 'Régimen General', s: 'a la carta · IVA sobre el total', revealBy: ['carta'],
+    body:
+      lead('Encargo comprado con IVA deducible (concesionario / UE exento).') +
+      punto('Repercutes', '21% sobre el total, desglosado') +
+      punto('Si el cliente es empresa', 'se lo deduce') +
+      hook('Aquí es donde entra el NIF-IVA: si el cliente no lo tiene, compras tú y le revendes con factura española.') },
+  serv: { x: 1240, y: 1020, t: 'Servicios + suplido', s: 'a la carta · el coche no es tuyo', revealBy: ['carta'],
     body:
       lead('No compras ni vendes: gestionas y cobras honorarios.') +
       punto('Honorarios', 'con IVA 21%') +
@@ -122,21 +138,22 @@ const NODES = {
       punto('Ojo', 'lo que negocias barato (transporte, gestoría) es tu precio, no suplido') +
       hook('Tu base imponible son tus honorarios, no el valor del coche. Por eso con un coche de 40.000 € ingresas 383 € de IVA, no 6.000.') },
 
-  nifiva: { x: 1450, y: 160, t: 'NIF-IVA / ROI', s: 'capa · quién compra en la UE', sat: true, clip: true, revealBy: ['rg'],
+  nifiva: { x: 1450, y: 940, t: 'NIF-IVA / ROI', s: 'capa · quién compra en la UE', sat: true, clip: true, revealBy: ['rg_c'],
     chips: ['Concepto', '🎬 clip'],
     body:
       lead('Para comprar en la UE con exención hace falta NIF-IVA (VIES).') +
       punto('Si el cliente no lo tiene', 'el alemán le cobra su 19%, difícil de recuperar') +
       punto('La solución', 'compras tú con tu NIF-IVA y le revendes con factura española') +
       hook('Si tu cliente no tiene NIF-IVA: o lo tienes tú y compras por él, o paga un IVA extranjero que casi nunca recupera.') },
-  ded: { x: 1450, y: 1100, t: 'Deducción 50/100', s: 'capa · cuánto deduce el comprador', sat: true, revealBy: ['rg'],
+  ded: { x: 1450, y: 480, t: 'Deducción 50/100', s: 'capa · cuánto deduce el comprador', sat: true, revealBy: ['rg_s'],
     chips: ['Concepto'],
     body:
       lead('Cuánto IVA se deduce un cliente empresa según el uso del coche.') +
       datos([['Turismo uso mixto', '50% (art. 95.Tres LIVA)'], ['Más del 50%', 'hay que probarlo'], ['100% automático', 'comerciales, autoescuelas, transporte, vigilancia'], ['Stock para revender', '100% siempre']]) +
       hook('Deducir más del 50% exige prueba sólida — la jurisprudencia suele dar la razón a Hacienda.') },
 
-  a45s: { x: 1620, y: 300, t: 'Mercedes A45 S', s: 'stock · REBU', esCaso: true, clip: true, revealBy: ['rebu'],
+  // --- casos reales de STOCK ---
+  a45s: { x: 1620, y: 320, t: 'Mercedes A45 S', s: 'stock · REBU', esCaso: true, clip: true, revealBy: ['rebu_s'],
     chips: ['Stock', 'REBU', '🎬 clip'],
     body:
       lead('Comprado a particular alemán y revendido como stock por REBU.') +
@@ -144,14 +161,7 @@ const NODES = {
       kpi('Margen real neto', '3.066 €') +
       hook('La hoja marcaba 10,15% de ROI. El real, tras el IVA REBU, es 6,26%. Casi 4 puntos que se esfuman con el modelo 303.') +
       fotos() },
-  q3: { x: 1620, y: 465, t: 'Audi Q3', s: 'a la carta · REBU', esCaso: true, clip: true, revealBy: ['rebu'],
-    chips: ['A la carta', 'REBU', '🎬 clip'],
-    body:
-      lead('Calculado antes de comprar — así se decide una operación a la carta.') +
-      datos([['Compra negociada', '15.249 € (−750)'], ['Importación', '2.420 €'], ['Invertido', '17.669 €'], ['Venta pactada', '20.900 €'], ['IVA REBU', '981 €']]) +
-      kpi('Beneficio neto previsto', '2.250 €') +
-      fotos() },
-  b218: { x: 1620, y: 625, t: 'BMW 218 GC', s: 'stock · Régimen General', esCaso: true, revealBy: ['rg'],
+  b218: { x: 1620, y: 560, t: 'BMW 218 GC', s: 'stock · Régimen General', esCaso: true, revealBy: ['rg_s'],
     chips: ['Stock', 'Régimen General', 'Financiación'],
     body:
       lead('Comprado con IVA deducible y vendido con el 21% desglosado.') +
@@ -159,7 +169,16 @@ const NODES = {
       kpi('Margen (1.515 + 750 finan.)', '2.265 €') +
       hook('El IVA no toca tu margen: lo paga el cliente aparte. Compara con el A45S — mismo negocio, dos matemáticas distintas.') +
       fotos() },
-  c300: { x: 1620, y: 790, t: 'Mercedes C300', s: 'a la carta · Régimen General', esCaso: true, clip: true, revealBy: ['rg'],
+
+  // --- casos reales de A LA CARTA ---
+  q3: { x: 1620, y: 700, t: 'Audi Q3', s: 'a la carta · REBU', esCaso: true, clip: true, revealBy: ['rebu_c'],
+    chips: ['A la carta', 'REBU', '🎬 clip'],
+    body:
+      lead('Calculado antes de comprar — así se decide una operación a la carta.') +
+      datos([['Compra negociada', '15.249 € (−750)'], ['Importación', '2.420 €'], ['Invertido', '17.669 €'], ['Venta pactada', '20.900 €'], ['IVA REBU', '981 €']]) +
+      kpi('Beneficio neto previsto', '2.250 €') +
+      fotos() },
+  c300: { x: 1620, y: 860, t: 'Mercedes C300', s: 'a la carta · Régimen General', esCaso: true, clip: true, revealBy: ['rg_c'],
     chips: ['A la carta', 'Régimen General', '🎬 clip'],
     body:
       lead('Compra con el 19% alemán por delante: pagado, reclamado y devuelto.') +
@@ -167,7 +186,7 @@ const NODES = {
       kpi('Margen real · ROI 10,2%', '2.793 €') +
       hook('5.090 € de IVA extranjero parados en tesorería hasta el reembolso. El coste oculto de comprar en concesionario alemán.') +
       fotos() },
-  z4: { x: 1620, y: 960, t: 'BMW Z4', s: 'a la carta · servicios + suplido', esCaso: true, clip: true, revealBy: ['serv'],
+  z4: { x: 1620, y: 1020, t: 'BMW Z4', s: 'a la carta · servicios + suplido', esCaso: true, clip: true, revealBy: ['serv'],
     chips: ['A la carta', 'Servicios', '🎬 clip'],
     body:
       lead('El coche nunca fue de GPSO: precio cerrado + honorarios aparte.') +
@@ -176,7 +195,7 @@ const NODES = {
       hook('Coche de 40.000 € e ingresas 383 € de IVA. La base son tus honorarios, porque el coche jamás fue tuyo.') +
       fotos() },
 
-  comparador: { x: 1980, y: 960, t: 'Comparador', s: 'REBU vs IVA vs servicios', esCaso: true, clip: true, comparador: true, revealBy: ['z4'],
+  comparador: { x: 1980, y: 1020, t: 'Comparador', s: 'REBU vs IVA vs servicios', esCaso: true, clip: true, comparador: true, revealBy: ['z4'],
     chips: ['Herramienta', '🎬 clip'] },
 };
 
@@ -186,12 +205,16 @@ const EDGES = [
   ['p_stock', 'golf'],
   ['p_stock', 'limite'], ['p_carta', 'limite'],
   ['profesional', 'stock'], ['profesional', 'carta'], ['intermediario', 'carta'],
-  ['stock', 'rebu'], ['stock', 'rg'],
-  ['carta', 'rebu'], ['carta', 'rg'], ['carta', 'serv'],
-  ['rebu', 'a45s'], ['rebu', 'q3'], ['rg', 'b218'], ['rg', 'c300'], ['serv', 'z4'],
+  // rama stock
+  ['stock', 'rebu_s'], ['stock', 'rg_s'],
+  ['rebu_s', 'a45s'], ['rg_s', 'b218'],
+  // rama a la carta
+  ['carta', 'rebu_c'], ['carta', 'rg_c'], ['carta', 'serv'],
+  ['rebu_c', 'q3'], ['rg_c', 'c300'], ['serv', 'z4'],
   ['z4', 'comparador'],
-  ['nifiva', 'rg', 1], ['nifiva', 'c300', 1],
-  ['ded', 'rg', 1], ['ded', 'b218', 1],
+  // capas transversales (línea discontinua)
+  ['nifiva', 'rg_c', 1], ['nifiva', 'c300', 1],
+  ['ded', 'rg_s', 1], ['ded', 'b218', 1],
 ];
 
 function radio(n) {
@@ -313,7 +336,7 @@ export default function FiscalidadClient({ email, perfil }) {
     const dots = [];
     for (let i = 0; i < 180; i++) {
       dots.push({
-        x: Math.random() * 2280, y: Math.random() * 1180,
+        x: Math.random() * 2280, y: Math.random() * 1240,
         r: Math.random() * 1.6 + 0.5,
         d: (Math.random() * 28 + 14).toFixed(0),
         tw: (Math.random() * 5 + 2.5).toFixed(1),
@@ -426,7 +449,7 @@ export default function FiscalidadClient({ email, perfil }) {
       <div className={'viewport' + (n ? (esComp ? ' conPanelAncho' : ' conPanel') : '')} ref={viewRef}>
         <div className={'canvas' + (lit ? ' dim' : '')}>
 
-          <svg className="cosmos" ref={cosmosRef} viewBox="0 0 2280 1180" aria-hidden="true">
+          <svg className="cosmos" ref={cosmosRef} viewBox="0 0 2280 1240" aria-hidden="true">
             {cosmos && cosmos.links.map((l, i) => (
               <line key={'l' + i} x1={l.a.x} y1={l.a.y} x2={l.b.x} y2={l.b.y} />
             ))}
@@ -436,7 +459,7 @@ export default function FiscalidadClient({ email, perfil }) {
             ))}
           </svg>
 
-          <svg className="wires" viewBox="0 0 2280 1180">
+          <svg className="wires" viewBox="0 0 2280 1240">
             {edgesVisibles.map(({ e, i }) => {
               const on = lit && lit.has(e[0]) && lit.has(e[1]);
               const seva = cerrando.has(e[0]) || cerrando.has(e[1]);
@@ -575,7 +598,7 @@ export default function FiscalidadClient({ email, perfil }) {
         .viewport{position:absolute;inset:0;overflow:auto;padding:90px 40px 40px;transition:right .38s cubic-bezier(.22,.9,.3,1)}
         .viewport.conPanel{right:420px}
         .viewport.conPanelAncho{right:560px}
-        .canvas{position:relative;width:2280px;height:1180px}
+        .canvas{position:relative;width:2280px;height:1240px}
 
         .cosmos{position:absolute;inset:-40px;width:calc(100% + 80px);height:calc(100% + 80px);will-change:transform}
         .cosmos line{stroke:rgba(139,147,163,.09);stroke-width:.6}
