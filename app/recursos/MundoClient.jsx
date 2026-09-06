@@ -21,16 +21,16 @@ import MenuDrawer from '../components/MenuDrawer';
 //  cx/cy opcionales: si los omites, se auto-coloca en espiral.
 // ---------------------------------------------------------------------
 const MODULOS = [
-  { id: 'fiscalidad',   t: 'Fiscalidad',   s: 'del importador',     marca: 'Mercedes',    img: '/emblemas/mercedes.png',    activo: true, href: '/recursos/fiscalidad',
+  { id: 'fiscalidad',   t: 'Fiscalidad',   s: 'del importador',     marca: 'Mercedes',    img: '/mercedes.png',    activo: true, href: '/recursos/fiscalidad',
     desc: 'Quién, qué y cómo se factura cada operación — con coches reales.' },
-  { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/emblemas/ferrari.png',     activo: false,
+  { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/ferrari.png',     activo: false,
     desc: 'Cómo negociar el precio en Alemania y cerrar la compra.' },
-  { id: 'logistica',    t: 'Logística',    s: 'transporte y ruta',  marca: 'Cupra',       img: '/emblemas/cupra.png',       activo: false,
+  { id: 'logistica',    t: 'Logística',    s: 'transporte y ruta',  marca: 'Cupra',       img: '/cupra.png',       activo: false,
     desc: 'Cómo traer el coche: camión, ruta propia, tiempos y costes.' },
-  { id: 'ventas',       t: 'Ventas',       s: 'cerrar al cliente',  marca: 'Lamborghini', img: '/emblemas/lamborghini.png', activo: false,
+  { id: 'ventas',       t: 'Ventas',       s: 'cerrar al cliente',  marca: 'Lamborghini', img: '/lamborghini.png', activo: false,
     desc: 'Cómo presentar, cerrar y entregar la venta al cliente final.' },
   // — sigue añadiendo módulos aquí, se colocan solos —
-  // { id: 'homologacion', t:'Homologación', s:'ITV y matriculación', marca:'Audi', img:'/emblemas/audi.png', activo:false, desc:'...' },
+  // { id: 'homologacion', t:'Homologación', s:'ITV y matriculación', marca:'Audi', img:'/audi.png', activo:false, desc:'...' },
 ];
 
 // auto-colocación en espiral áurea (para los que no tienen cx/cy fijos)
