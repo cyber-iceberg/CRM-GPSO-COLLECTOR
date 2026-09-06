@@ -1,11 +1,12 @@
 // =====================================================================
-//  GPSO COLLECTOR · Recursos (servidor)  ·  app/recursos/page.jsx
-//  Sección interna: números, PDFs, contactos, contratos de la formación.
+//  GPSO COLLECTOR · Recursos = El Mundo (servidor)
+//  app/recursos/page.jsx
+//  Reemplaza el Recursos antiguo. Puerta de entrada al mundo de módulos.
 // =====================================================================
 
 import { createClient } from '../../lib/supabase/server';
 import { redirect } from 'next/navigation';
-import RecursosClient from './RecursosClient';
+import MundoClient from './MundoClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,9 +16,12 @@ export default async function RecursosPage() {
   if (!user) redirect('/login');
 
   const { data: perfil } = await supabase
-    .from('perfiles_alumno').select('nombre, rol, activo, vip').eq('id', user.id).single();
+    .from('perfiles_alumno')
+    .select('nombre, rol, activo, vip')
+    .eq('id', user.id)
+    .single();
 
   if (!perfil || !perfil.activo) redirect('/');
 
-  return <RecursosClient email={user.email} perfil={perfil} />;
+  return <MundoClient email={user.email} perfil={perfil} />;
 }
