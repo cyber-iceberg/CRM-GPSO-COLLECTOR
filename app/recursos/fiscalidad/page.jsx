@@ -1,8 +1,7 @@
 // =====================================================================
 //  GPSO COLLECTOR · Fiscalidad del Importador (servidor)
 //  app/recursos/fiscalidad/page.jsx
-//  PRIVADO: solo rol admin. Los alumnos son redirigidos a /recursos.
-//  No hay tarjeta de acceso en Recursos — se entra por URL directa.
+//  ABIERTO a todos los alumnos activos.
 // =====================================================================
 
 import { createClient } from '../../../lib/supabase/server';
@@ -23,7 +22,8 @@ export default async function FiscalidadPage() {
     .single();
 
   if (!perfil || !perfil.activo) redirect('/');
-  if (perfil.rol !== 'admin') redirect('/recursos');
+  // (antes: if (perfil.rol !== 'admin') redirect('/recursos');)
+  // Ahora abierto a todos los alumnos activos.
 
   return <FiscalidadClient email={user.email} perfil={perfil} />;
 }
