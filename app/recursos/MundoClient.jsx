@@ -208,6 +208,7 @@ export default function MundoClient({ email, perfil }) {
         {/* tooltip */}
         {hover && (() => {
           const m = nodos.find(x => x.id === hover);
+          if (!m) return null;
           const sx = m.cx * cam.z + cam.x;
           const sy = m.cy * cam.z + cam.y;
           return (
@@ -268,8 +269,8 @@ export default function MundoClient({ email, perfil }) {
         .nodo.pronto .aro{border-color:rgba(139,147,163,.18)}
 
         .emblema{position:absolute;top:0;left:0;width:112px;height:112px;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center}
-        .emblema img{width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 14px rgba(201,161,77,.35))}
-        .nodo.pronto .emblema img{filter:grayscale(1) brightness(.5);opacity:.55}
+        .emblema img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 14px rgba(201,161,77,.35))}
+        .nodo.pronto .emblema img{opacity:.4;filter:saturate(.5) brightness(.8)}
         .nodo.activo:hover .emblema img,.nodo.activo.hov .emblema img{filter:drop-shadow(0 0 22px rgba(240,226,182,.6));transform:scale(1.06);transition:transform .3s}
 
         .etq{position:absolute;top:92px;left:0;transform:translate(-50%,0);text-align:center;white-space:nowrap}
