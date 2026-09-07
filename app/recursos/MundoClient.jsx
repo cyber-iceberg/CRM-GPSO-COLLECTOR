@@ -59,7 +59,8 @@ export default function MundoClient({ email, perfil }) {
       for (const destId of (m.conecta || [])) {
         const d = nodos.find(x => x.id === destId);
         if (d && d.cx != null && m.cx != null) {
-          segs.push({ key: m.id + '-' + d.id, x1: m.cx, y1: m.cy, x2: d.cx, y2: d.cy });
+          const len = Math.round(Math.hypot(d.cx - m.cx, d.cy - m.cy));
+          segs.push({ key: m.id + '-' + d.id, a: m.id, b: d.id, x1: m.cx, y1: m.cy, x2: d.cx, y2: d.cy, len });
         }
       }
     }
@@ -205,14 +206,16 @@ export default function MundoClient({ email, perfil }) {
 
         {/* lienzo de módulos (aplica cámara: pan + zoom) */}
         <div className="world" style={{ transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})` }}>
-          {/* conexiones entre constelaciones (estáticas, calculadas una vez) */}
+          {/* conexiones: apagadas por defecto, se trazan al pasar por un módulo */}
           <svg className="constelinks" width="2600" height="1600" style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible', pointerEvents: 'none', zIndex: 1 }}>
-            {conexiones.map(c => (
-              <g key={c.key}>
-                <line x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2} className="clink-base" />
-                <line x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2} className="clink" />
-              </g>
-            ))}
+            {conexiones.map(c => {
+              const on = hover === c.a || hover === c.b;
+              return (
+                <line key={c.key} x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2}
+                  className={'clink' + (on ? ' on' : '')}
+                  style={on ? { ['--len']: c.len } : undefined} />
+              );
+            })}
           </svg>
           {nodos.map((m, idx) => (
             <div key={m.id}
@@ -289,10 +292,10 @@ export default function MundoClient({ email, perfil }) {
         @keyframes brillo{from{fill-opacity:.3}to{fill-opacity:1}}
 
         .world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;z-index:2}
-        .constelinks .clink-base{stroke:rgba(201,161,77,.16);stroke-width:1}
-        .constelinks .clink{stroke:rgba(240,210,130,.75);stroke-width:1.6;stroke-dasharray:1 9;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(201,161,77,.6));animation:fluir 2.6s linear infinite}
-        @keyframes fluir{to{stroke-dashoffset:-20}}
-        @media (prefers-reduced-motion: reduce){.constelinks .clink{animation:none}}
+        .constelinks .clink{stroke:rgba(240,210,130,.9);stroke-width:1.8;stroke-linecap:round;filter:drop-shadow(0 0 4px rgba(240,200,110,.8));opacity:0}
+        .constelinks .clink.on{opacity:1;stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:trazar .55s ease-out forwards}
+        @keyframes trazar{to{stroke-dashoffset:0}}
+        @media (prefers-reduced-motion: reduce){.constelinks .clink.on{animation:none;stroke-dashoffset:0}}
 
         .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;user-select:none}
         .nodo.pronto{cursor:default}
