@@ -325,10 +325,12 @@ export default function FiscalidadClient({ email, perfil }) {
   const [cerrando, setCerrando] = useState(() => new Set());
   const [sel, setSel] = useState(null);
   const [lit, setLit] = useState(null);
+  const [hov, setHov] = useState(null);
   const [cosmos, setCosmos] = useState(null);
   const viewRef = useRef(null);
   const cosmosRef = useRef(null);
   const haloRef = useRef(null);
+  const cieloRef = useRef(null);
   const reduceRef = useRef(false);
 
   useEffect(() => {
@@ -364,6 +366,11 @@ export default function FiscalidadClient({ email, perfil }) {
         const dx = (mx / window.innerWidth - 0.5) * -26;
         const dy = (my / window.innerHeight - 0.5) * -18;
         cosmosRef.current.style.transform = `translate(${dx}px, ${dy}px)`;
+      }
+      if (cieloRef.current) {
+        const dx = (mx / window.innerWidth - 0.5) * -12;
+        const dy = (my / window.innerHeight - 0.5) * -8;
+        cieloRef.current.style.transform = `translate(${dx}px, ${dy}px) scale(1.06)`;
       }
       raf = requestAnimationFrame(loop);
     };
@@ -431,6 +438,7 @@ export default function FiscalidadClient({ email, perfil }) {
   return (
     <div className="fisc-bg">
       <div className="halo" ref={haloRef} aria-hidden="true" />
+      <div className="cielo" ref={cieloRef} aria-hidden="true" />
 
       <header className="fisc-top">
         <div className="brand-wrap">
@@ -462,14 +470,15 @@ export default function FiscalidadClient({ email, perfil }) {
           <svg className="wires" viewBox="0 0 2280 1240">
             {edgesVisibles.map(({ e, i }) => {
               const on = lit && lit.has(e[0]) && lit.has(e[1]);
+              const hovLink = hov && (e[0] === hov || e[1] === hov);
               const seva = cerrando.has(e[0]) || cerrando.has(e[1]);
               return (
                 <g key={i} className={seva ? 'seva' : ''}>
-                  {on && !e[2] && (<path d={edgePath(e)} className="glow" pathLength="1" />)}
+                  {(on || hovLink) && !e[2] && (<path d={edgePath(e)} className="glow" pathLength="1" />)}
                   <path id={'w' + i} d={edgePath(e)} pathLength="1"
-                    className={'wire' + (e[2] ? ' dashed' : '') + (on ? ' on' : '')} />
+                    className={'wire' + (e[2] ? ' dashed' : '') + (on ? ' on' : '') + (hovLink ? ' hov' : '')} />
                   {!e[2] && !reduceRef.current && (
-                    <circle r="2.6" className={'spark' + (on ? ' on' : '')}>
+                    <circle r="2.6" className={'spark' + (on || hovLink ? ' on' : '')}>
                       <animateMotion dur={(4 + (i % 4)) + 's'} repeatCount="indefinite">
                         <mpath href={'#w' + i} />
                       </animateMotion>
@@ -489,6 +498,7 @@ export default function FiscalidadClient({ email, perfil }) {
                 (cerrando.has(id) ? ' seva' : '')
               }
               style={{ left: nd.x, top: nd.y }}
+              onMouseEnter={() => setHov(id)} onMouseLeave={() => setHov(null)}
               onClick={() => clickNodo(id)}>
               <span className={'orbe' + (tieneOcultos(id) && !expandidos.has(id) ? ' cerrado' : '')} />
               <span className="etq">
@@ -584,7 +594,9 @@ export default function FiscalidadClient({ email, perfil }) {
       `}</style>
 
       <style jsx>{`
-        .fisc-bg{position:fixed;inset:0;background:radial-gradient(1300px 760px at 42% 45%, #0e1118 0%, #0a0c10 60%);color:#e9e6df;font-family:'Space Grotesk',sans-serif;font-weight:300;overflow:hidden}
+        .fisc-bg{position:fixed;inset:0;background:#080a0f;color:#e9e6df;font-family:'Space Grotesk',sans-serif;font-weight:300;overflow:hidden}
+        .cielo{position:absolute;inset:-30px;z-index:0;background-image:url(/cosmos.png);background-size:cover;background-position:center;opacity:.3;will-change:transform}
+        .cielo::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 45% 45%, rgba(10,12,16,.35) 25%, rgba(10,12,16,.82) 100%)}
         .halo{position:fixed;top:0;left:0;width:520px;height:520px;pointer-events:none;z-index:2;border-radius:50%;background:radial-gradient(circle, rgba(201,161,77,.14) 0%, rgba(201,161,77,.05) 38%, transparent 68%);mix-blend-mode:screen;will-change:transform}
         @media (prefers-reduced-motion: reduce){.halo{display:none}}
 
@@ -595,12 +607,12 @@ export default function FiscalidadClient({ email, perfil }) {
         .volver{font-size:13px;color:#8b93a3;text-decoration:none;text-transform:uppercase;letter-spacing:1px}
         .volver:hover{color:#c9a14d}
 
-        .viewport{position:absolute;inset:0;overflow:auto;padding:90px 40px 40px;transition:right .38s cubic-bezier(.22,.9,.3,1)}
+        .viewport{position:absolute;inset:0;overflow:auto;z-index:2;padding:90px 40px 40px;transition:right .38s cubic-bezier(.22,.9,.3,1)}
         .viewport.conPanel{right:420px}
         .viewport.conPanelAncho{right:560px}
         .canvas{position:relative;width:2280px;height:1240px}
 
-        .cosmos{position:absolute;inset:-40px;width:calc(100% + 80px);height:calc(100% + 80px);will-change:transform}
+        .cosmos{position:absolute;inset:-40px;z-index:1;width:calc(100% + 80px);height:calc(100% + 80px);will-change:transform}
         .cosmos line{stroke:rgba(139,147,163,.09);stroke-width:.6}
         .cosmos circle{fill:#8b93a3;animation:deriva linear infinite alternate, brillo ease-in-out infinite alternate}
         @keyframes deriva{from{transform:translate(0,0)}to{transform:translate(18px,-14px)}}
@@ -613,6 +625,9 @@ export default function FiscalidadClient({ email, perfil }) {
         @keyframes traza{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
         .wires :global(.wire.dashed){stroke:rgba(139,147,163,.4);stroke-dasharray:5 6;animation:none}
         .wires :global(.wire.on){stroke:#e9d194;stroke-width:1.7}
+        .wires :global(.wire.hov){stroke:#f0e2b6;stroke-width:2;filter:drop-shadow(0 0 4px rgba(240,210,130,.8));stroke-dasharray:var(--l,1);stroke-dashoffset:0;animation:trazaHov .5s ease-out both}
+        @keyframes trazaHov{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+        @media (prefers-reduced-motion: reduce){.wires :global(.wire.hov){animation:none}}
         .canvas.dim .wires :global(.wire:not(.on)){opacity:.16}
         .wires :global(.spark){fill:#c9a14d;opacity:.5;transition:opacity .35s}
         .wires :global(.spark.on){opacity:1;fill:#f0e2b6}
