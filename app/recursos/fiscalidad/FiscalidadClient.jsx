@@ -464,7 +464,7 @@ export default function FiscalidadClient({ email, perfil }) {
           <div className="brand-tile" style={{ width: 46, height: 46 }}><img src="/collector.jpg" alt="GPSO" /></div>
           <div>
             <div className="marca" style={{ fontSize: 18 }}>gpso<span className="low">collector<span className="dot">.</span></span></div>
-            <div className="sublabel">Fiscalidad del Importador</div>
+            <div className="sublabel">Fiscalidad del Importador · Privado</div>
           </div>
         </div>
         <div className="top-right">
@@ -561,7 +561,6 @@ export default function FiscalidadClient({ email, perfil }) {
       </aside>
 
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap');
 
         .viewport::-webkit-scrollbar{display:none;width:0;height:0}
 
@@ -577,16 +576,16 @@ export default function FiscalidadClient({ email, perfil }) {
         .pbody .n-fila b{color:#e9e6df;font-weight:500;text-align:right}
         .pbody .n-kpi{display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 0;padding:14px 0 0;border-top:1px solid #232833}
         .pbody .n-kpi span{font-size:12px;color:#8b93a3}
-        .pbody .n-kpi b{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;color:#3ddc97}
+        .pbody .n-kpi b{font-family:var(--font-cormorant),serif;font-size:32px;font-weight:600;color:#3ddc97}
         .pbody .n-hook{margin-top:18px;padding:13px 15px;border-radius:9px;background:rgba(201,161,77,.08);border:1px solid rgba(201,161,77,.32);font-size:13px;line-height:1.5;color:#ecdcae}
         .pbody .n-fotos{margin-top:16px;border:1px dashed #2a303c;border-radius:9px;padding:16px;text-align:center;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:#6a7180}
 
         /* ---- panel comparador ---- */
         .pbody .lead-comp{font-size:14px;line-height:1.55;color:#e9e6df;margin:0 0 6px}
-        .pbody .sec{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:19px;color:#ecdcae;margin:24px 0 14px;padding-bottom:8px;border-bottom:1px solid #232833}
+        .pbody .sec{font-family:var(--font-cormorant),serif;font-weight:600;font-size:19px;color:#ecdcae;margin:24px 0 14px;padding-bottom:8px;border-bottom:1px solid #232833}
         .pbody .calc-in{display:block;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:#8b93a3;margin-bottom:11px}
         .pbody .calc-in span{position:relative;display:block;margin-top:5px}
-        .pbody .calc-in input{width:100%;background:#0d1017;border:1px solid #232833;border-radius:8px;padding:10px 30px 10px 12px;color:#ecdcae;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:500}
+        .pbody .calc-in input{width:100%;background:#0d1017;border:1px solid #232833;border-radius:8px;padding:10px 30px 10px 12px;color:#ecdcae;font-family:var(--font-space-grotesk),sans-serif;font-size:16px;font-weight:500}
         .pbody .calc-in input:focus{outline:none;border-color:#c9a14d}
         .pbody .calc-in i{position:absolute;right:12px;top:11px;color:#8b93a3;font-size:13px;font-style:normal}
         .pbody .calc-out{border:1px solid #232833;border-radius:10px;overflow:hidden;margin-top:6px}
@@ -595,7 +594,7 @@ export default function FiscalidadClient({ email, perfil }) {
         .pbody .co.destaca{background:rgba(201,161,77,.07)}
         .pbody .co.destaca b{color:#c9a14d}
         .pbody .co.final{background:rgba(61,220,151,.06);border-bottom:none}
-        .pbody .co.final b{color:#3ddc97;font-family:'Cormorant Garamond',serif;font-size:22px}
+        .pbody .co.final b{color:#3ddc97;font-family:var(--font-cormorant),serif;font-size:22px}
         .pbody .calc-nota{font-size:11.5px;line-height:1.5;color:#8b93a3;margin:12px 2px 0}
 
         .pbody .comp-intro{font-size:13.5px;line-height:1.55;color:#e9e6df;margin:0 0 14px}
@@ -617,8 +616,8 @@ export default function FiscalidadClient({ email, perfil }) {
       `}</style>
 
       <style jsx>{`
-        .fisc-bg{position:fixed;inset:0;background:#080a0f;color:#e9e6df;font-family:'Space Grotesk',sans-serif;font-weight:300;overflow:hidden}
-        .cielo{position:absolute;inset:-30px;z-index:0;background-image:url(/cosmos.jpg);background-size:cover;background-position:center;opacity:.3;will-change:transform}
+        .fisc-bg{position:fixed;inset:0;background:#080a0f;color:#e9e6df;font-family:var(--font-space-grotesk),sans-serif;font-weight:300;overflow:hidden}
+        .cielo{position:absolute;inset:-30px;z-index:0;background-color:#0a0d14;background-image:radial-gradient(1200px 700px at 62% 42%, rgba(60,48,24,.35) 0%, transparent 55%), url(/cosmos.jpg);background-size:cover;background-position:center;opacity:.3;will-change:transform}
         .cielo::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 45% 45%, rgba(10,12,16,.35) 25%, rgba(10,12,16,.82) 100%)}
         .halo{position:fixed;top:0;left:0;width:520px;height:520px;pointer-events:none;z-index:2;border-radius:50%;background:radial-gradient(circle, rgba(201,161,77,.14) 0%, rgba(201,161,77,.05) 38%, transparent 68%);mix-blend-mode:screen;will-change:transform}
         @media (prefers-reduced-motion: reduce){.halo{display:none}}
@@ -658,7 +657,7 @@ export default function FiscalidadClient({ email, perfil }) {
         .wires :global(g.seva){opacity:0;transition:opacity .4s ease}
         @media (prefers-reduced-motion: reduce){.wires :global(.wire){animation:none}}
 
-        .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:11px;background:none;border:none;padding:8px;cursor:pointer;color:#e9e6df;font-family:'Space Grotesk',sans-serif;animation:brota .55s cubic-bezier(.2,.9,.3,1.4) both;transition:opacity .35s;z-index:3}
+        .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:11px;background:none;border:none;padding:8px;cursor:pointer;color:#e9e6df;font-family:var(--font-space-grotesk),sans-serif;animation:brota .55s cubic-bezier(.2,.9,.3,1.4) both;transition:opacity .35s;z-index:3}
         @keyframes brota{from{opacity:0;transform:translate(-50%,-50%) scale(.25)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
         .nodo.seva{animation:sevaAnim .43s cubic-bezier(.6,-.3,.8,.6) both;pointer-events:none}
         @keyframes sevaAnim{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-50%) scale(.2)}}
@@ -694,7 +693,7 @@ export default function FiscalidadClient({ email, perfil }) {
         .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
         .chip{font-size:10.5px;letter-spacing:.6px;color:#8b93a3;border:1px solid #232833;border-radius:20px;padding:3px 10px;text-transform:uppercase}
         .chip.gold{color:#c9a14d;border-color:rgba(201,161,77,.5)}
-        .panel h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:30px;color:#ecdcae;line-height:1.05;margin:0}
+        .panel h2{font-family:var(--font-cormorant),serif;font-weight:600;font-size:30px;color:#ecdcae;line-height:1.05;margin:0}
         .pbody{padding:22px 28px 40px;overflow-y:auto;flex:1}
         .cerrar{position:absolute;top:20px;right:20px;background:none;border:1px solid #232833;border-radius:50%;width:32px;height:32px;color:#8b93a3;cursor:pointer;font-size:15px;transition:border-color .2s,color .2s;z-index:2}
         .cerrar:hover{border-color:#c9a14d;color:#c9a14d}
