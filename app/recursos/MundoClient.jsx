@@ -12,7 +12,7 @@
 // =====================================================================
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import MenuDrawer from '../components/MenuDrawer';
 
 // ---------------------------------------------------------------------
@@ -50,7 +50,7 @@ function layout(mods) {
 
 export default function MundoClient({ email, perfil }) {
   const router = useRouter();
-  const nodos = layout(MODULOS);
+  const nodos = useMemo(() => layout(MODULOS), []);
 
   const [cam, setCam] = useState({ x: 0, y: 0, z: 1 });   // desplazamiento y zoom
   const [hover, setHover] = useState(null);
