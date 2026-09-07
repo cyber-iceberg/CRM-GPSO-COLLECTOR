@@ -80,7 +80,7 @@ export default function HomeClient({ email, perfil, stats }) {
             icon={<UploadCloud size={16} />} externo />
 
           <Acc onClick={() => window.open(URL_FORMACION, '_blank', 'noopener,noreferrer')}
-            img="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1000"
+          img="/formacion.jpg"
             badge="🎓 Academia" badgeClass="stock"
             titulo="Formación" desc="Accede a los módulos, vídeos y masterclases de la academia."
             icon={<GraduationCap size={16} />} externo />
