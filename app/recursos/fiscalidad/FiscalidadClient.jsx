@@ -542,6 +542,8 @@ export default function FiscalidadClient({ email, perfil }) {
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap');
 
+        .viewport::-webkit-scrollbar{display:none;width:0;height:0}
+
         /* ---- bloques de contenido estructurado (todas las notas) ---- */
         .pbody .n-lead{font-size:15px;line-height:1.5;color:#ecdcae;font-weight:400;margin:0 0 18px}
         .pbody .n-punto{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-top:1px solid #1c212b}
@@ -607,7 +609,7 @@ export default function FiscalidadClient({ email, perfil }) {
         .volver{font-size:13px;color:#8b93a3;text-decoration:none;text-transform:uppercase;letter-spacing:1px}
         .volver:hover{color:#c9a14d}
 
-        .viewport{position:absolute;inset:0;overflow:auto;z-index:2;padding:90px 40px 40px;transition:right .38s cubic-bezier(.22,.9,.3,1)}
+        .viewport{position:absolute;inset:0;overflow:auto;z-index:2;scrollbar-width:none;-ms-overflow-style:none;padding:90px 40px 40px;transition:right .38s cubic-bezier(.22,.9,.3,1)}
         .viewport.conPanel{right:420px}
         .viewport.conPanelAncho{right:560px}
         .canvas{position:relative;width:2280px;height:1240px}
