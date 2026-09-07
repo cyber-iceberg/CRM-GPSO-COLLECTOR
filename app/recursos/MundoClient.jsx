@@ -265,8 +265,7 @@ export default function MundoClient({ email, perfil }) {
       </div>
 
       <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap');
-        .mundo-bg{position:fixed;inset:0;background:#05070c;color:#e9e6df;font-family:'Space Grotesk',sans-serif;font-weight:300;overflow:hidden}
+        .mundo-bg{position:fixed;inset:0;background:#05070c;color:#e9e6df;font-family:var(--font-space-grotesk),sans-serif;font-weight:300;overflow:hidden}
         .cielo{position:absolute;inset:-40px;z-index:0;background-image:url(/cosmos.jpg);background-size:cover;background-position:center;opacity:.6;will-change:transform}
         .cielo::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%, rgba(5,7,12,.15) 30%, rgba(5,7,12,.72) 100%)}
         .halo{position:fixed;top:0;left:0;width:600px;height:600px;pointer-events:none;z-index:2;border-radius:50%;background:radial-gradient(circle, rgba(201,161,77,.12) 0%, rgba(201,161,77,.04) 42%, transparent 68%);mix-blend-mode:screen;will-change:transform}
@@ -281,7 +280,7 @@ export default function MundoClient({ email, perfil }) {
         .volver:hover{color:#c9a14d}
 
         .titulo{position:absolute;top:90px;left:0;right:0;z-index:20;text-align:center;pointer-events:none}
-        .titulo h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(24px,3.6vw,38px);color:#ecdcae;margin:0}
+        .titulo h1{font-family:var(--font-cormorant),serif;font-weight:600;font-size:clamp(24px,3.6vw,38px);color:#ecdcae;margin:0}
         .titulo p{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#8b93a3;margin:8px 0 0}
 
         .viewport{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none}
@@ -317,7 +316,7 @@ export default function MundoClient({ email, perfil }) {
         .nodo.activo:hover .emblema img,.nodo.activo.hov .emblema img{transform:scale(1.05);filter:drop-shadow(0 0 20px rgba(240,226,182,.4))}
 
         .etq{position:absolute;top:135px;left:0;transform:translate(-50%,0);text-align:center;white-space:nowrap}
-        .e-t{display:block;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:23px;color:#ecdcae;letter-spacing:.5px;text-shadow:0 2px 12px rgba(10,12,16,.9)}
+        .e-t{display:block;font-family:var(--font-cormorant),serif;font-weight:600;font-size:23px;color:#ecdcae;letter-spacing:.5px;text-shadow:0 2px 12px rgba(10,12,16,.9)}
         .nodo.pronto .e-t{color:#6a7180}
         .e-s{display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#8b93a3;margin-top:4px}
         .nodo.pronto .e-s{color:#565d6b}
@@ -325,7 +324,7 @@ export default function MundoClient({ email, perfil }) {
 
         .tip{position:absolute;transform:translate(-50%,-100%);z-index:30;width:240px;background:#12151c;border:1px solid #232833;border-radius:12px;padding:16px 18px;pointer-events:none;box-shadow:0 20px 50px rgba(0,0,0,.5);animation:tipIn .22s ease both}
         @keyframes tipIn{from{opacity:0;transform:translate(-50%,-92%)}to{opacity:1;transform:translate(-50%,-100%)}}
-        .tip b{display:block;font-family:'Cormorant Garamond',serif;font-size:19px;color:#ecdcae;margin-bottom:6px}
+        .tip b{display:block;font-family:var(--font-cormorant),serif;font-size:19px;color:#ecdcae;margin-bottom:6px}
         .tip span{display:block;font-size:12.5px;line-height:1.5;color:#c8ccd4}
         .tip em{display:inline-block;font-style:normal;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-top:10px;font-weight:600}
         .tip em.go{color:#c9a14d}
