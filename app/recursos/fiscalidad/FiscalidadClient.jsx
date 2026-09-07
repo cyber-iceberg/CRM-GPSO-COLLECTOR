@@ -618,7 +618,7 @@ export default function FiscalidadClient({ email, perfil }) {
 
       <style jsx>{`
         .fisc-bg{position:fixed;inset:0;background:#080a0f;color:#e9e6df;font-family:'Space Grotesk',sans-serif;font-weight:300;overflow:hidden}
-        .cielo{position:absolute;inset:-30px;z-index:0;background-image:url(/cosmos.png);background-size:cover;background-position:center;opacity:.3;will-change:transform}
+        .cielo{position:absolute;inset:-30px;z-index:0;background-image:url(/cosmos.jpg);background-size:cover;background-position:center;opacity:.3;will-change:transform}
         .cielo::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 45% 45%, rgba(10,12,16,.35) 25%, rgba(10,12,16,.82) 100%)}
         .halo{position:fixed;top:0;left:0;width:520px;height:520px;pointer-events:none;z-index:2;border-radius:50%;background:radial-gradient(circle, rgba(201,161,77,.14) 0%, rgba(201,161,77,.05) 38%, transparent 68%);mix-blend-mode:screen;will-change:transform}
         @media (prefers-reduced-motion: reduce){.halo{display:none}}
