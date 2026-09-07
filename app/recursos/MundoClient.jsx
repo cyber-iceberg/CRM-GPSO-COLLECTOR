@@ -22,7 +22,7 @@ import MenuDrawer from '../components/MenuDrawer';
 // ---------------------------------------------------------------------
 const MODULOS = [
   { id: 'fiscalidad',   t: 'Fiscalidad',   s: 'del importador',     marca: 'Mercedes',    img: '/mercedes.png',    activo: true, href: '/recursos/fiscalidad',
-    cx: 1000, cy: 620, conecta: ['negociacion', 'logistica', 'ventas'],
+    cx: 1000, cy: 700, conecta: ['negociacion', 'logistica', 'ventas'],
     desc: 'Quién, qué y cómo se factura cada operación — con coches reales.' },
   { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/ferrari.png',     activo: false,
     cx: 680, cy: 440, conecta: ['logistica'],
@@ -31,7 +31,7 @@ const MODULOS = [
     cx: 1320, cy: 440, conecta: ['ventas'],
     desc: 'Cómo traer el coche: camión, ruta propia, tiempos y costes.' },
   { id: 'ventas',       t: 'Ventas',       s: 'cerrar al cliente',  marca: 'Lamborghini', img: '/lamborghini.png', activo: false,
-    cx: 1000, cy: 380,
+    cx: 1000, cy: 320,
     desc: 'Cómo presentar, cerrar y entregar la venta al cliente final.' },
 ];
 
@@ -93,7 +93,7 @@ export default function MundoClient({ email, perfil }) {
     const activo = nodos.find(m => m.activo) || nodos[0];
     if (activo && wrapRef.current) {
       const w = wrapRef.current.clientWidth, h = wrapRef.current.clientHeight;
-      setCam({ x: w / 2 - activo.cx, y: h / 2 - activo.cy + 90, z: 1 });
+      setCam({ x: w / 2 - activo.cx, y: h / 2 - activo.cy + 40, z: 1 });
     }
 
     if (reduceRef.current) return;
