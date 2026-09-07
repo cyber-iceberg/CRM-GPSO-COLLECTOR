@@ -690,3 +690,17 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
   .pt-inf-foto img { border:1px solid #ccc !important; }
   h3.pt-h3 { break-after:avoid; }
 }
+/* =====================================================================
+   AÑADIR AL FINAL DE app/globals.css
+   ===================================================================== */
+
+/* Fuente base (elimina el FOUC junto con next/font del layout) */
+body {
+  font-family: var(--font-space-grotesk), sans-serif;
+}
+
+/* Ocultar el botón de tema en las páginas oscuras (universo y fiscalidad).
+   Estas páginas añaden 'ocultar-theme-toggle' al <body> mientras están montadas. */
+body.ocultar-theme-toggle .theme-toggle {
+  display: none !important;
+}
