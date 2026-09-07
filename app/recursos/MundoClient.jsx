@@ -56,13 +56,14 @@ export default function MundoClient({ email, perfil }) {
   const dragRef = useRef(null);
   const wrapRef = useRef(null);
   const haloRef = useRef(null);
+  const cieloRef = useRef(null);
   const reduceRef = useRef(false);
 
   // centrar la cámara en el módulo activo al entrar
   useEffect(() => {
     reduceRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const dots = [];
-    for (let i = 0; i < 260; i++) {
+    for (let i = 0; i < 90; i++) {
       dots.push({
         x: Math.random() * 2600 - 300, y: Math.random() * 1800 - 200,
         r: Math.random() * 1.6 + 0.4,
@@ -148,6 +149,10 @@ export default function MundoClient({ email, perfil }) {
     <div className="mundo-bg">
       <div className="halo" ref={haloRef} aria-hidden="true" />
 
+      {/* fondo cósmico con parallax */}
+      <div className="cielo" ref={cieloRef} aria-hidden="true"
+        style={{ backgroundPosition: `${cam.x * 0.15}px ${cam.y * 0.15}px` }} />
+
       <header className="mundo-top">
         <div className="brand-wrap">
           <div className="brand-tile" style={{ width: 46, height: 46 }}><img src="/collector.jpg" alt="GPSO" /></div>
@@ -230,7 +235,9 @@ export default function MundoClient({ email, perfil }) {
 
       <style jsx>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap');
-        .mundo-bg{position:fixed;inset:0;background:radial-gradient(1500px 900px at 50% 46%, #0f1219 0%, #0a0c10 64%);color:#e9e6df;font-family:'Space Grotesk',sans-serif;font-weight:300;overflow:hidden}
+        .mundo-bg{position:fixed;inset:0;background:#05070c;color:#e9e6df;font-family:'Space Grotesk',sans-serif;font-weight:300;overflow:hidden}
+        .cielo{position:absolute;inset:-40px;z-index:0;background-image:url(/cosmos.jpg);background-size:cover;background-position:center;opacity:.85;will-change:transform}
+        .cielo::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%, transparent 40%, rgba(5,7,12,.55) 100%)}
         .halo{position:fixed;top:0;left:0;width:600px;height:600px;pointer-events:none;z-index:2;border-radius:50%;background:radial-gradient(circle, rgba(201,161,77,.12) 0%, rgba(201,161,77,.04) 42%, transparent 68%);mix-blend-mode:screen;will-change:transform}
         @media (prefers-reduced-motion: reduce){.halo{display:none}}
 
@@ -249,11 +256,11 @@ export default function MundoClient({ email, perfil }) {
         .viewport{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none}
         .viewport:active{cursor:grabbing}
 
-        .cosmos{position:absolute;top:-200px;left:-300px;width:2600px;height:1800px;will-change:transform}
+        .cosmos{position:absolute;top:-200px;left:-300px;z-index:1;width:2600px;height:1800px;will-change:transform}
         .cosmos circle{fill:#8b93a3}
         @keyframes brillo{from{fill-opacity:.3}to{fill-opacity:1}}
 
-        .world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+        .world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;z-index:2}
 
         .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;user-select:none}
         .nodo.pronto{cursor:default}
@@ -269,7 +276,7 @@ export default function MundoClient({ email, perfil }) {
         .nodo.pronto .aro{border-color:rgba(139,147,163,.18)}
 
         .emblema{position:absolute;top:0;left:0;width:230px;height:230px;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;-webkit-mask-image:radial-gradient(circle, #000 55%, transparent 74%);mask-image:radial-gradient(circle, #000 55%, transparent 74%)}
-        .emblema img{width:100%;height:100%;object-fit:contain;transition:transform .3s,filter .3s}
+        .emblema img{width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;transition:transform .3s,filter .3s}
         .nodo.pronto .emblema img{opacity:.35;filter:saturate(.4) brightness(.7)}
         .nodo.activo:hover .emblema img,.nodo.activo.hov .emblema img{transform:scale(1.05);filter:drop-shadow(0 0 20px rgba(240,226,182,.4))}
 
