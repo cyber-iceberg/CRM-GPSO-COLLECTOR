@@ -208,7 +208,10 @@ export default function MundoClient({ email, perfil }) {
           {/* conexiones entre constelaciones (estáticas, calculadas una vez) */}
           <svg className="constelinks" width="2600" height="1600" style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible', pointerEvents: 'none', zIndex: 1 }}>
             {conexiones.map(c => (
-              <line key={c.key} x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2} className="clink" />
+              <g key={c.key}>
+                <line x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2} className="clink-base" />
+                <line x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2} className="clink" />
+              </g>
             ))}
           </svg>
           {nodos.map((m, idx) => (
@@ -286,8 +289,9 @@ export default function MundoClient({ email, perfil }) {
         @keyframes brillo{from{fill-opacity:.3}to{fill-opacity:1}}
 
         .world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;z-index:2}
-        .constelinks .clink{stroke:rgba(201,161,77,.28);stroke-width:1;stroke-dasharray:2 10;stroke-linecap:round;animation:fluir 3s linear infinite}
-        @keyframes fluir{to{stroke-dashoffset:-24}}
+        .constelinks .clink-base{stroke:rgba(201,161,77,.16);stroke-width:1}
+        .constelinks .clink{stroke:rgba(240,210,130,.75);stroke-width:1.6;stroke-dasharray:1 9;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(201,161,77,.6));animation:fluir 2.6s linear infinite}
+        @keyframes fluir{to{stroke-dashoffset:-20}}
         @media (prefers-reduced-motion: reduce){.constelinks .clink{animation:none}}
 
         .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;user-select:none}
