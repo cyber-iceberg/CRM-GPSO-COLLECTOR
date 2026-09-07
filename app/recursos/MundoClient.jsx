@@ -24,7 +24,7 @@ const MODULOS = [
   { id: 'fiscalidad',   t: 'Fiscalidad',   s: 'del importador',     marca: 'Mercedes',    img: '/mercedes.png',    activo: true, href: '/recursos/fiscalidad',
     cx: 1000, cy: 700, conecta: ['negociacion', 'logistica', 'ventas'],
     desc: 'Quién, qué y cómo se factura cada operación — con coches reales.' },
-  { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/ferrari.png',     activo: true, href: '/recursos/fiscalidad',
+  { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/ferrari.png',     activo: false,
     cx: 640, cy: 480, conecta: ['logistica'],
     desc: 'Cómo negociar el precio en Alemania y cerrar la compra.' },
   { id: 'logistica',    t: 'Logística',    s: 'transporte y ruta',  marca: 'Cupra',       img: '/cupra.png',       activo: false,
@@ -51,6 +51,20 @@ function layout(mods) {
 export default function MundoClient({ email, perfil }) {
   const router = useRouter();
   const nodos = useMemo(() => layout(MODULOS), []);
+
+  // conexiones calculadas UNA vez (no dependen del hover → no pueden petar)
+  const conexiones = useMemo(() => {
+    const segs = [];
+    for (const m of nodos) {
+      for (const destId of (m.conecta || [])) {
+        const d = nodos.find(x => x.id === destId);
+        if (d && d.cx != null && m.cx != null) {
+          segs.push({ key: m.id + '-' + d.id, x1: m.cx, y1: m.cy, x2: d.cx, y2: d.cy });
+        }
+      }
+    }
+    return segs;
+  }, [nodos]);
 
   const [cam, setCam] = useState({ x: 0, y: 0, z: 1 });   // desplazamiento y zoom
   const [hover, setHover] = useState(null);
@@ -191,6 +205,12 @@ export default function MundoClient({ email, perfil }) {
 
         {/* lienzo de módulos (aplica cámara: pan + zoom) */}
         <div className="world" style={{ transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})` }}>
+          {/* conexiones entre constelaciones (estáticas, calculadas una vez) */}
+          <svg className="constelinks" width="2600" height="1600" style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible', pointerEvents: 'none', zIndex: 1 }}>
+            {conexiones.map(c => (
+              <line key={c.key} x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2} className="clink" />
+            ))}
+          </svg>
           {nodos.map((m, idx) => (
             <div key={m.id}
               className={'nodo' + (m.activo ? ' activo' : ' pronto') + (hover === m.id ? ' hov' : '')}
@@ -266,6 +286,9 @@ export default function MundoClient({ email, perfil }) {
         @keyframes brillo{from{fill-opacity:.3}to{fill-opacity:1}}
 
         .world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;z-index:2}
+        .constelinks .clink{stroke:rgba(201,161,77,.28);stroke-width:1;stroke-dasharray:2 10;stroke-linecap:round;animation:fluir 3s linear infinite}
+        @keyframes fluir{to{stroke-dashoffset:-24}}
+        @media (prefers-reduced-motion: reduce){.constelinks .clink{animation:none}}
 
         .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;user-select:none}
         .nodo.pronto{cursor:default}
