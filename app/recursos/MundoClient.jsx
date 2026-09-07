@@ -22,16 +22,16 @@ import MenuDrawer from '../components/MenuDrawer';
 // ---------------------------------------------------------------------
 const MODULOS = [
   { id: 'fiscalidad',   t: 'Fiscalidad',   s: 'del importador',     marca: 'Mercedes',    img: '/mercedes.png',    activo: true, href: '/recursos/fiscalidad',
-    cx: 1000, cy: 700, conecta: ['negociacion', 'logistica', 'ventas'],
+    cx: 1000, cy: 620, conecta: ['negociacion', 'logistica', 'ventas'],
     desc: 'Quién, qué y cómo se factura cada operación — con coches reales.' },
   { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/ferrari.png',     activo: false,
-    cx: 660, cy: 470, conecta: ['logistica'],
+    cx: 680, cy: 440, conecta: ['logistica'],
     desc: 'Cómo negociar el precio en Alemania y cerrar la compra.' },
   { id: 'logistica',    t: 'Logística',    s: 'transporte y ruta',  marca: 'Cupra',       img: '/cupra.png',       activo: false,
-    cx: 1340, cy: 470, conecta: ['ventas'],
+    cx: 1320, cy: 440, conecta: ['ventas'],
     desc: 'Cómo traer el coche: camión, ruta propia, tiempos y costes.' },
   { id: 'ventas',       t: 'Ventas',       s: 'cerrar al cliente',  marca: 'Lamborghini', img: '/lamborghini.png', activo: false,
-    cx: 1000, cy: 380,
+    cx: 1000, cy: 880,
     desc: 'Cómo presentar, cerrar y entregar la venta al cliente final.' },
 ];
 
@@ -93,7 +93,10 @@ export default function MundoClient({ email, perfil }) {
     const activo = nodos.find(m => m.activo) || nodos[0];
     if (activo && wrapRef.current) {
       const w = wrapRef.current.clientWidth, h = wrapRef.current.clientHeight;
-      setCam({ x: w / 2 - activo.cx, y: h / 2 - activo.cy, z: 1 });
+      const cxs = nodos.map(n => n.cx), cys = nodos.map(n => n.cy);
+      const midX = (Math.min(...cxs) + Math.max(...cxs)) / 2;
+      const midY = (Math.min(...cys) + Math.max(...cys)) / 2;
+      setCam({ x: w / 2 - midX, y: h / 2 - midY, z: 1 });
     }
 
     if (reduceRef.current) return;
@@ -150,7 +153,10 @@ export default function MundoClient({ email, perfil }) {
     const activo = nodos.find(m => m.activo) || nodos[0];
     if (!activo || !wrapRef.current) return;
     const w = wrapRef.current.clientWidth, h = wrapRef.current.clientHeight;
-    setCam({ x: w / 2 - activo.cx, y: h / 2 - activo.cy, z: 1 });
+    const cxs = nodos.map(n => n.cx), cys = nodos.map(n => n.cy);
+      const midX = (Math.min(...cxs) + Math.max(...cxs)) / 2;
+      const midY = (Math.min(...cys) + Math.max(...cys)) / 2;
+      setCam({ x: w / 2 - midX, y: h / 2 - midY, z: 1 });
   };
 
   const emblemaHalo = (i) => {
