@@ -25,13 +25,13 @@ const MODULOS = [
     cx: 1000, cy: 700, conecta: ['negociacion', 'logistica', 'ventas'],
     desc: 'Quién, qué y cómo se factura cada operación — con coches reales.' },
   { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/ferrari.png',     activo: false,
-    cx: 640, cy: 480, conecta: ['logistica'],
+    cx: 660, cy: 470, conecta: ['logistica'],
     desc: 'Cómo negociar el precio en Alemania y cerrar la compra.' },
   { id: 'logistica',    t: 'Logística',    s: 'transporte y ruta',  marca: 'Cupra',       img: '/cupra.png',       activo: false,
-    cx: 1180, cy: 380, conecta: ['ventas'],
+    cx: 1340, cy: 470, conecta: ['ventas'],
     desc: 'Cómo traer el coche: camión, ruta propia, tiempos y costes.' },
   { id: 'ventas',       t: 'Ventas',       s: 'cerrar al cliente',  marca: 'Lamborghini', img: '/lamborghini.png', activo: false,
-    cx: 1360, cy: 780,
+    cx: 1000, cy: 380,
     desc: 'Cómo presentar, cerrar y entregar la venta al cliente final.' },
 ];
 
