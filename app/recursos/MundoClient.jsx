@@ -190,20 +190,6 @@ export default function MundoClient({ email, perfil }) {
 
         {/* lienzo de módulos (aplica cámara: pan + zoom) */}
         <div className="world" style={{ transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})` }}>
-          {/* líneas de conexión entre constelaciones */}
-          <svg className="constelinks" width="2600" height="1600" style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible', pointerEvents: 'none', zIndex: 1 }}>
-            {nodos.flatMap(m => (m.conecta || [])
-              .map(destId => nodos.find(x => x.id === destId))
-              .filter(d => d && d.cx != null)
-              .map(d => {
-                const activo = hover === m.id || hover === d.id;
-                return (
-                  <line key={m.id + '-' + d.id} x1={m.cx} y1={m.cy} x2={d.cx} y2={d.cy}
-                    className={'clink' + (activo ? ' on' : '')} />
-                );
-              })
-            )}
-          </svg>
           {nodos.map((m, idx) => (
             <div key={m.id}
               className={'nodo' + (m.activo ? ' activo' : ' pronto') + (hover === m.id ? ' hov' : '')}
@@ -228,9 +214,10 @@ export default function MundoClient({ email, perfil }) {
         </div>
 
         {/* tooltip */}
-        {hover && (() => {
+        {(() => {
+          if (!hover) return null;
           const m = nodos.find(x => x.id === hover);
-          if (!m) return null;
+          if (!m || m.cx == null) return null;
           const sx = m.cx * cam.z + cam.x;
           const sy = m.cy * cam.z + cam.y;
           return (
@@ -278,8 +265,6 @@ export default function MundoClient({ email, perfil }) {
         @keyframes brillo{from{fill-opacity:.3}to{fill-opacity:1}}
 
         .world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;z-index:2}
-        .constelinks .clink{stroke:rgba(201,161,77,.22);stroke-width:1;stroke-dasharray:2 9;stroke-linecap:round;transition:stroke .4s}
-        .constelinks .clink.on{stroke:rgba(240,210,130,.6);stroke-width:1.4}
 
         .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;user-select:none}
         .nodo.pronto{cursor:default}
