@@ -23,7 +23,7 @@ import MenuDrawer from '../components/MenuDrawer';
 const MODULOS = [
   { id: 'fiscalidad',   t: 'Fiscalidad',   s: 'del importador',     marca: 'Mercedes',    img: '/mercedes.png',    activo: true, href: '/recursos/fiscalidad',
     desc: 'Quién, qué y cómo se factura cada operación — con coches reales.' },
-  { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/ferrari.png',     activo: false,
+  { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/ferrari.png',     activo: true, href: '/recursos/fiscalidad',
     desc: 'Cómo negociar el precio en Alemania y cerrar la compra.' },
   { id: 'logistica',    t: 'Logística',    s: 'transporte y ruta',  marca: 'Cupra',       img: '/cupra.png',       activo: false,
     desc: 'Cómo traer el coche: camión, ruta propia, tiempos y costes.' },
@@ -258,22 +258,22 @@ export default function MundoClient({ email, perfil }) {
         .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;user-select:none}
         .nodo.pronto{cursor:default}
 
-        .halo-star{position:absolute;width:6px;height:6px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 35% 30%, #f0e2b6, #c9a14d);box-shadow:0 0 8px rgba(201,161,77,.5);animation:pulso 4s ease-in-out infinite;top:0;left:0}
+        .halo-star{display:none}
         @keyframes pulso{0%,100%{opacity:.5}50%{opacity:1}}
         @media (prefers-reduced-motion: reduce){.halo-star{animation:none}}
         .nodo.pronto .halo-star{background:#3a4150;box-shadow:none;opacity:.4;animation:none}
 
-        .aro{position:absolute;top:0;left:0;width:150px;height:150px;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(201,161,77,.28);box-shadow:0 0 40px rgba(201,161,77,.10) inset;transition:border-color .3s, box-shadow .3s}
+        .aro{display:none}
         .nodo.activo .aro{border-color:rgba(201,161,77,.5);box-shadow:0 0 50px rgba(201,161,77,.18) inset, 0 0 30px rgba(201,161,77,.12)}
         .nodo.activo:hover .aro,.nodo.activo.hov .aro{border-color:rgba(240,226,182,.85);box-shadow:0 0 60px rgba(201,161,77,.28) inset, 0 0 50px rgba(201,161,77,.25)}
         .nodo.pronto .aro{border-color:rgba(139,147,163,.18)}
 
-        .emblema{position:absolute;top:0;left:0;width:112px;height:112px;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center}
-        .emblema img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 14px rgba(201,161,77,.35))}
-        .nodo.pronto .emblema img{opacity:.4;filter:saturate(.5) brightness(.8)}
-        .nodo.activo:hover .emblema img,.nodo.activo.hov .emblema img{filter:drop-shadow(0 0 22px rgba(240,226,182,.6));transform:scale(1.06);transition:transform .3s}
+        .emblema{position:absolute;top:0;left:0;width:230px;height:230px;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;-webkit-mask-image:radial-gradient(circle, #000 55%, transparent 74%);mask-image:radial-gradient(circle, #000 55%, transparent 74%)}
+        .emblema img{width:100%;height:100%;object-fit:contain;transition:transform .3s,filter .3s}
+        .nodo.pronto .emblema img{opacity:.35;filter:saturate(.4) brightness(.7)}
+        .nodo.activo:hover .emblema img,.nodo.activo.hov .emblema img{transform:scale(1.05);filter:drop-shadow(0 0 20px rgba(240,226,182,.4))}
 
-        .etq{position:absolute;top:92px;left:0;transform:translate(-50%,0);text-align:center;white-space:nowrap}
+        .etq{position:absolute;top:135px;left:0;transform:translate(-50%,0);text-align:center;white-space:nowrap}
         .e-t{display:block;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:23px;color:#ecdcae;letter-spacing:.5px;text-shadow:0 2px 12px rgba(10,12,16,.9)}
         .nodo.pronto .e-t{color:#6a7180}
         .e-s{display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#8b93a3;margin-top:4px}
