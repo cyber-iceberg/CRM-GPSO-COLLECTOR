@@ -98,15 +98,16 @@ export default function MundoClient({ email, perfil }) {
   // ---- arrastre ----
   const onDown = (e) => {
     const p = e.touches ? e.touches[0] : e;
-    dragRef.current = { sx: p.clientX, sy: p.clientY, cx: cam.x, cy: cam.y, moved: false };
+    dragRef.current = { sx: p.clientX, sy: p.clientY, camX: cam.x, camY: cam.y, moved: false };
   };
   const onMoveDrag = (e) => {
-    if (!dragRef.current) return;
+    const dr = dragRef.current;
+    if (!dr) return;
     const p = e.touches ? e.touches[0] : e;
-    const dx = p.clientX - dragRef.current.sx;
-    const dy = p.clientY - dragRef.current.sy;
-    if (Math.abs(dx) + Math.abs(dy) > 4) dragRef.current.moved = true;
-    setCam(c => ({ ...c, x: dragRef.current.cx + dx, y: dragRef.current.cy + dy }));
+    const dx = p.clientX - dr.sx;
+    const dy = p.clientY - dr.sy;
+    if (Math.abs(dx) + Math.abs(dy) > 4) dr.moved = true;
+    setCam(c => ({ ...c, x: dr.camX + dx, y: dr.camY + dy }));
   };
   const onUp = () => { dragRef.current = null; };
 
