@@ -267,7 +267,7 @@ export default function MundoClient({ email, perfil }) {
       <style jsx>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap');
         .mundo-bg{position:fixed;inset:0;background:#05070c;color:#e9e6df;font-family:'Space Grotesk',sans-serif;font-weight:300;overflow:hidden}
-        .cielo{position:absolute;inset:-40px;z-index:0;background-image:url(/cosmos.png);background-size:cover;background-position:center;opacity:.6;will-change:transform}
+        .cielo{position:absolute;inset:-40px;z-index:0;background-image:url(/cosmos.jpg);background-size:cover;background-position:center;opacity:.6;will-change:transform}
         .cielo::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%, rgba(5,7,12,.15) 30%, rgba(5,7,12,.72) 100%)}
         .halo{position:fixed;top:0;left:0;width:600px;height:600px;pointer-events:none;z-index:2;border-radius:50%;background:radial-gradient(circle, rgba(201,161,77,.12) 0%, rgba(201,161,77,.04) 42%, transparent 68%);mix-blend-mode:screen;will-change:transform}
         @media (prefers-reduced-motion: reduce){.halo{display:none}}
