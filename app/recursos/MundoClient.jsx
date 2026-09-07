@@ -132,6 +132,7 @@ export default function MundoClient({ email, perfil }) {
   const zoomBtn = (d) => setCam(c => ({ ...c, z: Math.min(1.8, Math.max(0.45, c.z + d)) }));
   const recenter = () => {
     const activo = nodos.find(m => m.activo) || nodos[0];
+    if (!activo || !wrapRef.current) return;
     const w = wrapRef.current.clientWidth, h = wrapRef.current.clientHeight;
     setCam({ x: w / 2 - activo.cx, y: h / 2 - activo.cy, z: 1 });
   };
@@ -191,17 +192,17 @@ export default function MundoClient({ email, perfil }) {
         <div className="world" style={{ transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})` }}>
           {/* líneas de conexión entre constelaciones */}
           <svg className="constelinks" width="2600" height="1600" style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible', pointerEvents: 'none', zIndex: 1 }}>
-            {nodos.flatMap(m => (m.conecta || []).map(destId => {
-              const d = nodos.find(x => x.id === destId);
-              if (!d) return null;
-              const activo = hover === m.id || hover === destId;
-              return (
-                <g key={m.id + '-' + destId}>
-                  <line x1={m.cx} y1={m.cy} x2={d.cx} y2={d.cy}
+            {nodos.flatMap(m => (m.conecta || [])
+              .map(destId => nodos.find(x => x.id === destId))
+              .filter(d => d && d.cx != null)
+              .map(d => {
+                const activo = hover === m.id || hover === d.id;
+                return (
+                  <line key={m.id + '-' + d.id} x1={m.cx} y1={m.cy} x2={d.cx} y2={d.cy}
                     className={'clink' + (activo ? ' on' : '')} />
-                </g>
-              );
-            }))}
+                );
+              })
+            )}
           </svg>
           {nodos.map((m, idx) => (
             <div key={m.id}
