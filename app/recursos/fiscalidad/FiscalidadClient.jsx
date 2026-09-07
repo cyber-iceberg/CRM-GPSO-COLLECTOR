@@ -332,6 +332,7 @@ export default function FiscalidadClient({ email, perfil }) {
   const haloRef = useRef(null);
   const cieloRef = useRef(null);
   const reduceRef = useRef(false);
+  const panRef = useRef(null);
 
   useEffect(() => {
     reduceRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -435,6 +436,24 @@ export default function FiscalidadClient({ email, perfil }) {
   const nodosVisibles = Object.entries(NODES).filter(([id]) => visible(id));
   const edgesVisibles = EDGES.map((e, i) => ({ e, i })).filter(({ e }) => visible(e[0]) && visible(e[1]));
 
+  // ---- arrastre para desplazarse por el grafo (pan) ----
+  const panDown = (e) => {
+    if (e.target.closest('.nodo') || e.target.closest('.panel')) return;
+    const p = e.touches ? e.touches[0] : e;
+    const v = viewRef.current;
+    if (!v) return;
+    panRef.current = { x: p.clientX, y: p.clientY, sl: v.scrollLeft, st: v.scrollTop };
+  };
+  const panMove = (e) => {
+    if (!panRef.current) return;
+    const p = e.touches ? e.touches[0] : e;
+    const v = viewRef.current;
+    if (!v) return;
+    v.scrollLeft = panRef.current.sl - (p.clientX - panRef.current.x);
+    v.scrollTop = panRef.current.st - (p.clientY - panRef.current.y);
+  };
+  const panUp = () => { panRef.current = null; };
+
   return (
     <div className="fisc-bg">
       <div className="halo" ref={haloRef} aria-hidden="true" />
@@ -454,7 +473,9 @@ export default function FiscalidadClient({ email, perfil }) {
         </div>
       </header>
 
-      <div className={'viewport' + (n ? (esComp ? ' conPanelAncho' : ' conPanel') : '')} ref={viewRef}>
+      <div className={'viewport' + (n ? (esComp ? ' conPanelAncho' : ' conPanel') : '')} ref={viewRef}
+        onMouseDown={panDown} onMouseMove={panMove} onMouseUp={panUp} onMouseLeave={panUp}
+        onTouchStart={panDown} onTouchMove={panMove} onTouchEnd={panUp}>
         <div className={'canvas' + (lit ? ' dim' : '')}>
 
           <svg className="cosmos" ref={cosmosRef} viewBox="0 0 2280 1240" aria-hidden="true">
@@ -609,7 +630,7 @@ export default function FiscalidadClient({ email, perfil }) {
         .volver{font-size:13px;color:#8b93a3;text-decoration:none;text-transform:uppercase;letter-spacing:1px}
         .volver:hover{color:#c9a14d}
 
-        .viewport{position:absolute;inset:0;overflow:auto;z-index:2;scrollbar-width:none;-ms-overflow-style:none;padding:90px 40px 40px;transition:right .38s cubic-bezier(.22,.9,.3,1)}
+        .viewport{position:absolute;inset:0;overflow:auto;z-index:2;scrollbar-width:none;-ms-overflow-style:none;cursor:grab;padding:90px 40px 40px;transition:right .38s cubic-bezier(.22,.9,.3,1)}
         .viewport.conPanel{right:420px}
         .viewport.conPanelAncho{right:560px}
         .canvas{position:relative;width:2280px;height:1240px}
