@@ -22,15 +22,17 @@ import MenuDrawer from '../components/MenuDrawer';
 // ---------------------------------------------------------------------
 const MODULOS = [
   { id: 'fiscalidad',   t: 'Fiscalidad',   s: 'del importador',     marca: 'Mercedes',    img: '/mercedes.png',    activo: true, href: '/recursos/fiscalidad',
+    cx: 1000, cy: 700, conecta: ['negociacion', 'logistica', 'ventas'],
     desc: 'Quién, qué y cómo se factura cada operación — con coches reales.' },
   { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/ferrari.png',     activo: true, href: '/recursos/fiscalidad',
+    cx: 640, cy: 480, conecta: ['logistica'],
     desc: 'Cómo negociar el precio en Alemania y cerrar la compra.' },
   { id: 'logistica',    t: 'Logística',    s: 'transporte y ruta',  marca: 'Cupra',       img: '/cupra.png',       activo: false,
+    cx: 1180, cy: 380, conecta: ['ventas'],
     desc: 'Cómo traer el coche: camión, ruta propia, tiempos y costes.' },
   { id: 'ventas',       t: 'Ventas',       s: 'cerrar al cliente',  marca: 'Lamborghini', img: '/lamborghini.png', activo: false,
+    cx: 1360, cy: 780,
     desc: 'Cómo presentar, cerrar y entregar la venta al cliente final.' },
-  // — sigue añadiendo módulos aquí, se colocan solos —
-  // { id: 'homologacion', t:'Homologación', s:'ITV y matriculación', marca:'Audi', img:'/audi.png', activo:false, desc:'...' },
 ];
 
 // auto-colocación en espiral áurea (para los que no tienen cx/cy fijos)
@@ -158,7 +160,7 @@ export default function MundoClient({ email, perfil }) {
           <div className="brand-tile" style={{ width: 46, height: 46 }}><img src="/collector.jpg" alt="GPSO" /></div>
           <div>
             <div className="marca" style={{ fontSize: 18 }}>gpso<span className="low">collector<span className="dot">.</span></span></div>
-            <div className="sublabel">Recursos · El Mundo</div>
+            <div className="sublabel">Recursos · El Universo</div>
           </div>
         </div>
         <div className="top-right">
@@ -168,7 +170,7 @@ export default function MundoClient({ email, perfil }) {
       </header>
 
       <div className="titulo">
-        <h1>El Mundo del Importador</h1>
+        <h1>El Universo del Importador</h1>
         <p>Arrastra para moverte · rueda para zoom · toca un emblema para entrar</p>
       </div>
 
@@ -187,6 +189,20 @@ export default function MundoClient({ email, perfil }) {
 
         {/* lienzo de módulos (aplica cámara: pan + zoom) */}
         <div className="world" style={{ transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})` }}>
+          {/* líneas de conexión entre constelaciones */}
+          <svg className="constelinks" width="2600" height="1600" style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible', pointerEvents: 'none', zIndex: 1 }}>
+            {nodos.flatMap(m => (m.conecta || []).map(destId => {
+              const d = nodos.find(x => x.id === destId);
+              if (!d) return null;
+              const activo = hover === m.id || hover === destId;
+              return (
+                <g key={m.id + '-' + destId}>
+                  <line x1={m.cx} y1={m.cy} x2={d.cx} y2={d.cy}
+                    className={'clink' + (activo ? ' on' : '')} />
+                </g>
+              );
+            }))}
+          </svg>
           {nodos.map((m, idx) => (
             <div key={m.id}
               className={'nodo' + (m.activo ? ' activo' : ' pronto') + (hover === m.id ? ' hov' : '')}
@@ -236,8 +252,8 @@ export default function MundoClient({ email, perfil }) {
       <style jsx>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap');
         .mundo-bg{position:fixed;inset:0;background:#05070c;color:#e9e6df;font-family:'Space Grotesk',sans-serif;font-weight:300;overflow:hidden}
-        .cielo{position:absolute;inset:-40px;z-index:0;background-image:url(/cosmos.png);background-size:cover;background-position:center;opacity:.85;will-change:transform}
-        .cielo::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%, transparent 40%, rgba(5,7,12,.55) 100%)}
+        .cielo{position:absolute;inset:-40px;z-index:0;background-image:url(/cosmos.png);background-size:cover;background-position:center;opacity:.6;will-change:transform}
+        .cielo::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%, rgba(5,7,12,.15) 30%, rgba(5,7,12,.72) 100%)}
         .halo{position:fixed;top:0;left:0;width:600px;height:600px;pointer-events:none;z-index:2;border-radius:50%;background:radial-gradient(circle, rgba(201,161,77,.12) 0%, rgba(201,161,77,.04) 42%, transparent 68%);mix-blend-mode:screen;will-change:transform}
         @media (prefers-reduced-motion: reduce){.halo{display:none}}
 
@@ -261,6 +277,8 @@ export default function MundoClient({ email, perfil }) {
         @keyframes brillo{from{fill-opacity:.3}to{fill-opacity:1}}
 
         .world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;z-index:2}
+        .constelinks .clink{stroke:rgba(201,161,77,.22);stroke-width:1;stroke-dasharray:2 9;stroke-linecap:round;transition:stroke .4s}
+        .constelinks .clink.on{stroke:rgba(240,210,130,.6);stroke-width:1.4}
 
         .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;user-select:none}
         .nodo.pronto{cursor:default}
@@ -275,8 +293,9 @@ export default function MundoClient({ email, perfil }) {
         .nodo.activo:hover .aro,.nodo.activo.hov .aro{border-color:rgba(240,226,182,.85);box-shadow:0 0 60px rgba(201,161,77,.28) inset, 0 0 50px rgba(201,161,77,.25)}
         .nodo.pronto .aro{border-color:rgba(139,147,163,.18)}
 
-        .emblema{position:absolute;top:0;left:0;width:230px;height:230px;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;-webkit-mask-image:radial-gradient(circle, #000 55%, transparent 74%);mask-image:radial-gradient(circle, #000 55%, transparent 74%)}
-        .emblema img{width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;transition:transform .3s,filter .3s}
+        .emblema{position:absolute;top:0;left:0;width:250px;height:250px;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;-webkit-mask-image:radial-gradient(circle, #000 55%, transparent 74%);mask-image:radial-gradient(circle, #000 55%, transparent 74%)}
+        .emblema::before{content:'';position:absolute;inset:-6%;border-radius:50%;background:radial-gradient(circle, rgba(5,7,12,.82) 30%, rgba(5,7,12,.35) 55%, transparent 72%);z-index:-1}
+        .emblema img{width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 6px rgba(240,210,130,.5)) brightness(1.15);transition:transform .3s,filter .3s}
         .nodo.pronto .emblema img{opacity:.35;filter:saturate(.4) brightness(.7)}
         .nodo.activo:hover .emblema img,.nodo.activo.hov .emblema img{transform:scale(1.05);filter:drop-shadow(0 0 20px rgba(240,226,182,.4))}
 
