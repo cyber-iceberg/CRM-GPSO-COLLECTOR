@@ -464,7 +464,7 @@ export default function FiscalidadClient({ email, perfil }) {
           <div className="brand-tile" style={{ width: 46, height: 46 }}><img src="/collector.jpg" alt="GPSO" /></div>
           <div>
             <div className="marca" style={{ fontSize: 18 }}>gpso<span className="low">collector<span className="dot">.</span></span></div>
-            <div className="sublabel">Fiscalidad del Importador · Privado</div>
+            <div className="sublabel">Fiscalidad del Importador</div>
           </div>
         </div>
         <div className="top-right">
