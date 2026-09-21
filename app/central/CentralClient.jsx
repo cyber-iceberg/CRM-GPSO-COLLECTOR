@@ -98,7 +98,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
     setRefrescando(false);
   }, [supabase, user.id]);
 
-  useEffect(() => { const t = setInterval(cargarDatos, 30000); return () => clearInterval(t); }, [cargarDatos]);
+  useEffect(() => { const t = setInterval(cargarDatos, 180000); return () => clearInterval(t); }, [cargarDatos]);
 
   function aviso(t, m) { setFlash({ t, m }); }
 
