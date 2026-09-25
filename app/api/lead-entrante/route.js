@@ -166,13 +166,36 @@ export async function POST(request) {
     { auth: { persistSession: false } }
   );
 
+  // ANTI-DUPLICADOS: si ya existe un lead con el mismo email + telefono
+  // + vehiculo, no creamos otro (evita duplicados por reenvíos de GHL).
+  if (email) {
+    const { data: existe } = await supabase
+      .from('leads')
+      .select('id')
+      .eq('email', email)
+      .eq('telefono', telefono)
+      .eq('vehiculo', vehiculo)
+      .limit(1)
+      .maybeSingle();
+    if (existe) {
+      // ya existe: respondemos OK para que GHL no reintente, pero no duplicamos
+      return NextResponse.json({ ok: true, id: existe.id, duplicado: true });
+    }
+  }
+
   const { data, error } = await supabase
     .from('leads')
     .insert({ nombre, telefono, email, vehiculo, ciudad, calor, presupuesto, detalles })
     .select('id')
     .single();
 
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  if (error) {
+    // si el índice único lo rechaza (duplicado en carrera), respondemos OK igualmente
+    if (error.code === '23505' || /duplicate|unique/i.test(error.message || '')) {
+      return NextResponse.json({ ok: true, duplicado: true });
+    }
+    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  }
 
   try { await supabase.from('lead_eventos').insert({ lead_id: data.id, tipo: 'creado' }); } catch (e) {}
 
