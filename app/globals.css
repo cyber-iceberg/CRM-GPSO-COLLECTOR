@@ -25,6 +25,7 @@
   --glow-red:0 0 40px rgba(198,26,26,.12);
   --vignette:rgba(0,0,0,.35);
   --aura2:transparent;
+  --premium-bg:linear-gradient(160deg, rgba(232,163,61,.14), rgba(20,17,20,.6) 45%), var(--card-glass);
 }
 
 /* BLINDAJE: cualquier zona marcada data-theme="dark" (como Inversión VIP)
@@ -52,7 +53,7 @@
 :root[data-theme="light"]{
   --bg-deep:#fbfaf8;
   --aura:rgba(232,163,61,.14);
-  --card-glass:rgba(255,255,255,.82); --card-bd:rgba(20,20,30,.07);
+  --card-glass:rgba(255,255,255,.95); --card-bd:rgba(20,20,30,.08);
   --text:#141315; --text-soft:#54545c; --gray-mid:#8a8a92; --gray-dark:#c4c4ca;
   --card:#ffffff; --border:#e6e4e6;
   --red:#C61A1A; --red-soft:#c2231a; --red-deep:#9e1414;
@@ -67,6 +68,8 @@
   /* en claro: nada de negro abajo. Un velo blanco + un toque dorado cálido */
   --vignette:rgba(255,255,255,.6);
   --aura2:rgba(232,163,61,.10);
+  /* tarjeta premium en claro: blanco con un lavado dorado cálido, sin gris oscuro */
+  --premium-bg:linear-gradient(160deg, rgba(232,163,61,.22), rgba(255,252,245,.9) 55%), #ffffff;
 }
 
 *{ box-sizing:border-box; margin:0; padding:0; }
@@ -409,9 +412,7 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
    =================================================================== */
 .lead-card.premium{
   border:1.5px solid rgba(232,163,61,.55);
-  background:
-    linear-gradient(160deg, rgba(232,163,61,.10), rgba(20,17,20,.6) 45%),
-    var(--card-glass);
+  background:var(--premium-bg);
   box-shadow:0 14px 44px rgba(232,163,61,.16), inset 0 0 0 1px rgba(232,163,61,.08);
   position:relative;
   overflow:hidden;
