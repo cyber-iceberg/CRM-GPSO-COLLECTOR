@@ -16,7 +16,7 @@ import {
   Car, MapPin, Wallet, Lock, Unlock, Clock, Phone, Mail, User,
   Trophy, Timer, Users, TrendingUp, X, RotateCcw, XCircle,
   LogOut, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Circle, ArrowLeft, Trash2, Calendar, Gauge,
-  Banknote, Landmark, Zap, Gem, Filter
+  Banknote, Landmark, Zap, Gem, Filter, Flame, Handshake
 } from 'lucide-react';
 
 const CALOR = {
@@ -24,6 +24,22 @@ const CALOR = {
   medio: { label: 'TEMPLADO', color: 'var(--gold)',     dot: '#E8A33D' },
   bajo:  { label: 'FRÍO',     color: '#6fa8dc',          dot: '#6fa8dc' },
 };
+
+// Estados del pipeline de gestión (lead reservado)
+// seg:true = "en seguimiento" (NO ocupa slot, tope propio config.seguimiento_max)
+const SEG_ESTADOS = ['caliente', 'negociando'];
+const GEST = {
+  sin_contactar: { label: 'Sin contactar', color: 'var(--red-soft)', bd: 'var(--red-bd)',          bg: 'var(--red-bg)',            seg: false },
+  contactado:    { label: 'Contactado',    color: 'var(--gold)',     bd: 'rgba(232,163,61,.35)',   bg: 'rgba(232,163,61,.10)',     seg: false },
+  caliente:      { label: 'Caliente',      color: '#ff7a3d',         bd: 'rgba(255,122,61,.45)',   bg: 'rgba(255,122,61,.12)',     seg: true  },
+  negociando:    { label: 'En negociación',color: '#E8A33D',         bd: 'rgba(232,163,61,.5)',    bg: 'rgba(232,163,61,.12)',     seg: true  },
+};
+// botones del pipeline en orden (sin_contactar es el punto de partida implícito)
+const PIPELINE = [
+  { k: 'contactado', label: 'Contactado', icon: Phone },
+  { k: 'caliente',   label: 'Caliente',   icon: Flame },
+  { k: 'negociando', label: 'Negociación', icon: Handshake },
+];
 
 const LOGO = '/collector.jpg'; // sube tu logo a public/collector.jpg
 
@@ -126,7 +142,10 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
 
   const activo = perfil && perfil.activo;
   const esAdmin = perfil && perfil.rol === 'admin';
-  const slotsLibres = config.slots_max - misLeads.length;
+  const frescos = misLeads.filter((l) => !SEG_ESTADOS.includes(l.gestion));
+  const seguim  = misLeads.filter((l) =>  SEG_ESTADOS.includes(l.gestion));
+  const slotsLibres = config.slots_max - frescos.length;
+  const seguimMax = config.seguimiento_max || 15;
   const enCooldown = cooldownHasta > ahora;
 
   useEffect(() => { const t = setInterval(() => setAhora(Date.now()), 1000); return () => clearInterval(t); }, []);
@@ -173,10 +192,20 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
     aviso('ok', '¡Reservado! Datos desbloqueados en Mis clientes.');
     await cargarDatos(); setVista('mis');
   }
-  async function contactado(id) {
-    const { data, error } = await supabase.rpc('marcar_contactado', { p_lead_id: id });
-    if (error || !data?.ok) { aviso('warn', 'No se pudo marcar como contactado. Vuelve a intentarlo.'); return; }
-    aviso('ok', 'Marcado como contactado.'); await cargarDatos();
+  async function avanzar(id, gestion) {
+    const { data, error } = await supabase.rpc('avanzar_lead', { p_lead_id: id, p_gestion: gestion });
+    if (error || !data?.ok) {
+      const m = data?.error === 'seguimiento_lleno'
+        ? `En seguimiento lleno (${data.max}). Cierra o descarta alguno antes de mover más a seguimiento.`
+        : 'No se pudo actualizar el estado. Reintenta.';
+      aviso('warn', m); return;
+    }
+    const txt = {
+      contactado: 'Marcado como contactado.',
+      caliente:   '🔥 Lead caliente — ya no ocupa slot, puedes coger otro.',
+      negociando: 'En negociación — ya no ocupa slot, puedes coger otro.',
+    }[gestion] || 'Estado actualizado.';
+    aviso('ok', txt); await cargarDatos();
   }
   async function ganado(id) {
     const { data, error } = await supabase.rpc('marcar_ganado', { p_lead_id: id });
@@ -252,8 +281,8 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
   const pasosGuia = [
     { seccion: 'Central', titulo: '¡Bienvenido a tu Central!',
       texto: 'Aquí llegan en tiempo real personas que quieren comprar o importar un coche. Te enseño en 30 segundos dónde está cada cosa y cómo sacarle partido. Usa <b>Siguiente</b> o las flechas del teclado.' },
-    { sel: '[data-tour="stats"]', seccion: 'Tu estado', titulo: 'Slots, cerrados y reputación',
-      texto: '<b>Slots</b>: cuántos clientes puedes tener a la vez. <b>Cerrados</b>: ventas ganadas. <b>Reputación</b>: % de leads que acabas cerrando. Cuídala: trabaja bien los que coges.' },
+    { sel: '[data-tour="stats"]', seccion: 'Tu estado', titulo: 'Slots, seguimiento y reputación',
+      texto: '<b>Slots</b>: cuántos clientes <i>nuevos</i> puedes tener a la vez. <b>Seguim.</b>: los que ya estás trabajando — <b>no ocupan slot</b>. <b>Cerrados</b> y <b>Reputación</b>: tus ventas y tu % de cierre.' },
     { sel: '[data-tour="escasez"]', seccion: 'En vivo', titulo: 'Leads disponibles ahora',
       texto: 'Esto se actualiza solo. <b>El primero que reserva un lead se lo lleva</b>, así que entra cada día: los buenos vuelan en minutos.', antes: () => setVista('catalogo') },
     { sel: '[data-tour="filtros"]', seccion: 'Catálogo', titulo: 'Filtra lo que buscas',
@@ -263,7 +292,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
     { sel: '[data-tour="reservar"]', seccion: 'Catálogo', titulo: 'Reservar un cliente',
       texto: 'Al reservar, el lead es <b style="color:var(--gold)">tuyo</b>: se desbloquean su teléfono y email y ocupa un slot. Después hay un pequeño <b>cooldown</b> para que a todos les toque. Úsalo con cabeza.' },
     { sel: '[data-tour="tabs"]', seccion: 'Mis clientes', titulo: 'Gestiona a los tuyos',
-      texto: 'En <b>Mis clientes</b> están los que ya reservaste. Marca <b>Contactado</b> cuando le escribas, <b>Ganado</b> cuando cierres la venta, o <b>Descartar</b> si no cuaja (vuelve a la bolsa si aún no lo contactaste).', antes: () => setVista('mis') },
+      texto: 'Muévelos por el pipeline: <b>Contactado → Caliente → En negociación</b>. En cuanto marcas <b style="color:#ff7a3d">Caliente</b> o <b>En negociación</b>, el lead pasa a <b>Seguimiento</b> y <b>deja de ocupar slot</b>: sigues hablando con él y puedes coger más. Marca <b>Ganado</b> solo cuando cierres de verdad.', antes: () => setVista('mis') },
     { sel: '[data-tour="ganados"]', seccion: 'Mis clientes', titulo: 'Tus ventas ganadas',
       texto: 'Aquí se guardan tus cierres. Si te equivocaste, puedes <b>deshacer un ganado</b> y vuelve a Mis clientes.' },
     { seccion: 'Listo', titulo: 'Ya lo tienes',
@@ -285,7 +314,8 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
             </div>
           </div>
           <div data-tour="stats" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <Stat icon={<Circle size={12} />} val={`${misLeads.length} / ${config.slots_max}`} lab="Slots" hot={slotsLibres <= 0} />
+            <Stat icon={<Circle size={12} />} val={`${frescos.length} / ${config.slots_max}`} lab="Slots" hot={slotsLibres <= 0} />
+            <Stat icon={<Flame size={13} />} val={`${seguim.length} / ${seguimMax}`} lab="Seguim." />
             <Stat icon={<Trophy size={13} />} val={perfil?.leads_ganados || 0} lab="Cerrados" />
             <Stat icon={<TrendingUp size={13} />} val={reputacion == null ? '—' : `${reputacion}%`} lab="Reputación" />
             <MenuDrawer perfil={perfil} email={user.email} />
@@ -407,6 +437,8 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
 
           {vista === 'mis' && misLeads.map((l) => {
             const sinContactar = l.gestion === 'sin_contactar';
+            const g = GEST[l.gestion] || GEST.sin_contactar;
+            const enSeg = SEG_ESTADOS.includes(l.gestion);
             const c = CALOR[l.calor] || CALOR.medio;
             const detM = l.detalles && typeof l.detalles === 'object' ? l.detalles : {};
             const buscaDetM = (...frag) => {
@@ -423,9 +455,10 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                 <div style={S.rowB}>
                   <span style={S.owned}><Unlock size={11} /> DESBLOQUEADO</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                    {sinContactar
-                      ? <span style={S.estadoTag}>Sin contactar · {config.expiracion_sin_contactar_horas}h</span>
-                      : <span style={{ ...S.estadoTag, color: 'var(--green)', borderColor: 'var(--green-bd)' }}>En gestión</span>}
+                    <span style={{ ...S.estadoTag, color: g.color, borderColor: g.bd, background: g.bg }}>
+                      {g.label}{sinContactar ? ` · ${config.expiracion_sin_contactar_horas}h` : ''}
+                    </span>
+                    {enSeg && <span style={S.segTag}><Flame size={10} /> no ocupa slot</span>}
                     {esAdmin && <button onClick={(e) => { e.stopPropagation(); borrarLead(l); }} title="Borrar lead" style={S.trashBtn}><Trash2 size={13} /></button>}
                   </span>
                 </div>
@@ -477,19 +510,24 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                     </div>
                   );
                 })()}
-                {sinContactar ? (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn-ghost" onClick={() => contactado(l.id)} style={{ flex: 1, borderColor: 'var(--red-bd)', color: 'var(--text)' }}>
-                      <Phone size={14} style={{ verticalAlign: -2, marginRight: 6 }} /> Marcar como contactado
-                    </button>
-                    <button className="est lose" onClick={() => setDescartando(l)} title="Soltar sin contactar (vuelve a la bolsa)"><XCircle size={13} /></button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  <div style={S.pipeRow}>
+                    {PIPELINE.map(({ k, label, icon: Ic }) => {
+                      const on = l.gestion === k;
+                      return (
+                        <button key={k} onClick={() => avanzar(l.id, k)}
+                          style={{ ...S.pipeBtn, ...(on ? { color: GEST[k].color, borderColor: GEST[k].bd, background: GEST[k].bg } : {}) }}
+                          title={GEST[k].seg ? 'En seguimiento · no ocupa slot' : 'Ocupa slot'}>
+                          <Ic size={13} /> {label}
+                        </button>
+                      );
+                    })}
                   </div>
-                ) : (
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button className="est win" onClick={() => ganado(l.id)}><Trophy size={13} /> Ganado</button>
                     <button className="est lose" onClick={() => setDescartando(l)}><XCircle size={13} /> Descartar</button>
                   </div>
-                )}
+                </div>
                 </>)}
               </div>
             );
@@ -554,14 +592,14 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
               <button onClick={() => setDescartando(null)} style={{ background: 'none', border: 'none', color: 'var(--gray-mid)', cursor: 'pointer' }}><X size={18} /></button>
             </div>
             <p style={{ fontSize: 12.5, color: 'var(--gray-mid)', margin: '6px 0 16px' }}>{descartando.vehiculo} · {descartando.nombre}</p>
-            {descartando.gestion === 'contactado' && (
+            {descartando.gestion && descartando.gestion !== 'sin_contactar' && (
               <div style={{ fontSize: 12, color: 'var(--red-soft)', background: 'var(--red-bg)', border: '1px solid var(--red-bd)', borderRadius: 10, padding: '9px 12px', marginBottom: 14, lineHeight: 1.4 }}>
                 Ya contactaste a este cliente, así que se <b>cerrará</b> (no vuelve a la bolsa para no llamarle de nuevo).
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {motivos.map((m) => {
-                const contactado = descartando.gestion === 'contactado';
+                const contactado = descartando.gestion !== 'sin_contactar';
                 const cierra = contactado || m.destino === 'cerrado';
                 return (
                   <button key={m.id} className="motivo" onClick={() => confirmarDescarte(m.id)}>
@@ -618,7 +656,10 @@ const S = {
   locked: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: 'var(--gray-mid)', background: 'rgba(128,128,128,.06)', border: '1px dashed var(--card-bd)', borderRadius: 9, padding: '8px 11px' },
   rowB: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   owned: { display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10.5, fontWeight: 700, letterSpacing: .5, color: 'var(--red-soft)', background: 'var(--red-bg)', border: '1px solid var(--red-bd)', borderRadius: 20, padding: '3px 10px' },
-  estadoTag: { fontSize: 10.5, fontWeight: 600, color: 'var(--gold)', border: '1px solid rgba(232,163,61,.35)', borderRadius: 20, padding: '3px 9px' },
+  estadoTag: { fontSize: 10.5, fontWeight: 700, color: 'var(--gold)', border: '1px solid rgba(232,163,61,.35)', borderRadius: 20, padding: '3px 9px' },
+  segTag: { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: '#ff7a3d', background: 'rgba(255,122,61,.12)', border: '1px solid rgba(255,122,61,.4)', borderRadius: 20, padding: '3px 8px' },
+  pipeRow: { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7 },
+  pipeBtn: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700, padding: '9px 6px', borderRadius: 10, border: '1px solid var(--card-bd)', background: 'var(--card)', color: 'var(--text-soft)', cursor: 'pointer', transition: 'all .15s ease' },
   crow: { display: 'flex', alignItems: 'center', gap: 9, fontSize: 13.5, fontWeight: 500 },
   chipMini: { display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 600, color: 'var(--text-soft)', background: 'rgba(128,128,128,.08)', border: '1px solid var(--card-bd)', borderRadius: 20, padding: '4px 10px' },
   trashBtn: { display: 'inline-grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, border: '1px solid var(--red-bd)', background: 'var(--red-bg)', color: 'var(--red-soft)', cursor: 'pointer', padding: 0 },
