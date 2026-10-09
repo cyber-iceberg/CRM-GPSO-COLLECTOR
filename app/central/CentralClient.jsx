@@ -14,7 +14,8 @@ import BottomNav from '../components/BottomNav';
 import {
   Car, MapPin, Wallet, Lock, Unlock, Clock, Phone, Mail, User,
   Trophy, Timer, Users, TrendingUp, X, RotateCcw, XCircle,
-  LogOut, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Circle, ArrowLeft, Trash2, Calendar, Gauge
+  LogOut, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Circle, ArrowLeft, Trash2, Calendar, Gauge,
+  Banknote, Landmark, Zap, Gem, Filter
 } from 'lucide-react';
 
 const CALOR = {
@@ -60,6 +61,48 @@ function restante(hasta) {
   return `${s}s`;
 }
 
+// ---- Clasificadores para los filtros del catálogo ----
+// Leen el JSONB `detalles` (texto libre de los dos formularios) de forma tolerante.
+function _det(l) { return l && l.detalles && typeof l.detalles === 'object' ? l.detalles : {}; }
+function _junta(l, ...frag) {
+  let s = '';
+  for (const [k, v] of Object.entries(_det(l))) {
+    const kk = k.toLowerCase();
+    if (frag.some((f) => kk.includes(f))) s += ' ' + String(v).toLowerCase();
+  }
+  return s;
+}
+// mayor número (3-6 dígitos) que aparezca en el texto de presupuesto/precio
+function numMax(txt) {
+  if (!txt) return null;
+  const nums = String(txt).replace(/[.\s]/g, '').match(/\d{3,6}/g);
+  if (!nums) return null;
+  return Math.max(...nums.map(Number));
+}
+function presuMax(l) {
+  let best = null;
+  for (const [k, v] of Object.entries(_det(l))) {
+    if (/presupuesto|budget|precio/i.test(k)) {
+      const n = numMax(v);
+      if (n != null) best = Math.max(best == null ? 0 : best, n);
+    }
+  }
+  if (best == null && l.presupuesto) best = Number(l.presupuesto);
+  return best;
+}
+function esContado(l) {
+  const s = _junta(l, 'pago', 'financ', 'contado', 'dinero');
+  return /contado|efectivo|al contado|sin financ/.test(s);
+}
+function esFinanciado(l) {
+  const s = _junta(l, 'pago', 'financ', 'contado', 'dinero');
+  return /financ/.test(s) && !/sin financ|no financ/.test(s) && !/contado|efectivo/.test(s);
+}
+function esUrgente(l) {
+  const s = _junta(l, 'plazo', 'urg', 'cuando', 'cuándo', 'tiempo', 'prisa', 'momento');
+  return /lo antes|antes posible|cuanto antes|cuánto antes|inmediat|urg|\bya\b|de 1-3|1-3 mes|menos de 1|al momento/.test(s);
+}
+
 export default function CentralClient({ user, perfil, catalogoInicial, misLeadsInicial, config, motivos }) {
   const router = useRouter();
   const supabase = createClient();
@@ -77,6 +120,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
   const [verGanados, setVerGanados] = useState(false);
   const [abiertos, setAbiertos] = useState({});
   const toggleAbierto = (id) => setAbiertos(prev => ({ ...prev, [id]: !prev[id] }));
+  const [filtro, setFiltro] = useState('todos');
 
   const activo = perfil && perfil.activo;
   const esAdmin = perfil && perfil.rol === 'admin';
@@ -84,7 +128,6 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
   const enCooldown = cooldownHasta > ahora;
 
   useEffect(() => { const t = setInterval(() => setAhora(Date.now()), 1000); return () => clearInterval(t); }, []);
-  useEffect(() => { cargarGanados(); }, []);
   useEffect(() => { if (!flash) return; const t = setTimeout(() => setFlash(null), 3200); return () => clearTimeout(t); }, [flash]);
 
   const cargarDatos = useCallback(async () => {
@@ -98,7 +141,15 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
     setRefrescando(false);
   }, [supabase, user.id]);
 
-  useEffect(() => { const t = setInterval(cargarDatos, 180000); return () => clearInterval(t); }, [cargarDatos]);
+  useEffect(() => {
+    const t = setInterval(() => {
+      // solo refresca si la pestaña está visible (ahorra carga en la base de datos)
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        cargarDatos();
+      }
+    }, 180000);
+    return () => clearInterval(t);
+  }, [cargarDatos]);
 
   function aviso(t, m) { setFlash({ t, m }); }
 
@@ -183,6 +234,18 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
 
   const totalCat = catalogo.length;
 
+  // ---- Filtros del catálogo (cliente) ----
+  const FILTROS = [
+    { k: 'todos',     lab: 'Todos',         icon: Filter,   test: null },
+    { k: 'contado',   lab: 'Al contado',    icon: Banknote, test: esContado },
+    { k: 'financiado',lab: 'Financiado',    icon: Landmark, test: esFinanciado },
+    { k: 'premium30', lab: '+30.000 €',     icon: Gem,      test: (l) => (presuMax(l) || 0) >= 30000 },
+    { k: 'urgente',   lab: 'Lo quieren ya', icon: Zap,      test: esUrgente },
+  ];
+  const conteo = Object.fromEntries(FILTROS.map(f => [f.k, f.test ? catalogo.filter(f.test).length : catalogo.length]));
+  const testActivo = (FILTROS.find(f => f.k === filtro) || FILTROS[0]).test;
+  const catalogoFiltrado = testActivo ? catalogo.filter(testActivo) : catalogo;
+
   return (
     <div className="gpso-bg" style={{ minHeight: '100vh' }}>
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '26px 22px 50px' }}>
@@ -226,6 +289,26 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
           {esAdmin && <span style={S.adminTag}><Sparkles size={12} /> Admin</span>}
         </div>
 
+        {/* FILTROS (solo catálogo) */}
+        {vista === 'catalogo' && (
+          <div style={S.filtros}>
+            {FILTROS.map(({ k, lab, icon: Ic }) => {
+              const on = filtro === k;
+              return (
+                <button
+                  key={k}
+                  onClick={() => setFiltro(k)}
+                  style={{ ...S.fChip, ...(on ? S.fChipOn : {}) }}
+                >
+                  <Ic size={13} style={{ color: on ? 'var(--gold)' : 'var(--gray-mid)' }} />
+                  {lab}
+                  <span style={{ ...S.fChipN, ...(on ? S.fChipNOn : {}) }}>{conteo[k]}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {flash && (
           <div className={`aviso-flotante ${flash.t === 'ok' ? 'ok' : 'error'}`}>
             {flash.t === 'ok' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />} {flash.m}
@@ -234,7 +317,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
 
         {/* GRID */}
         <div style={S.grid}>
-          {vista === 'catalogo' && catalogo.map((l) => {
+          {vista === 'catalogo' && catalogoFiltrado.map((l) => {
             const c = CALOR[l.calor] || CALOR.medio;
             const off = slotsLibres <= 0 || enCooldown || ocupadoId === l.id;
             const det = l.detalles && typeof l.detalles === 'object' ? l.detalles : {};
@@ -288,8 +371,13 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
               </div>
             );
           })}
-          {vista === 'catalogo' && catalogo.length === 0 && (
-            <div style={S.empty}><Car size={34} color="var(--gray-dark)" /><p>No hay leads disponibles ahora mismo.</p></div>
+          {vista === 'catalogo' && catalogoFiltrado.length === 0 && (
+            <div style={S.empty}>
+              <Car size={34} color="var(--gray-dark)" />
+              <p>{catalogo.length === 0
+                ? 'No hay leads disponibles ahora mismo.'
+                : 'Ningún lead en este filtro. Prueba otro o pulsa «Todos».'}</p>
+            </div>
           )}
 
           {vista === 'mis' && misLeads.map((l) => {
@@ -387,7 +475,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
 
           {vista === 'mis' && (
             <div style={{ gridColumn: '1/-1' }}>
-              <button onClick={() => setVerGanados(v => !v)} style={S.ganadosToggle}>
+              <button onClick={() => { const nuevo = !verGanados; setVerGanados(nuevo); if (nuevo && ganados.length === 0) cargarGanados(); }} style={S.ganadosToggle}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                   <Trophy size={15} color="var(--green)" /> Mis ganados <span style={S.ganadosCount}>{ganados.length}</span>
                 </span>
@@ -483,6 +571,11 @@ const S = {
   scarcity: { display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, padding: '12px 16px', flexWrap: 'wrap' },
   cooldownPill: { display: 'inline-flex', alignItems: 'center', gap: 5, background: 'var(--red-bg)', color: 'var(--red-soft)', border: '1px solid var(--red-bd)', borderRadius: 20, padding: '4px 11px', fontSize: 11.5, fontWeight: 700 },
   adminTag: { display: 'inline-flex', alignItems: 'center', gap: 5, marginLeft: 'auto', color: 'var(--gold)', border: '1px solid rgba(232,163,61,.35)', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 700 },
+  filtros: { display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', margin: '0 0 18px' },
+  fChip: { display: 'inline-flex', alignItems: 'center', gap: 7, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: 'var(--text-soft)', background: 'var(--card-glass)', border: '1px solid var(--card-bd)', borderRadius: 30, padding: '8px 14px', cursor: 'pointer', transition: 'all .15s ease' },
+  fChipOn: { color: 'var(--text)', borderColor: 'rgba(232,163,61,.55)', background: 'rgba(232,163,61,.10)', boxShadow: '0 0 0 1px rgba(232,163,61,.18)' },
+  fChipN: { fontSize: 11, fontWeight: 800, color: 'var(--gray-mid)', background: 'rgba(128,128,128,.14)', borderRadius: 20, padding: '1px 8px', minWidth: 20, textAlign: 'center' },
+  fChipNOn: { color: '#231802', background: 'linear-gradient(100deg,var(--gold),#f2c982)' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px,1fr))', gap: 18, marginTop: 6 },
   cardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   calor: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, letterSpacing: .5 },
