@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '../../lib/supabase/client';
 import MenuDrawer from '../components/MenuDrawer';
 import BottomNav from '../components/BottomNav';
+import GuiaTour, { BotonGuia, useGuia } from '../components/GuiaTour';
 import {
   Car, MapPin, Wallet, Lock, Unlock, Clock, Phone, Mail, User,
   Trophy, Timer, Users, TrendingUp, X, RotateCcw, XCircle,
@@ -121,6 +122,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
   const [abiertos, setAbiertos] = useState({});
   const toggleAbierto = (id) => setAbiertos(prev => ({ ...prev, [id]: !prev[id] }));
   const [filtro, setFiltro] = useState('todos');
+  const guia = useGuia('central-v1');
 
   const activo = perfil && perfil.activo;
   const esAdmin = perfil && perfil.rol === 'admin';
@@ -246,6 +248,28 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
   const testActivo = (FILTROS.find(f => f.k === filtro) || FILTROS[0]).test;
   const catalogoFiltrado = testActivo ? catalogo.filter(testActivo) : catalogo;
 
+  // ---- Pasos del tutorial interactivo (Central) ----
+  const pasosGuia = [
+    { seccion: 'Central', titulo: '¡Bienvenido a tu Central!',
+      texto: 'Aquí llegan en tiempo real personas que quieren comprar o importar un coche. Te enseño en 30 segundos dónde está cada cosa y cómo sacarle partido. Usa <b>Siguiente</b> o las flechas del teclado.' },
+    { sel: '[data-tour="stats"]', seccion: 'Tu estado', titulo: 'Slots, cerrados y reputación',
+      texto: '<b>Slots</b>: cuántos clientes puedes tener a la vez. <b>Cerrados</b>: ventas ganadas. <b>Reputación</b>: % de leads que acabas cerrando. Cuídala: trabaja bien los que coges.' },
+    { sel: '[data-tour="escasez"]', seccion: 'En vivo', titulo: 'Leads disponibles ahora',
+      texto: 'Esto se actualiza solo. <b>El primero que reserva un lead se lo lleva</b>, así que entra cada día: los buenos vuelan en minutos.', antes: () => setVista('catalogo') },
+    { sel: '[data-tour="filtros"]', seccion: 'Catálogo', titulo: 'Filtra lo que buscas',
+      texto: 'Clasifica el catálogo al instante: <b>al contado</b>, <b>financiado</b>, <b>+30.000 €</b> o los que lo quieren <b>ya</b>. Cada filtro te dice cuántos hay.' },
+    { sel: '[data-tour="lead"]', seccion: 'Catálogo', titulo: 'Cada tarjeta es un cliente',
+      texto: 'Ves coche, presupuesto, zona y lo que pidió. Las tarjetas <b style="color:var(--gold)">doradas (Premium)</b> traen mucha más información: son las más fáciles de cerrar. El contacto está oculto hasta que reservas.' },
+    { sel: '[data-tour="reservar"]', seccion: 'Catálogo', titulo: 'Reservar un cliente',
+      texto: 'Al reservar, el lead es <b style="color:var(--gold)">tuyo</b>: se desbloquean su teléfono y email y ocupa un slot. Después hay un pequeño <b>cooldown</b> para que a todos les toque. Úsalo con cabeza.' },
+    { sel: '[data-tour="tabs"]', seccion: 'Mis clientes', titulo: 'Gestiona a los tuyos',
+      texto: 'En <b>Mis clientes</b> están los que ya reservaste. Marca <b>Contactado</b> cuando le escribas, <b>Ganado</b> cuando cierres la venta, o <b>Descartar</b> si no cuaja (vuelve a la bolsa si aún no lo contactaste).', antes: () => setVista('mis') },
+    { sel: '[data-tour="ganados"]', seccion: 'Mis clientes', titulo: 'Tus ventas ganadas',
+      texto: 'Aquí se guardan tus cierres. Si te equivocaste, puedes <b>deshacer un ganado</b> y vuelve a Mis clientes.' },
+    { seccion: 'Listo', titulo: 'Ya lo tienes',
+      texto: 'Eso es todo. Recuerda: <b>entra cada día</b>, reserva con cabeza y trabaja bien cada cliente. Puedes volver a ver este tutorial cuando quieras con el botón <b style="color:var(--gold)">¿Cómo funciona?</b>', antes: () => setVista('catalogo') },
+  ];
+
   return (
     <div className="gpso-bg" style={{ minHeight: '100vh' }}>
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '26px 22px 50px' }}>
@@ -260,7 +284,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
               <div style={{ fontSize: 10, letterSpacing: 2.5, fontWeight: 700, color: 'var(--gray-mid)', textTransform: 'uppercase', marginTop: 3 }}>Central de Leads</div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div data-tour="stats" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <Stat icon={<Circle size={12} />} val={`${misLeads.length} / ${config.slots_max}`} lab="Slots" hot={slotsLibres <= 0} />
             <Stat icon={<Trophy size={13} />} val={perfil?.leads_ganados || 0} lab="Cerrados" />
             <Stat icon={<TrendingUp size={13} />} val={reputacion == null ? '—' : `${reputacion}%`} lab="Reputación" />
@@ -269,7 +293,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
         </div>
 
         {/* ESCASEZ */}
-        <div className="glass" style={S.scarcity}>
+        <div data-tour="escasez" className="glass" style={S.scarcity}>
           <Users size={15} color="var(--red-soft)" />
           <span style={{ color: 'var(--text-soft)' }}><b style={{ color: 'var(--text)', fontWeight: 700 }}>{totalCat} leads</b> disponibles ahora · el primero que reserva se lo lleva</span>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -282,16 +306,17 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
 
         {/* TABS */}
         <div style={{ display: 'flex', gap: 10, margin: '20px 0 16px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div className="seg">
+          <div className="seg" data-tour="tabs">
             <button className={`seg-btn ${vista === 'catalogo' ? 'active' : ''}`} onClick={() => setVista('catalogo')}>Catálogo <span className="mini">{totalCat}</span></button>
             <button className={`seg-btn ${vista === 'mis' ? 'active' : ''}`} onClick={() => setVista('mis')}>Mis clientes <span className="mini">{misLeads.length}</span></button>
           </div>
+          <BotonGuia onClick={guia.abrir} />
           {esAdmin && <span style={S.adminTag}><Sparkles size={12} /> Admin</span>}
         </div>
 
         {/* FILTROS (solo catálogo) */}
         {vista === 'catalogo' && (
-          <div style={S.filtros}>
+          <div data-tour="filtros" style={S.filtros}>
             {FILTROS.map(({ k, lab, icon: Ic }) => {
               const on = filtro === k;
               return (
@@ -336,7 +361,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
             const pago = buscaDet('forma de pago', 'pago', 'financ', 'contado', 'dinero');
             const presuTxt = limpiaPresupuesto(buscaDet('presupuesto', 'budget')) || (l.presupuesto ? euros(l.presupuesto) : 'Consultar');
             return (
-              <div key={l.id} className={`lead-card ${esPremium ? 'premium' : ''}`}>
+              <div key={l.id} data-tour="lead" className={`lead-card ${esPremium ? 'premium' : ''}`}>
                 <div style={S.cardTop}>
                   <span style={{ ...S.calor, color: c.color }}><Circle size={7} fill={c.dot} color={c.dot} /> {c.label}</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
@@ -364,7 +389,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
                 )}
                 <div className="card-foot">
                   <div style={S.locked}><Lock size={12} /> Contacto oculto hasta reservar</div>
-                  <button className={`btn-de ${off ? 'off' : ''}`} disabled={off} onClick={() => reservar(l.id)} style={{ fontSize: 13.5 }}>
+                  <button data-tour="reservar" className={`btn-de ${off ? 'off' : ''}`} disabled={off} onClick={() => reservar(l.id)} style={{ fontSize: 13.5 }}>
                     <Lock size={14} /> {ocupadoId === l.id ? 'RESERVANDO…' : 'RESERVAR CLIENTE'}
                   </button>
                 </div>
@@ -475,7 +500,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
 
           {vista === 'mis' && (
             <div style={{ gridColumn: '1/-1' }}>
-              <button onClick={() => { const nuevo = !verGanados; setVerGanados(nuevo); if (nuevo && ganados.length === 0) cargarGanados(); }} style={S.ganadosToggle}>
+              <button data-tour="ganados" onClick={() => { const nuevo = !verGanados; setVerGanados(nuevo); if (nuevo && ganados.length === 0) cargarGanados(); }} style={S.ganadosToggle}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                   <Trophy size={15} color="var(--green)" /> Mis ganados <span style={S.ganadosCount}>{ganados.length}</span>
                 </span>
@@ -549,6 +574,7 @@ export default function CentralClient({ user, perfil, catalogoInicial, misLeadsI
           </div>
         </div>
       )}
+      <GuiaTour run={guia.run} steps={pasosGuia} onClose={guia.cerrar} />
       <BottomNav perfil={perfil} activa="central" />
     </div>
   );
