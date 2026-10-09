@@ -12,6 +12,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '../../lib/supabase/client';
 import BottomNav from '../components/BottomNav';
+import GuiaTour, { BotonGuia, useGuia } from '../components/GuiaTour';
 import {
   ArrowLeft, Car, Plus, Camera, Flag, Clock, Gauge, MapPin, CheckCircle2,
   AlertTriangle, CloudOff, ChevronRight, Copy, Printer,
@@ -61,6 +62,7 @@ export default function PeritacionClient({ user, perfil, listaInicial }) {
   const [sinSubir, setSinSubir] = useState(0);
   const [cargando, setCargando] = useState(false);
   const syncRef = useRef(null);
+  const guia = useGuia('peritacion-v1', { auto: vista === 'editor' });
 
   const aviso = (t, m) => setFlash({ t, m });
   useEffect(() => { if (!flash) return; const x = setTimeout(() => setFlash(null), 3200); return () => clearTimeout(x); }, [flash]);
@@ -272,6 +274,22 @@ export default function PeritacionClient({ user, perfil, listaInicial }) {
   }
 
   /* =========================================================== EDITOR */
+  const pasosGuia = [
+  { seccion: 'Peritación', titulo: 'La peritación de 140 puntos',
+    texto: 'Te enseño a inspeccionar una unidad paso a paso. Marca solo lo que ves — la nota y el informe se calculan solos.' },
+  { sel: '.pt-main .pt-card', seccion: 'La unidad', titulo: 'Empieza por los datos',
+    texto: 'Marca, VIN, km, precio… Rellena lo que sepas; el resto lo completas <b>delante del coche</b>. Se guarda en el móvil aunque te quedes sin cobertura.', antes: () => setPaso(0) },
+  { sel: '.pt-hdr-bot', seccion: 'Arriba siempre', titulo: 'Tu nota en vivo',
+    texto: 'Aquí ves tu <b>nota /100</b>, las <b>banderas rojas</b> y el <b>% revisado</b>. Se mueve sola según lo que marcas.' },
+  { sel: '.pt-items .pt-item', seccion: 'Cada punto', titulo: 'Correcto · Observación · Defecto',
+    texto: 'Cada comprobación se marca con un toque: <b style="color:var(--green)">Correcto</b>, <b style="color:var(--gold)">Observación</b> o <b style="color:var(--red-soft)">Defecto</b>. Al marcar defecto podrás añadir nota y foto.', antes: () => setPaso(1) },
+  { sel: '.pt-item .pt-tip-btn', seccion: '¿No sabes qué mirar?', titulo: 'Cómo revisar esto',
+    texto: 'Pulsa aquí y te dice <b>qué mirar</b>, <b>qué es normal</b> y <b>qué es una alerta</b>. Nunca marcas a ciegas.' },
+  { sel: '.pt-foot', seccion: 'Navegación', titulo: 'Avanza bloque a bloque',
+    texto: 'Con <b>Siguiente</b> recorres los 11 bloques. Al final: costes, tu recomendación y el <b>informe con semáforo</b>.' },
+  { seccion: 'Listo', titulo: 'Listo, a inspeccionar',
+    texto: 'Marca solo lo que ves y la herramienta hace el resto. Puedes reabrir este tutorial con el botón <b style="color:var(--gold)">Tutorial</b>.', antes: () => setPaso(0) },
+];
   return (
     <div className="gpso-bg pt-app">
       <header className="pt-hdr">
@@ -280,6 +298,7 @@ export default function PeritacionClient({ user, perfil, listaInicial }) {
           <span className="pt-titulo">{ficha.modelo || 'Peritación'}</span>
           {!online && <span className="pt-offline"><CloudOff size={12} /></span>}
           {sinSubir > 0 && <span className="pt-pend"><Camera size={11} /> {sinSubir}</span>}
+          <BotonGuia onClick={guia.abrir} texto="Tutorial" style={{ marginLeft: 'auto' }} />
         </div>
         <div className={'pt-rail' + (res.banderas.length ? ' pt-rail-rojo' : '')}>
           {BLOQUES.map((b, i) => {
@@ -449,6 +468,7 @@ export default function PeritacionClient({ user, perfil, listaInicial }) {
           ? <button className="btn-de" onClick={() => { if (paso === N + 2) finalizar(); setPaso(paso + 1); }} style={{ padding: '13px 18px', fontSize: 13.5 }}>{paso === N + 2 ? 'CERRAR Y VER' : 'SIGUIENTE'}</button>
           : <button className="btn-de" onClick={salir} style={{ padding: '13px 18px', fontSize: 13.5 }}>TERMINAR</button>}
       </footer>
+      <GuiaTour run={guia.run} steps={pasosGuia} onClose={guia.cerrar} />
     </div>
   );
 }
