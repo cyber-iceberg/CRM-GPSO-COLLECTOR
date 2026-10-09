@@ -1,11 +1,13 @@
 'use client';
 
 // =====================================================================
-//  app/peritacion/PeritacionClient.jsx · v5
+//  app/peritacion/PeritacionClient.jsx · v6 (+ tutorial interactivo)
 //  Peritación Collector de 140 puntos, sobre AURA.
 //  · Tips plegables (hacer/normal/alerta), penalización fija.
 //  · Espesómetro (coche), 4 ruedas, elevador, fotos de estado.
 //  · Local-first: guarda en el móvil a cada toque, sincroniza con retraso.
+//  · Tutorial interactivo (GuiaTour): arranca la 1ª vez que se abre una
+//    peritación y se repite con el botón "Tutorial" de la cabecera.
 // =====================================================================
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -40,6 +42,24 @@ const SEM = {
 
 const fichaVacia = () => ({ modelo: '', vin: '', km: '', precio: '', vendedor: '', ciudad: '', fecha: new Date().toISOString().slice(0, 10) });
 const N = BLOQUES.length;
+
+// Pasos del tutorial interactivo (apuntan por clases .pt-*; no tocan componentes.jsx)
+const PASOS_GUIA = (setPaso) => [
+  { seccion: 'Peritación', titulo: 'La peritación de 140 puntos',
+    texto: 'Te enseño a inspeccionar una unidad paso a paso. Marca solo lo que ves — la nota y el informe se calculan solos.' },
+  { sel: '.pt-main .pt-card', seccion: 'La unidad', titulo: 'Empieza por los datos',
+    texto: 'Marca, VIN, km, precio… Rellena lo que sepas; el resto lo completas <b>delante del coche</b>. Se guarda en el móvil aunque te quedes sin cobertura.', antes: () => setPaso(0) },
+  { sel: '.pt-hdr-bot', seccion: 'Arriba siempre', titulo: 'Tu nota en vivo',
+    texto: 'Aquí ves tu <b>nota /100</b>, las <b>banderas rojas</b> y el <b>% revisado</b>. Se mueve sola según lo que marcas.' },
+  { sel: '.pt-items .pt-item', seccion: 'Cada punto', titulo: 'Correcto · Observación · Defecto',
+    texto: 'Cada comprobación se marca con un toque: <b style="color:var(--green)">Correcto</b>, <b style="color:var(--gold)">Observación</b> o <b style="color:var(--red-soft)">Defecto</b>. Al marcar defecto podrás añadir nota y foto.', antes: () => setPaso(1) },
+  { sel: '.pt-item .pt-tip-btn', seccion: '¿No sabes qué mirar?', titulo: 'Cómo revisar esto',
+    texto: 'Pulsa aquí y te dice <b>qué mirar</b>, <b>qué es normal</b> y <b>qué es una alerta</b>. Nunca marcas a ciegas.' },
+  { sel: '.pt-foot', seccion: 'Navegación', titulo: 'Avanza bloque a bloque',
+    texto: 'Con <b>Siguiente</b> recorres los 11 bloques. Al final: costes, tu recomendación y el <b>informe con semáforo</b>.' },
+  { seccion: 'Listo', titulo: 'Listo, a inspeccionar',
+    texto: 'Marca solo lo que ves y la herramienta hace el resto. Puedes reabrir este tutorial con el botón <b style="color:var(--gold)">Tutorial</b>.', antes: () => setPaso(0) },
+];
 
 export default function PeritacionClient({ user, perfil, listaInicial }) {
   const router = useRouter();
@@ -179,6 +199,8 @@ export default function PeritacionClient({ user, perfil, listaInicial }) {
     } catch { aviso('warn', 'No se pudo procesar la foto.'); }
   }
 
+  const pasosGuia = PASOS_GUIA(setPaso);
+
   /* ============================================================ LISTA */
   if (vista === 'lista') {
     return (
@@ -267,29 +289,13 @@ export default function PeritacionClient({ user, perfil, listaInicial }) {
     if (Object.values(mic).some((v) => parseFloat(v) > 0)) { L.push(''); L.push('MICRAS:'); PIEZAS_PINTURA.forEach((p) => { if (mic[p.id]) L.push(`    ${p.label}: ${mic[p.id]} µm`); }); }
     if (ct > 0) { L.push(''); L.push(`COSTES: ${ct.toLocaleString('es-ES')} €`); if (ficha.precio) L.push(`ENTRADA REAL: ${((parseFloat(ficha.precio)||0)+ct).toLocaleString('es-ES')} €`); }
     if (cierre.notas) { L.push(''); L.push('NOTAS: ' + cierre.notas); }
-    return L.join('\\n');
+    return L.join('\n');
   }
   function copiarTexto() {
     navigator.clipboard?.writeText(informeTexto()).then(() => aviso('ok', 'Informe copiado.')).catch(() => aviso('warn', 'No se pudo copiar.'));
   }
 
   /* =========================================================== EDITOR */
-  const pasosGuia = [
-  { seccion: 'Peritación', titulo: 'La peritación de 140 puntos',
-    texto: 'Te enseño a inspeccionar una unidad paso a paso. Marca solo lo que ves — la nota y el informe se calculan solos.' },
-  { sel: '.pt-main .pt-card', seccion: 'La unidad', titulo: 'Empieza por los datos',
-    texto: 'Marca, VIN, km, precio… Rellena lo que sepas; el resto lo completas <b>delante del coche</b>. Se guarda en el móvil aunque te quedes sin cobertura.', antes: () => setPaso(0) },
-  { sel: '.pt-hdr-bot', seccion: 'Arriba siempre', titulo: 'Tu nota en vivo',
-    texto: 'Aquí ves tu <b>nota /100</b>, las <b>banderas rojas</b> y el <b>% revisado</b>. Se mueve sola según lo que marcas.' },
-  { sel: '.pt-items .pt-item', seccion: 'Cada punto', titulo: 'Correcto · Observación · Defecto',
-    texto: 'Cada comprobación se marca con un toque: <b style="color:var(--green)">Correcto</b>, <b style="color:var(--gold)">Observación</b> o <b style="color:var(--red-soft)">Defecto</b>. Al marcar defecto podrás añadir nota y foto.', antes: () => setPaso(1) },
-  { sel: '.pt-item .pt-tip-btn', seccion: '¿No sabes qué mirar?', titulo: 'Cómo revisar esto',
-    texto: 'Pulsa aquí y te dice <b>qué mirar</b>, <b>qué es normal</b> y <b>qué es una alerta</b>. Nunca marcas a ciegas.' },
-  { sel: '.pt-foot', seccion: 'Navegación', titulo: 'Avanza bloque a bloque',
-    texto: 'Con <b>Siguiente</b> recorres los 11 bloques. Al final: costes, tu recomendación y el <b>informe con semáforo</b>.' },
-  { seccion: 'Listo', titulo: 'Listo, a inspeccionar',
-    texto: 'Marca solo lo que ves y la herramienta hace el resto. Puedes reabrir este tutorial con el botón <b style="color:var(--gold)">Tutorial</b>.', antes: () => setPaso(0) },
-];
   return (
     <div className="gpso-bg pt-app">
       <header className="pt-hdr">
@@ -468,6 +474,7 @@ export default function PeritacionClient({ user, perfil, listaInicial }) {
           ? <button className="btn-de" onClick={() => { if (paso === N + 2) finalizar(); setPaso(paso + 1); }} style={{ padding: '13px 18px', fontSize: 13.5 }}>{paso === N + 2 ? 'CERRAR Y VER' : 'SIGUIENTE'}</button>
           : <button className="btn-de" onClick={salir} style={{ padding: '13px 18px', fontSize: 13.5 }}>TERMINAR</button>}
       </footer>
+
       <GuiaTour run={guia.run} steps={pasosGuia} onClose={guia.cerrar} />
     </div>
   );
