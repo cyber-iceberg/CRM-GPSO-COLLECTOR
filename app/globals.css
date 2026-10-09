@@ -441,3 +441,100 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
   animation:girar .7s linear infinite;
 }
 @keyframes girar{to{transform:rotate(360deg);}}
+
+/* =====================================================================
+   PERITACIÓN COLLECTOR (.pt-*)  ·  RECUPERADO
+   Se perdió al reescribir el globals para los colores. Recreado sobre
+   el mismo sistema AURA (tokens, cristal, Bricolage). Phone-first.
+   ===================================================================== */
+
+/* ---- LISTA de peritaciones ---- */
+.pt-lista-head{ display:flex; align-items:center; gap:14px; margin-bottom:22px; }
+.pt-sub{ font-size:12px; color:var(--gray-mid); letter-spacing:.3px; margin-top:3px; }
+.pt-offline{ margin-left:auto; display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700;
+  color:var(--gold); border:1px solid rgba(232,163,61,.35); border-radius:20px; padding:4px 10px; }
+.pt-vacio{ text-align:center; padding:56px 20px; color:var(--text-soft); font-size:14px; line-height:1.6;
+  display:flex; flex-direction:column; align-items:center; gap:14px; }
+.pt-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:14px; }
+.pt-tag{ font-size:10px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
+  border:1px solid var(--card-bd); border-radius:20px; padding:3px 9px; color:var(--text-soft); }
+.pt-time{ display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--gray-mid); }
+.pt-meta{ display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--text-soft); font-weight:500; }
+.pt-bandera-mini{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700;
+  color:var(--red-soft); background:var(--red-bg); border:1px solid var(--red-bd); border-radius:20px; padding:2px 7px; }
+
+/* ---- EDITOR: shell (header fijo · main scroll · footer fijo) ---- */
+.pt-app{ display:flex; flex-direction:column; min-height:100vh; }
+.pt-app > *{ width:100%; max-width:680px; margin-left:auto; margin-right:auto; }
+
+.pt-hdr{ position:sticky; top:0; z-index:30; padding:12px 16px 10px;
+  background:color-mix(in srgb, var(--bg-deep) 86%, transparent);
+  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--card-bd); }
+.pt-hdr-top{ display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+.pt-icon{ display:inline-grid; place-items:center; width:34px; height:34px; flex-shrink:0;
+  border-radius:9px; border:1px solid var(--card-bd); background:var(--card-glass); color:var(--text); cursor:pointer; }
+.pt-titulo{ flex:1; font-size:15px; font-weight:700; color:var(--text);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pt-pend{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700;
+  color:var(--gold); border:1px solid rgba(232,163,61,.35); border-radius:20px; padding:3px 8px; }
+
+/* barra segmentada de progreso por bloque */
+.pt-rail{ display:flex; gap:3px; align-items:stretch; height:8px; }
+.pt-seg{ position:relative; height:8px; min-width:6px; flex:1 1 auto; padding:0; border:none;
+  border-radius:4px; background:var(--card-bd); overflow:hidden; cursor:pointer; }
+.pt-seg.on{ outline:2px solid var(--gold); outline-offset:1px; }
+.pt-seg-fill{ position:absolute; left:0; top:0; height:100%; border-radius:4px; transition:width .3s ease; }
+.pt-rail-rojo .pt-seg{ background:var(--red-bg); }
+
+.pt-hdr-bot{ display:flex; align-items:center; gap:12px; margin-top:9px; }
+.pt-pts{ font-size:13px; color:var(--gray-mid); }
+.pt-pts b{ font-family:'Bricolage Grotesque', sans-serif; font-weight:800; font-size:20px; color:var(--text); }
+.pt-pill-rojo{ font-size:11px; font-weight:700; color:var(--red-soft);
+  background:var(--red-bg); border:1px solid var(--red-bd); border-radius:20px; padding:2px 9px; }
+.pt-cob{ margin-left:auto; font-size:12px; color:var(--gray-mid); }
+
+/* ---- EDITOR: cuerpo ---- */
+.pt-main{ flex:1 1 auto; padding:22px 16px 26px; }
+.pt-eyebrow{ font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
+  color:var(--gold); margin-bottom:6px; }
+.pt-h1{ font-size:30px; line-height:1.05; color:var(--text); margin:0 0 8px; }
+.pt-lead{ color:var(--text-soft); font-size:15px; line-height:1.55; margin:0 0 18px; }
+.pt-intro{ color:var(--text-soft); font-size:14.5px; line-height:1.55; margin:0 0 16px; }
+.pt-card{ padding:18px; margin-bottom:16px; }
+.pt-fila{ display:flex; gap:12px; }
+.pt-fila > *{ flex:1; min-width:0; }
+.pt-k{ font-size:14px; font-weight:700; color:var(--text); margin:0 0 6px; }
+
+.pt-marcador{ display:flex; align-items:center; gap:16px; padding:16px 18px; margin-bottom:16px; }
+.pt-nota{ flex-shrink:0; color:var(--gray-mid); line-height:1; }
+.pt-nota b{ font-size:34px; color:var(--text); }
+.pt-nota span{ font-size:16px; color:var(--gray-mid); }
+
+.pt-items{ list-style:none; margin:0 0 16px; padding:0; display:flex; flex-direction:column; gap:10px; }
+.pt-mini-t{ font-size:12.5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase;
+  color:var(--text); margin:0 0 10px; }
+
+.pt-coste{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:9px 0; border-top:1px solid var(--card-bd); }
+.pt-coste:first-of-type{ border-top:none; }
+.pt-coste label{ font-size:13.5px; color:var(--text-soft); }
+.pt-euro{ display:inline-flex; align-items:center; gap:7px; }
+.pt-euro input{ width:120px; text-align:right; }
+.pt-euro span{ color:var(--gray-mid); font-size:13px; }
+.pt-euro b{ font-size:22px; color:var(--text); }
+.pt-coste-total{ border-top:2px solid var(--card-bd); margin-top:4px; padding-top:12px; }
+.pt-coste-total label{ font-weight:700; color:var(--text); }
+
+.pt-opcion{ width:100%; display:flex; flex-direction:column; align-items:flex-start; gap:3px; text-align:left;
+  background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px;
+  margin-bottom:10px; cursor:pointer; color:var(--text); font-family:inherit; transition:border-color .15s ease, background .15s ease; }
+.pt-opcion:last-child{ margin-bottom:0; }
+.pt-opcion b{ font-size:15px; }
+.pt-opcion span{ font-size:13px; color:var(--text-soft); line-height:1.4; }
+
+/* ---- EDITOR: footer de navegación ---- */
+.pt-foot{ position:sticky; bottom:0; z-index:30; display:flex; align-items:center; gap:12px; padding:12px 16px;
+  background:color-mix(in srgb, var(--bg-deep) 86%, transparent);
+  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border-top:1px solid var(--card-bd); }
+.pt-paso{ flex:1; text-align:center; font-size:12px; color:var(--gray-mid); }
