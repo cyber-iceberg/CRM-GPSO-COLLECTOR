@@ -1,13 +1,15 @@
 'use client';
 
 // =====================================================================
-//  GPSO COLLECTOR · Recursos = Mapa Galáctico (cliente) · v3
+//  GPSO COLLECTOR · Recursos = Mapa Galáctico (cliente) · v4
 //  app/recursos/MundoClient.jsx
 //  Lienzo infinito con ZOOM (rueda) y ARRASTRE (drag). Escala a +10 módulos.
 //  Cada módulo se AUTO-COLOCA en espiral — solo añades la entrada a MODULOS.
 //  (opcional: si pones cx/cy fijos en un módulo, respeta esa posición)
 //
 //  Los emblemas de marca (PNG dorados) van en /public/emblemas/<archivo>.
+//  Si un módulo NO tiene img (p.ej. Operativa), se dibuja un icono de línea
+//  dorado como emblema — no hace falta PNG.
 //  El nombre grande es el TEMA; la marca es solo la estética.
 // =====================================================================
 
@@ -19,6 +21,7 @@ import MenuDrawer from '../components/MenuDrawer';
 //  MÓDULOS · añade aquí. img = archivo en /public/emblemas/
 //  activo:true → navegable (href). activo:false → "próximamente".
 //  cx/cy opcionales: si los omites, se auto-coloca en espiral.
+//  Si omites img y pones icono:'docs' → emblema de línea dorado.
 // ---------------------------------------------------------------------
 const MODULOS = [
   { id: 'fiscalidad',   t: 'Fiscalidad',   s: 'del importador',     marca: 'Mercedes',    img: '/mercedes.png',    activo: true, href: '/recursos/fiscalidad',
@@ -33,7 +36,34 @@ const MODULOS = [
   { id: 'ventas',       t: 'Ventas',       s: 'cerrar al cliente',  marca: 'Lamborghini', img: '/lamborghini.png', activo: false,
     cx: 1000, cy: 320,
     desc: 'Cómo presentar, cerrar y entregar la venta al cliente final.' },
+
+  // NUEVO · constelación de utilidad: contratos descargables + contactos.
+  // Sin marca de coche → usa icono de línea (icono:'docs'). Si prefieres un
+  // emblema propio, pon img:'/emblemas/operativa.png' y se usará ese.
+  { id: 'operativa',    t: 'Operativa',    s: 'contratos y contactos', marca: 'GPSO',     icono: 'docs',           activo: true, href: '/recursos/operativa',
+    cx: 1000, cy: 1010, conecta: ['fiscalidad'],
+    desc: 'Tus contratos listos para descargar y los contactos de confianza para ejecutar cada operación.' },
 ];
+
+// emblema de línea (cuando un módulo no tiene PNG de marca)
+function IconoEmblema({ tipo }) {
+  if (tipo === 'docs') {
+    return (
+      <svg className="emblema-svg" width="108" height="108" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {/* documento */}
+        <path d="M7 3.5h7l4 4V18a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2Z" />
+        <path d="M14 3.5V7a1 1 0 0 0 1 1h3.2" />
+        <path d="M8.5 12h5M8.5 15h3.2" />
+        {/* contacto / nodo */}
+        <circle cx="17" cy="16.5" r="3.2" fill="#05070c" />
+        <circle cx="17" cy="15.4" r="1.05" />
+        <path d="M14.7 18.6c.3-1 1.2-1.6 2.3-1.6s2 .6 2.3 1.6" />
+      </svg>
+    );
+  }
+  return null;
+}
 
 // auto-colocación en espiral áurea (para los que no tienen cx/cy fijos)
 const GOLDEN = Math.PI * (3 - Math.sqrt(5));
@@ -235,8 +265,12 @@ export default function MundoClient({ email, perfil }) {
               ))}
               {/* aro dorado */}
               <span className="aro" />
-              {/* emblema */}
-              <span className="emblema"><img src={m.img} alt={m.marca} draggable="false" /></span>
+              {/* emblema (PNG de marca o icono de línea) */}
+              <span className={'emblema' + (m.img ? '' : ' emblema-icono')}>
+                {m.img
+                  ? <img src={m.img} alt={m.marca} draggable="false" />
+                  : <IconoEmblema tipo={m.icono} />}
+              </span>
               {/* etiqueta */}
               <span className="etq">
                 <span className="e-t">{m.t}</span>
@@ -320,6 +354,12 @@ export default function MundoClient({ email, perfil }) {
         .emblema img{width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 6px rgba(240,210,130,.5)) brightness(1.15);transition:transform .3s,filter .3s}
         .nodo.pronto .emblema img{opacity:.35;filter:saturate(.4) brightness(.7)}
         .nodo.activo:hover .emblema img,.nodo.activo.hov .emblema img{transform:scale(1.05);filter:drop-shadow(0 0 20px rgba(240,226,182,.4))}
+
+        /* emblema de línea (módulos sin PNG de marca, p.ej. Operativa) */
+        .emblema-icono{-webkit-mask-image:none;mask-image:none}
+        .emblema-svg{color:#e3c987;filter:drop-shadow(0 0 10px rgba(240,210,130,.5));transition:transform .3s,filter .3s}
+        .nodo.activo:hover .emblema-svg,.nodo.activo.hov .emblema-svg{transform:scale(1.07);filter:drop-shadow(0 0 20px rgba(240,226,182,.6))}
+        .nodo.pronto .emblema-svg{color:#6a7180;filter:none;opacity:.5}
 
         .etq{position:absolute;top:135px;left:0;transform:translate(-50%,0);text-align:center;white-space:nowrap}
         .e-t{display:block;font-family:var(--font-cormorant),serif;font-weight:600;font-size:23px;color:#ecdcae;letter-spacing:.5px;text-shadow:0 2px 12px rgba(10,12,16,.9)}
