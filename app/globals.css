@@ -548,7 +548,8 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
    ===================================================================== */
 
 /* ---- ÍTEM de inspección ---- */
-.pt-item{ background:var(--card-glass); border:1px solid var(--card-bd); border-radius:14px; padding:14px; }
+.pt-item{ background:var(--card-glass); border:1px solid var(--card-bd); border-radius:14px; padding:14px;
+  box-shadow:0 2px 12px rgba(20,20,30,.05); }
 .pt-item.e-ok{  border-color:var(--green-bd); }
 .pt-item.e-obs{ border-color:rgba(232,163,61,.42); }
 .pt-item.e-def{ border-color:var(--red-bd); }
@@ -558,21 +559,25 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
 .pt-pen{ font-size:12px; font-weight:700; color:var(--gray-mid); }
 .pt-item-flag{ color:var(--red-soft); }
 
-/* botón "cómo revisar" */
-.pt-tip-btn{ display:inline-flex; align-items:center; gap:7px; width:100%; font-family:inherit; font-size:12.5px;
-  font-weight:600; color:var(--text-soft); background:transparent; border:1px solid var(--card-bd);
-  border-radius:10px; padding:9px 12px; cursor:pointer; margin-bottom:11px; transition:all .15s ease; }
-.pt-tip-btn.on{ color:var(--text); }
+/* botón "cómo revisar" · pastilla ligera dorada, alineada a la izquierda
+   (antes era una caja grande que competía con la tarjeta) */
+.pt-tip-btn{ display:inline-flex; align-items:center; gap:7px; align-self:flex-start; width:auto; font-family:inherit;
+  font-size:12px; font-weight:700; color:var(--gold); background:rgba(232,163,61,.07);
+  border:1px solid rgba(232,163,61,.28); border-radius:20px; padding:6px 13px; cursor:pointer;
+  margin-bottom:11px; transition:all .15s ease; }
+.pt-tip-btn:hover{ background:rgba(232,163,61,.12); }
+.pt-tip-btn.on{ color:var(--gold); }
 .pt-tip-btn.urge{ color:var(--red-soft); border-color:var(--red-bd); background:var(--red-bg); }
-.pt-tip-chev{ margin-left:auto; transition:transform .2s ease; }
+.pt-tip-chev{ margin-left:2px; transition:transform .2s ease; }
 
-.pt-tip{ background:rgba(128,128,128,.06); border:1px solid var(--card-bd); border-radius:11px; padding:12px;
+/* el tip hereda el tinte dorado del botón -> sistema coherente */
+.pt-tip{ background:rgba(232,163,61,.05); border:1px solid rgba(232,163,61,.18); border-radius:12px; padding:12px;
   margin-bottom:11px; display:flex; flex-direction:column; gap:9px; }
 .pt-tip-l{ display:flex; align-items:flex-start; gap:9px; font-size:13px; line-height:1.45; color:var(--text-soft); margin:0; }
 .pt-tip-l svg{ flex-shrink:0; margin-top:1px; }
-.pt-tip-l.l-hacer svg{ color:#9db4d6; }
-.pt-tip-l.l-normal svg{ color:var(--green); }
-.pt-tip-l.l-alerta svg{ color:var(--red-soft); }
+.pt-tip-l.l-hacer svg{ color:var(--gold); }     /* qué mirar  = oro */
+.pt-tip-l.l-normal svg{ color:var(--green); }    /* normal/bien = verde */
+.pt-tip-l.l-alerta svg{ color:var(--red-soft); } /* alerta      = rojo */
 
 /* tres botones de estado */
 .pt-seg3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
@@ -647,3 +652,12 @@ input[type="range"].slider-gpso::-moz-range-track{ background:transparent; }
 .pt-desg{ font-family:inherit; font-size:11.5px; font-weight:600; padding:6px 11px; border-radius:20px;
   border:1px solid var(--card-bd); background:var(--card); color:var(--text-soft); cursor:pointer; transition:all .15s ease; }
 .pt-desg.on{ color:var(--text); border-color:rgba(232,163,61,.5); background:rgba(232,163,61,.10); }
+
+/* ---- Peritación · CTA del pie en DORADO (antes blanco brusco) ----
+   Scoped al pie de la peritación: se funde con el acento dorado de la
+   herramienta y no canta como un bloque blanco. No afecta a la Central. */
+.pt-foot .btn-de{
+  background:linear-gradient(100deg, #E8A33D, #f2c982);
+  color:#231802; box-shadow:0 6px 18px rgba(232,163,61,.3);
+}
+.pt-foot .btn-de:hover{ box-shadow:0 10px 26px rgba(232,163,61,.4); }
