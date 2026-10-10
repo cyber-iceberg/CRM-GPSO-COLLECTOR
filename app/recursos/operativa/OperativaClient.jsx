@@ -191,6 +191,8 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
     if (n.kind === 'contrato' || n.kind === 'categoria') { setSel(n.id); return; }
   }
   const volverHome = () => { setRama(null); setSel(null); };
+  // "Atrás" contextual: si estás dentro de un bloque/contrato/ITV, vuelve a los orbes; si no, al inicio.
+  const atras = () => { if (sel) { setSel(null); setRegionSel(null); } else { volverHome(); } };
 
   const panelAbierto = !!rama;
   const contrato = sel && CONTRATOS.find(c => c.id === sel);
@@ -276,8 +278,8 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
           </div>
         </div>
         <div className="top-right">
-          {rama && <button className="volver" onClick={volverHome}>← Volver</button>}
-          <a href="/recursos" className="volver">← Recursos</a>
+          {rama && <button className="volver" onClick={atras}>← Volver</button>}
+          <a href="/recursos" className="volver recursos-link">← Recursos</a>
           <MenuDrawer perfil={perfil} email={email} />
         </div>
       </header>
@@ -585,10 +587,14 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
           .stage.mapa{padding-right:420px}
         }
         @media (max-width:760px){
-          .panel{top:auto;left:0;right:0;width:auto;max-height:70vh;border-left:none;border-top:1px solid #1b2130;border-radius:16px 16px 0 0;transform:translateY(105%)}
+          .op-top{padding:12px 14px 10px}
+          .sublabel{display:none}
+          .volver{padding:6px 10px;font-size:11px;letter-spacing:.5px}
+          .top-right{gap:7px}
+          .panel{top:auto;left:0;right:0;width:auto;max-height:58vh;border-left:none;border-top:1px solid #1b2130;border-radius:16px 16px 0 0;transform:translateY(105%)}
           .panel.open{transform:translateY(0)}
-          .stage:not(.mapa){transform:scale(.62);transform-origin:top center;left:0;right:0}
-          .stage.mapa{padding:84px 14px 30vh;align-items:flex-start}
+          .stage:not(.mapa){transform:translateY(6%) scale(.82);transform-origin:top center;left:0;right:0}
+          .stage.mapa{padding:96px 12px 44vh;align-items:flex-start}
         }
       `}</style>
     </div>
