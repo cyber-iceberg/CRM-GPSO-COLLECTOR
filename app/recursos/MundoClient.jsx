@@ -108,11 +108,7 @@ export default function MundoClient({ email, perfil }) {
     }
     setCosmos({ dots });
 
-    const activo = nodos.find(m => m.activo) || nodos[0];
-    if (activo && wrapRef.current) {
-      const w = wrapRef.current.clientWidth, h = wrapRef.current.clientHeight;
-      setCam({ x: w / 2 - activo.cx, y: h / 2 - activo.cy + 40, z: 1 });
-    }
+    encuadrar();
 
     if (reduceRef.current) return;
     let mx = -600, my = -600, hx = -600, hy = -600, raf;
@@ -164,12 +160,24 @@ export default function MundoClient({ email, perfil }) {
     if (m.activo && m.href) router.push(m.href);
   };
   const zoomBtn = (d) => setCam(c => ({ ...c, z: Math.min(1.8, Math.max(0.45, c.z + d)) }));
-  const recenter = () => {
-    const activo = nodos.find(m => m.activo) || nodos[0];
-    if (!activo || !wrapRef.current) return;
-    const w = wrapRef.current.clientWidth, h = wrapRef.current.clientHeight;
-    setCam({ x: w / 2 - activo.cx, y: h / 2 - activo.cy, z: 1 });
-  };
+  // Encuadre inicial / centrar: en móvil aleja el zoom y encuadra TODO el universo.
+  function encuadrar() {
+    const el = wrapRef.current;
+    if (!el) return;
+    const w = el.clientWidth, h = el.clientHeight;
+    const movil = w < 680;
+    const z = movil ? Math.max(0.42, Math.min(0.62, (w - 60) / 920)) : 1;
+    let cx, cy;
+    if (movil) {
+      const xs = nodos.map(n => n.cx), ys = nodos.map(n => n.cy);
+      cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+      cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    } else {
+      const a = nodos.find(m => m.activo) || nodos[0]; cx = a.cx; cy = a.cy;
+    }
+    setCam({ x: w / 2 - cx * z, y: h / 2 - cy * z + (movil ? 0 : 40), z });
+  }
+  const recenter = () => encuadrar();
 
   const emblemaHalo = (i) => {
     // halo de estrellas alrededor del emblema (constelación)
@@ -353,6 +361,13 @@ export default function MundoClient({ email, perfil }) {
         .ctrl button:hover{border-color:#c9a14d;color:#f0e2b6}
         .ctrl .rec{font-size:16px}
 
+        @media (max-width:640px){
+          .mundo-top{padding:12px 14px 10px}
+          .sublabel{display:none}
+          .volver{padding:6px 11px;font-size:11px;letter-spacing:.8px}
+          .top-right{gap:10px}
+          .titulo{top:70px}
+        }
         @media (max-width:900px){
           .titulo h1{font-size:22px}
           .titulo p{font-size:10px}
