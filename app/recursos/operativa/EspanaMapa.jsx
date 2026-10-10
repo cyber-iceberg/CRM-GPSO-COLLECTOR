@@ -52,10 +52,16 @@ export default function EspanaMapa({ conCount = () => 0, sel = null, onSelect = 
       </svg>
 
       <style jsx>{`
-        .mapa-wrap{width:100%;max-width:760px;margin:0 auto;padding:0 10px;
-          animation:mapaIn .5s ease both}
-        @keyframes mapaIn{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:scale(1)}}
-        .mapa-head{text-align:center;margin-bottom:12px}
+        .mapa-wrap{width:100%;max-width:760px;margin:0 auto;padding:0 10px;transform-origin:50% 46%;
+          animation:mapaIn .95s cubic-bezier(.16,.82,.24,1) both}
+        @keyframes mapaIn{
+          0%{opacity:0;transform:scale(.26) translateY(14px);filter:blur(8px)}
+          55%{opacity:1}
+          100%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}
+        }
+        .mapa-head{text-align:center;margin-bottom:12px;animation:headIn .55s ease .45s both}
+        @keyframes headIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+        @media (prefers-reduced-motion:reduce){.mapa-wrap,.mapa-head{animation:none}}
         .mapa-h{font-family:var(--font-cormorant),Georgia,serif;font-weight:600;font-size:clamp(20px,2.6vw,26px);color:#ecdcae;margin:0}
         .mapa-hs{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8ea3c4;margin-top:5px;min-height:14px;transition:color .2s}
         .mapa-svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 20px 60px rgba(0,0,0,.5))}
