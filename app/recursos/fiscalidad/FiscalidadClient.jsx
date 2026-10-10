@@ -14,6 +14,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import MenuDrawer from '../../components/MenuDrawer';
+import NodoVisual from '../../components/NodoVisual';
 
 const fmt = (n) => (Math.round(n * 100) / 100).toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
@@ -527,7 +528,7 @@ export default function FiscalidadClient({ email, perfil }) {
               style={{ left: nd.x, top: nd.y }}
               onMouseEnter={() => setHov(id)} onMouseLeave={() => setHov(null)}
               onClick={() => clickNodo(id)}>
-              <span className={'orbe' + (tieneOcultos(id) && !expandidos.has(id) ? ' cerrado' : '')} />
+              <NodoVisual cerrado={tieneOcultos(id) && !expandidos.has(id)} />
               <span className="etq">
                 <span className="t">{nd.t}{nd.clip && <span className="clipb">CLIP</span>}</span>
                 <span className="s">{nd.s}</span>
