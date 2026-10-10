@@ -202,7 +202,10 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
     <div className={'op-scene r-' + (rama || 'home') + (panelAbierto ? ' conPanel' : '')}
       onMouseDown={(e) => { if (rama && !e.target.closest('.nodo') && !e.target.closest('.panel') && !e.target.closest('.op-top')) volverHome(); }}>
 
-      {/* cielo */}
+      {/* galaxia de fondo (imagen) + brillo por rama */}
+      <div className="cielo" aria-hidden="true" />
+
+      {/* estrellas */}
       <svg className="cosmos" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         {cosmos && cosmos.map((d, i) => (
           <circle key={i} cx={d.x} cy={d.y} r={d.r / 12} style={{ opacity: d.o, animation: `nbrillo ${d.tw}s ease-in-out ${d.d}s infinite alternate` }} />
@@ -355,16 +358,22 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
 
       <style jsx>{`
         .op-scene{position:fixed;inset:0;overflow:hidden;color:#ece7dd;font-family:var(--font-space-grotesk),sans-serif;
-          background:linear-gradient(180deg,#0a0e18 0%,#070a12 60%,#060810 100%);transition:background .6s}
-        .op-scene::before{content:'';position:absolute;inset:0;pointer-events:none;transition:opacity .6s,background .6s;
-          background:
-            radial-gradient(45% 30% at 50% 8%, rgba(201,161,77,.09), transparent 60%),
-            radial-gradient(42% 48% at 30% 56%, rgba(201,161,77,.08), transparent 62%),
-            radial-gradient(42% 48% at 74% 74%, rgba(90,122,168,.10), transparent 62%);}
-        .op-scene.r-contratos::before{background:radial-gradient(55% 60% at 30% 52%, rgba(201,161,77,.14), transparent 64%)}
-        .op-scene.r-contactos::before{background:radial-gradient(55% 60% at 30% 52%, rgba(90,122,168,.16), transparent 64%)}
+          background:#060810}
 
-        .cosmos{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+        /* GALAXIA de fondo (misma imagen que el mapa / Fiscalidad) */
+        .cielo{position:absolute;inset:-30px;z-index:0;background-color:#0a0d14;
+          background-image:radial-gradient(1200px 800px at 50% 40%, rgba(60,48,24,.25) 0%, transparent 58%), url(/cosmos.jpg);
+          background-size:cover;background-position:center;opacity:.5}
+        .cielo::after{content:'';position:absolute;inset:0;transition:background .6s;
+          background:radial-gradient(ellipse at 50% 46%, rgba(6,8,16,.18) 25%, rgba(6,8,16,.74) 100%)}
+        .op-scene.r-contratos .cielo::after{background:
+          radial-gradient(58% 60% at 30% 52%, rgba(201,161,77,.16), transparent 62%),
+          radial-gradient(ellipse at 50% 46%, rgba(6,8,16,.18) 25%, rgba(6,8,16,.78) 100%)}
+        .op-scene.r-contactos .cielo::after{background:
+          radial-gradient(58% 60% at 30% 52%, rgba(90,122,168,.18), transparent 62%),
+          radial-gradient(ellipse at 50% 46%, rgba(6,8,16,.18) 25%, rgba(6,8,16,.78) 100%)}
+
+        .cosmos{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
         .cosmos circle{fill:#9aa3b5}
         @keyframes nbrillo{from{fill-opacity:.3}to{fill-opacity:1}}
 
