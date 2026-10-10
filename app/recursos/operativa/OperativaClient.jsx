@@ -241,7 +241,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
   );
 
   return (
-    <div className={'op-scene r-' + (rama || 'home') + (panelAbierto ? ' conPanel' : '')}
+    <div className={'op-scene r-' + (rama || 'home') + (panelAbierto ? ' conPanel' : '') + (esMapaITV ? ' itv' : '')}
       onMouseDown={(e) => { if (rama && !e.target.closest('.nodo') && !e.target.closest('.panel') && !e.target.closest('.op-top') && !e.target.closest('.mapa-wrap')) volverHome(); }}>
 
       {/* galaxia de fondo (imagen) + brillo por rama */}
@@ -420,6 +420,10 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
         .op-scene.r-contactos .cielo::after{background:
           radial-gradient(58% 60% at 30% 52%, rgba(90,122,168,.18), transparent 62%),
           radial-gradient(ellipse at 50% 46%, rgba(6,8,16,.18) 25%, rgba(6,8,16,.78) 100%)}
+        /* al abrir ITV: leve zoom del fondo (sensación de "lanzarse" a España) */
+        .op-scene.itv .cielo{animation:cieloZoom 1.1s cubic-bezier(.16,.82,.24,1) both}
+        @keyframes cieloZoom{from{transform:scale(1.16)}to{transform:scale(1)}}
+        @media (prefers-reduced-motion:reduce){.op-scene.itv .cielo{animation:none}}
 
         .cosmos{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
         .cosmos circle{fill:#9aa3b5}
