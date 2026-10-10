@@ -14,6 +14,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { createClient } from '../../../lib/supabase/client';
 import MenuDrawer from '../../components/MenuDrawer';
+import NodoVisual from '../../components/NodoVisual';
 
 // ---- helpers de contenido ----
 const lead = (t) => `<p class="n-lead">${t}</p>`;
@@ -419,7 +420,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
                 style={{ left: nd.x, top: nd.y }}
                 onMouseEnter={() => setHov(id)} onMouseLeave={() => setHov(null)}
                 onClick={() => clickNodo(id)}>
-                <span className={'orbe' + (nd.tipo === 'contrato' ? ' doc' : '') + (nd.tipo === 'categoria' ? ' contacto' : '') + (tieneOcultos(id) && !expandidos.has(id) ? ' cerrado' : '')} />
+                <NodoVisual tono={nd.tipo === 'categoria' ? 'azul' : 'oro'} cerrado={tieneOcultos(id) && !expandidos.has(id)} />
                 <span className="etq">
                   <span className="t">{nd.t}</span>
                   <span className="s">{sub}</span>
