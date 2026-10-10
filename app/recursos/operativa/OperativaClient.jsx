@@ -405,7 +405,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
                     </>
                   )}
                   {esAdmin && mostrarForm && formAdmin('ITV', 'itv', 'Ej. sin cita previa', true)}
-                  <button className="link-volver" onClick={() => setSel(null)}>← Todos los bloques</button>
+                  <button className="link-volver" onClick={() => setSel(null)}>Todos los bloques</button>
                 </>
               )}
 
@@ -420,7 +420,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
                   {listaCat.map(tarjetaContacto)}
                   {esAdmin && !mostrarForm && (<button className="cf-add" onClick={() => abrirForm()}>+ Añadir contacto a {CAT_LABEL[catSel]}</button>)}
                   {esAdmin && mostrarForm && formAdmin(CAT_LABEL[catSel], catSel)}
-                  <button className="link-volver" onClick={() => setSel(null)}>← Todos los bloques</button>
+                  <button className="link-volver" onClick={() => setSel(null)}>Todos los bloques</button>
                 </>
               )}
             </div>
@@ -600,11 +600,12 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
         @media (max-width:760px){
           .op-top{padding:12px 14px 10px}
           .sublabel{display:none}
+          .marca{display:none}
           .volver{padding:6px 10px;font-size:11px;letter-spacing:.5px}
           .top-right{gap:7px}
           .panel{top:auto;left:0;right:0;width:auto;max-height:58vh;border-left:none;border-top:1px solid #1b2130;border-radius:16px 16px 0 0;transform:translateY(105%)}
           .panel.open{transform:translateY(0)}
-          .stage:not(.mapa){transform:translateY(6%) scale(.82);transform-origin:top center;left:0;right:0}
+          .stage:not(.mapa){transform:scale(.92);transform-origin:center 48%;left:0;right:0}
           .stage.mapa{padding:96px 12px 44vh;align-items:flex-start}
           /* eligiendo comunidad: panel bajo y mapa grande (toda España tocable) */
           .op-scene.itv-pick .panel{max-height:30vh}
