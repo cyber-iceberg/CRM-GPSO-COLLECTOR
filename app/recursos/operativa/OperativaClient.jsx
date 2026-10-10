@@ -421,8 +421,8 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
           radial-gradient(58% 60% at 30% 52%, rgba(90,122,168,.18), transparent 62%),
           radial-gradient(ellipse at 50% 46%, rgba(6,8,16,.18) 25%, rgba(6,8,16,.78) 100%)}
         /* al abrir ITV: leve zoom del fondo (sensación de "lanzarse" a España) */
-        .op-scene.itv .cielo{animation:cieloZoom 1.1s cubic-bezier(.16,.82,.24,1) both}
-        @keyframes cieloZoom{from{transform:scale(1.16)}to{transform:scale(1)}}
+        .op-scene.itv .cielo{animation:cieloZoom 1.2s cubic-bezier(.16,.82,.24,1) both}
+        @keyframes cieloZoom{from{transform:scale(1.28)}to{transform:scale(1)}}
         @media (prefers-reduced-motion:reduce){.op-scene.itv .cielo{animation:none}}
 
         .cosmos{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
