@@ -25,23 +25,26 @@ import MenuDrawer from '../components/MenuDrawer';
 // ---------------------------------------------------------------------
 const MODULOS = [
   { id: 'fiscalidad',   t: 'Fiscalidad',   s: 'del importador',     marca: 'Mercedes',    img: '/mercedes.png',    activo: true, href: '/recursos/fiscalidad',
-    cx: 1000, cy: 700, conecta: ['negociacion', 'logistica', 'ventas'],
+    cx: 1000, cy: 700, conecta: ['negociacion', 'operativa', 'ventas'],
     desc: 'Quién, qué y cómo se factura cada operación — con coches reales.' },
   { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/ferrari.png',     activo: false,
-    cx: 680, cy: 440, conecta: ['logistica'],
+    cx: 680, cy: 440, conecta: ['ventas'],
     desc: 'Cómo negociar el precio en Alemania y cerrar la compra.' },
-  { id: 'logistica',    t: 'Logística',    s: 'transporte y ruta',  marca: 'Cupra',       img: '/cupra.png',       activo: false,
-    cx: 1320, cy: 440, conecta: ['ventas'],
-    desc: 'Cómo traer el coche: camión, ruta propia, tiempos y costes.' },
   { id: 'ventas',       t: 'Ventas',       s: 'cerrar al cliente',  marca: 'Lamborghini', img: '/lamborghini.png', activo: false,
     cx: 1000, cy: 320,
     desc: 'Cómo presentar, cerrar y entregar la venta al cliente final.' },
 
-  // NUEVO · constelación de utilidad: contratos descargables + contactos.
-  // Usa el emblema del Cupra (libre, Logística está en "próximamente").
+  // Operativa ocupa el sitio del Cupra (antes "Logística", en próximamente).
+  // Constelación de utilidad: contratos descargables + contactos.
   { id: 'operativa',    t: 'Operativa',    s: 'contratos y contactos', marca: 'Cupra',    img: '/cupra.png',       activo: true, href: '/recursos/operativa',
-    cx: 1000, cy: 1010, conecta: ['fiscalidad'],
+    cx: 1320, cy: 440, conecta: ['fiscalidad'],
     desc: 'Tus contratos listos para descargar y los contactos de confianza para ejecutar cada operación.' },
+
+  // Logística aparcada (reutilizamos su emblema Cupra en Operativa). Para
+  // recuperarla, descoméntala y dale su propio emblema en /public/.
+  // { id: 'logistica', t: 'Logística', s: 'transporte y ruta', marca: 'Cupra', img: '/cupra.png', activo: false,
+  //   cx: 1320, cy: 180, conecta: ['ventas'],
+  //   desc: 'Cómo traer el coche: camión, ruta propia, tiempos y costes.' },
 ];
 
 // auto-colocación en espiral áurea (para los que no tienen cx/cy fijos)
