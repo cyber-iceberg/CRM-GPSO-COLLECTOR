@@ -4,6 +4,8 @@
 //  GPSO COLLECTOR · LOGIN  ·  app/login/page.jsx  (v5)
 //  Logo unificado + FEEDBACK de carga: overlay "Entrando…" a pantalla
 //  completa para que no haya momento en blanco tras pulsar ENTRAR.
+//  v5.1: botón ENTRAR con degradado rojo (antes salía blanco por el
+//        token --btn-grad del tema por defecto).
 // =====================================================================
 
 import { useState } from 'react';
@@ -11,6 +13,8 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '../../lib/supabase/client';
 
 const LOGO = '/collector.jpg'; // sube tu logo a public/collector.jpg
+// Degradado rojo del botón (fijo aquí para no depender del tema).
+const GRAD_ROJO = 'linear-gradient(100deg, #1a1212 0%, #3a1414 52%, #C61A1A 100%)';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -61,6 +65,9 @@ export default function LoginPage() {
     return msg;
   }
 
+  // estilo de pestaña activa (rojo) para que no salga blanca
+  const segActivo = { background: GRAD_ROJO, color: '#fff' };
+
   return (
     <div className="gpso-bg" style={{ display: 'grid', placeItems: 'center', minHeight: '100vh', padding: 20 }}>
 
@@ -94,9 +101,9 @@ export default function LoginPage() {
 
         <div style={{ padding: '22px 26px 26px' }}>
           <div className="seg" style={{ display: 'flex', width: '100%', marginBottom: 18 }}>
-            <button className={`seg-btn ${modo === 'login' ? 'active' : ''}`} style={{ flex: 1, justifyContent: 'center' }}
+            <button className={`seg-btn ${modo === 'login' ? 'active' : ''}`} style={{ flex: 1, justifyContent: 'center', ...(modo === 'login' ? segActivo : {}) }}
               onClick={() => { setModo('login'); setError(''); setOk(''); }}>Entrar</button>
-            <button className={`seg-btn ${modo === 'registro' ? 'active' : ''}`} style={{ flex: 1, justifyContent: 'center' }}
+            <button className={`seg-btn ${modo === 'registro' ? 'active' : ''}`} style={{ flex: 1, justifyContent: 'center', ...(modo === 'registro' ? segActivo : {}) }}
               onClick={() => { setModo('registro'); setError(''); setOk(''); }}>Crear cuenta</button>
           </div>
 
@@ -119,7 +126,8 @@ export default function LoginPage() {
           {error && <div className="aviso error" style={{ marginTop: 4 }}>{error}</div>}
           {ok && <div className="aviso ok" style={{ marginTop: 4 }}>{ok}</div>}
 
-          <button className="btn-de" disabled={cargando} onClick={submit} style={{ width: '100%', marginTop: 16, fontSize: 14 }}>
+          <button className="btn-de" disabled={cargando} onClick={submit}
+            style={{ width: '100%', marginTop: 16, fontSize: 14, background: GRAD_ROJO, color: '#fff' }}>
             {cargando
               ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span className="spinner-mini" /> {modo === 'login' ? 'ENTRANDO…' : 'CREANDO…'}</span>
               : (modo === 'login' ? 'ENTRAR' : 'CREAR CUENTA')}
