@@ -32,7 +32,7 @@ const CONTRATOS = [
   { id: 'c_compraventa',    t: 'Compraventa',              archivo: 'Plantilla_Contrato_Compraventa_Generica.docx',
     desc: 'Plantilla única de compraventa, tanto si el coche ya está en stock como si está pendiente de importar.' },
   { id: 'c_intermediacion', t: 'Intermediación',           archivo: 'Plantilla_Contrato_Intermediacion_Generica.docx',
-    desc: 'El cliente compra directamente al vendedor; GPSO cobra honorarios de intermediación. El coche nunca es tuyo.' },
+    desc: 'El cliente compra directamente al vendedor; tú cobras honorarios de intermediación. El coche nunca es tuyo.' },
   { id: 'c_matriculacion',  t: 'Gestión de matriculación', archivo: 'Plantilla Contrato Gestion Matriculacion Espana - Generica Alumnos.docx',
     desc: 'Solo el trámite técnico y documental en España, para coches que el cliente ya tiene fuera.' },
 ];
