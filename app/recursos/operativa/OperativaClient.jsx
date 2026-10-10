@@ -24,14 +24,16 @@ const hook = (t) => `<div class="n-hook">${t}</div>`;
 // ---------------------------------------------------------------------
 //  CONTRATOS · plantillas .docx (van en /public/contratos/<archivo>)
 // ---------------------------------------------------------------------
+// IMPORTANTE: `archivo` = nombre EXACTO del .docx en /public/contratos/
+// (tal cual lo subiste a GitHub, con mayúsculas, guiones bajos y espacios).
 const CONTRATOS = [
-  { id: 'c_reserva',        t: 'Reserva y Compra',         archivo: 'reserva-y-compra.docx',
+  { id: 'c_reserva',        t: 'Reserva y Compra',         archivo: 'Plantilla_Contrato_Reserva_Compra_Generica.docx',
     desc: 'Reserva, validación y compraventa de la unidad importada. El contrato completo de principio a fin.' },
-  { id: 'c_compraventa',    t: 'Compraventa',              archivo: 'compraventa.docx',
+  { id: 'c_compraventa',    t: 'Compraventa',              archivo: 'Plantilla_Contrato_Compraventa_Generica.docx',
     desc: 'Plantilla única de compraventa, tanto si el coche ya está en stock como si está pendiente de importar.' },
-  { id: 'c_intermediacion', t: 'Intermediación',           archivo: 'intermediacion.docx',
+  { id: 'c_intermediacion', t: 'Intermediación',           archivo: 'Plantilla_Contrato_Intermediacion_Generica.docx',
     desc: 'El cliente compra directamente al vendedor; GPSO cobra honorarios de intermediación. El coche nunca es tuyo.' },
-  { id: 'c_matriculacion',  t: 'Gestión de matriculación', archivo: 'gestion-matriculacion.docx',
+  { id: 'c_matriculacion',  t: 'Gestión de matriculación', archivo: 'Plantilla Contrato Gestion Matriculacion Espana - Generica Alumnos.docx',
     desc: 'Solo el trámite técnico y documental en España, para coches que el cliente ya tiene fuera.' },
 ];
 
@@ -74,7 +76,7 @@ const NODES = (() => {
   CONTRATOS.forEach((c, i) => {
     N[c.id] = {
       x: 940, y: 190 + i * 120, t: c.t, s: 'descargar · .docx', esCaso: true, revealBy: ['contratos'],
-      tipo: 'contrato', url: '/contratos/' + c.archivo, archivo: c.archivo, desc: c.desc,
+      tipo: 'contrato', url: '/contratos/' + encodeURI(c.archivo), archivo: c.archivo, desc: c.desc,
     };
   });
   CATEGORIAS.forEach((c, i) => {
