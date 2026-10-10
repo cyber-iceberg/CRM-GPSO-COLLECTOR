@@ -93,7 +93,7 @@ const IcoCopia = () => (
     <rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" />
   </svg>
 );
-const FORM_VACIO = { nombre: '', rol: '', telefono: '', email: '', nota: '', activo: true };
+const FORM_VACIO = { nombre: '', rol: '', telefono: '', email: '', nota: '', activo: true, region: '' };
 
 export default function OperativaClient({ email, perfil, contactosIniciales = [] }) {
   const esAdmin = perfil && perfil.rol === 'admin';
@@ -146,12 +146,13 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
   }
   async function guardar(catId) {
     if (!form.nombre.trim()) { setMsg('Pon al menos un nombre.'); return; }
+    if (catId === 'itv' && !form.region) { setMsg('Elige la comunidad.'); return; }
     setGuardando(true); setMsg(null);
     const payload = {
       categoria: catId, nombre: form.nombre.trim(), rol: form.rol.trim() || null,
       telefono: form.telefono.trim() || null, email: form.email.trim() || null,
       nota: form.nota.trim() || null, activo: !!form.activo,
-      region: catId === 'itv' ? (regionSel || null) : null,
+      region: catId === 'itv' ? (form.region || null) : null,
     };
     let error;
     if (editId) { ({ error } = await supabase.from('contactos_operativa').update(payload).eq('id', editId)); }
@@ -165,7 +166,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
   }
   function editar(c) {
     setEditId(c.id);
-    setForm({ nombre: c.nombre || '', rol: c.rol || '', telefono: c.telefono || '', email: c.email || '', nota: c.nota || '', activo: c.activo !== false });
+    setForm({ nombre: c.nombre || '', rol: c.rol || '', telefono: c.telefono || '', email: c.email || '', nota: c.nota || '', activo: c.activo !== false, region: c.region || '' });
     setMostrarForm(true);
   }
   async function borrar(c) {
@@ -199,6 +200,8 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
   // ITV por comunidad
   const cuentaRegion = (rid) => contactos.filter(c => c.categoria === 'itv' && c.region === rid && c.activo !== false).length;
   const listaReg = esMapaITV && regionSel ? contactos.filter(c => c.categoria === 'itv' && c.region === regionSel) : [];
+  // ITV sin comunidad válida (p.ej. guardadas antes de tener región) -> para poder asignarlas
+  const itvHuerfanas = esMapaITV ? contactos.filter(c => c.categoria === 'itv' && !REGION_NOMBRE[c.region]) : [];
 
   // etiqueta/sub de cada nodo (las categorías muestran recuento)
   const metaNodo = (n) => {
@@ -220,10 +223,19 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
       {c.nota && <div className="ct-nota">{c.nota}</div>}
     </div>
   );
-  const abrirForm = () => { setForm(FORM_VACIO); setEditId(null); setMostrarForm(true); };
-  const formAdmin = (titulo, cat, rolPH = 'Ej. Alemania → Levante') => (
+  const abrirForm = (regionPreset = '') => { setForm({ ...FORM_VACIO, region: regionPreset }); setEditId(null); setMostrarForm(true); };
+  const REGIONES_ORD = MAPA.regions.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const formAdmin = (titulo, cat, rolPH = 'Ej. Alemania → Levante', conRegion = false) => (
     <div className="cf-form">
       <div className="cf-title">{editId ? 'Editar contacto' : 'Nuevo contacto'} · {titulo}</div>
+      {conRegion && (
+        <label className="cf-l">Comunidad *
+          <select className="cf-sel" value={form.region} onChange={e => setForm({ ...form, region: e.target.value })}>
+            <option value="">— elige comunidad —</option>
+            {REGIONES_ORD.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        </label>
+      )}
       <label className="cf-l">Nombre *<input value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} placeholder="Empresa o persona" /></label>
       <label className="cf-l">Rol / nota corta<input value={form.rol} onChange={e => setForm({ ...form, rol: e.target.value })} placeholder={rolPH} /></label>
       <div className="cf-grid">
@@ -273,7 +285,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
       {/* zona central: mapa de ITV o constelación de orbes */}
       {esMapaITV ? (
         <div className="stage mapa">
-          <EspanaMapa conCount={cuentaRegion} sel={regionSel} onSelect={setRegionSel} />
+          <EspanaMapa conCount={cuentaRegion} sel={regionSel} onSelect={(id) => setRegionSel(prev => prev === id ? null : id)} />
         </div>
       ) : (
         <div className="stage" key={rama || 'home'}>
@@ -363,8 +375,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
               {/* ---- ITV: mapa de España (el mapa va en el centro; aquí la comunidad) ---- */}
               {esMapaITV && (
                 <>
-                  {!regionSel && <p className="n-lead">Toca tu comunidad en el mapa para ver sus ITV de confianza.</p>}
-                  {regionSel && (
+                  {regionSel ? (
                     <>
                       {listaReg.length === 0 && (
                         <p className="n-lead" style={{ color: '#8b93a6' }}>
@@ -372,10 +383,21 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
                         </p>
                       )}
                       {listaReg.map(tarjetaContacto)}
-                      {esAdmin && !mostrarForm && (<button className="cf-add" onClick={abrirForm}>+ Añadir ITV a {REGION_NOMBRE[regionSel]}</button>)}
-                      {esAdmin && mostrarForm && formAdmin(`ITV · ${REGION_NOMBRE[regionSel]}`, 'itv', 'Ej. sin cita previa')}
+                      {esAdmin && !mostrarForm && (<button className="cf-add" onClick={() => abrirForm(regionSel)}>+ Añadir ITV a {REGION_NOMBRE[regionSel]}</button>)}
+                    </>
+                  ) : (
+                    <>
+                      <p className="n-lead">Toca tu comunidad en el mapa para ver sus ITV de confianza.</p>
+                      {itvHuerfanas.length > 0 && (
+                        <>
+                          <div className="blk-sub">Sin comunidad asignada</div>
+                          {itvHuerfanas.map(tarjetaContacto)}
+                          {esAdmin && <p className="ct-nota" style={{ marginTop: 10 }}>Edita cada una (✎) y asígnale su comunidad para que salga en el mapa.</p>}
+                        </>
+                      )}
                     </>
                   )}
+                  {esAdmin && mostrarForm && formAdmin('ITV', 'itv', 'Ej. sin cita previa', true)}
                   <button className="link-volver" onClick={() => setSel(null)}>← Todos los bloques</button>
                 </>
               )}
@@ -389,7 +411,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
                     </p>
                   )}
                   {listaCat.map(tarjetaContacto)}
-                  {esAdmin && !mostrarForm && (<button className="cf-add" onClick={abrirForm}>+ Añadir contacto a {CAT_LABEL[catSel]}</button>)}
+                  {esAdmin && !mostrarForm && (<button className="cf-add" onClick={() => abrirForm()}>+ Añadir contacto a {CAT_LABEL[catSel]}</button>)}
                   {esAdmin && mostrarForm && formAdmin(CAT_LABEL[catSel], catSel)}
                   <button className="link-volver" onClick={() => setSel(null)}>← Todos los bloques</button>
                 </>
@@ -509,6 +531,9 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
         .cf-l{display:block;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:#8b93a6;margin-bottom:10px}
         .cf-l input{display:block;width:100%;margin-top:5px;background:#0d1017;border:1px solid #1b2130;border-radius:8px;padding:9px 11px;color:#ecdcae;font-family:inherit;font-size:14px}
         .cf-l input:focus{outline:none;border-color:#c9a14d}
+        .cf-sel{display:block;width:100%;margin-top:5px;background:#0d1017;border:1px solid #1b2130;border-radius:8px;padding:9px 11px;color:#ecdcae;font-family:inherit;font-size:14px}
+        .cf-sel:focus{outline:none;border-color:#c9a14d}
+        .blk-sub{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:#8b93a6;font-weight:700;margin:16px 0 10px;padding-bottom:7px;border-bottom:1px solid #1b2130}
         .cf-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
         .cf-check{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#c9c3b4;margin:2px 0 4px;cursor:pointer}
         .cf-check input{width:16px;height:16px;accent-color:#c9a14d}
