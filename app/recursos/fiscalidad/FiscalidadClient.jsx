@@ -714,6 +714,7 @@ export default function FiscalidadClient({ email, perfil }) {
         @media (max-width:640px){
           .fisc-top{padding:12px 14px 10px}
           .sublabel{display:none}
+          .marca{display:none}
           .volver{padding:6px 11px;font-size:11px;letter-spacing:.8px}
           .top-right{gap:10px}
         }
