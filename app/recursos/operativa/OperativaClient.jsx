@@ -190,9 +190,13 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
     if (n.kind === 'rama') { setRama(n.id); setSel(null); return; }
     if (n.kind === 'contrato' || n.kind === 'categoria') { setSel(n.id); return; }
   }
-  const volverHome = () => { setRama(null); setSel(null); };
-  // "Atrás" contextual: si estás dentro de un bloque/contrato/ITV, vuelve a los orbes; si no, al inicio.
-  const atras = () => { if (sel) { setSel(null); setRegionSel(null); } else { volverHome(); } };
+  const volverHome = () => { setRama(null); setSel(null); setRegionSel(null); };
+  // "Atrás" por niveles: comunidad ITV → mapa entero → bloques → inicio.
+  const atras = () => {
+    if (rama === 'contactos' && sel === 'itv' && regionSel) { setRegionSel(null); return; }
+    if (sel) { setSel(null); setRegionSel(null); return; }
+    volverHome();
+  };
 
   const panelAbierto = !!rama;
   const contrato = sel && CONTRATOS.find(c => c.id === sel);
@@ -255,7 +259,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
   );
 
   return (
-    <div className={'op-scene r-' + (rama || 'home') + (panelAbierto ? ' conPanel' : '') + (esMapaITV ? ' itv' : '')}
+    <div className={'op-scene r-' + (rama || 'home') + (panelAbierto ? ' conPanel' : '') + (esMapaITV ? ' itv' : '') + (esMapaITV && !regionSel ? ' itv-pick' : '')}
       onMouseDown={(e) => { if (rama && !e.target.closest('.nodo') && !e.target.closest('.panel') && !e.target.closest('.op-top') && !e.target.closest('.mapa-wrap')) volverHome(); }}>
 
       {/* galaxia de fondo (imagen) + brillo por rama */}
@@ -379,6 +383,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
                 <>
                   {regionSel ? (
                     <>
+                      <button className="link-mapa" onClick={() => setRegionSel(null)}>← Ver mapa completo</button>
                       {listaReg.length === 0 && (
                         <p className="n-lead" style={{ color: '#8b93a6' }}>
                           {esAdmin ? `Aún no hay ITV guardadas en ${REGION_NOMBRE[regionSel]}. Añade la primera abajo.` : `Aún no hay ITV guardadas en ${REGION_NOMBRE[regionSel]}.`}
@@ -494,9 +499,15 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
         .brand-wrap{display:flex;align-items:center;gap:12px}
         .sublabel{font-size:9.5px;letter-spacing:2.5px;color:#8b93a3;font-weight:700;text-transform:uppercase;margin-top:3px}
         .top-right{display:flex;align-items:center;gap:14px}
-        .volver{font-size:12px;color:#c9c3b4;text-decoration:none;text-transform:uppercase;letter-spacing:1.2px;border:1px solid rgba(201,161,77,.35);
-          border-radius:20px;padding:7px 14px;background:rgba(18,21,28,.5);cursor:pointer;font-family:inherit;transition:all .25s}
-        .volver:hover{color:#f0e2b6;border-color:rgba(201,161,77,.7);background:rgba(18,21,28,.75)}
+        .volver{font-size:12px;color:#e7ddc8;text-decoration:none;text-transform:uppercase;letter-spacing:1.1px;font-weight:600;
+          border:1px solid rgba(201,161,77,.45);border-radius:11px;padding:8px 14px;cursor:pointer;font-family:inherit;transition:all .2s;
+          background:linear-gradient(180deg,rgba(44,37,27,.9),rgba(20,17,14,.9));
+          box-shadow:0 2px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,240,205,.08)}
+        .volver:hover{color:#fff;border-color:rgba(232,163,61,.8);background:linear-gradient(180deg,rgba(60,50,34,.95),rgba(28,23,18,.95))}
+        .link-mapa{display:inline-flex;align-items:center;gap:6px;margin:0 0 16px;padding:8px 14px;border-radius:10px;cursor:pointer;font-family:inherit;
+          font-size:12.5px;font-weight:600;letter-spacing:.3px;color:#dfe8f5;border:1px solid rgba(150,180,222,.4);
+          background:linear-gradient(180deg,rgba(28,38,56,.9),rgba(16,22,33,.9));transition:all .2s}
+        .link-mapa:hover{color:#fff;border-color:rgba(150,180,222,.75);background:linear-gradient(180deg,rgba(36,50,74,.95),rgba(20,28,42,.95))}
 
         .stage{position:absolute;inset:0;z-index:2;animation:fadein .5s ease both}
         @keyframes fadein{from{opacity:0}to{opacity:1}}
@@ -595,6 +606,9 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
           .panel.open{transform:translateY(0)}
           .stage:not(.mapa){transform:translateY(6%) scale(.82);transform-origin:top center;left:0;right:0}
           .stage.mapa{padding:96px 12px 44vh;align-items:flex-start}
+          /* eligiendo comunidad: panel bajo y mapa grande (toda España tocable) */
+          .op-scene.itv-pick .panel{max-height:30vh}
+          .op-scene.itv-pick .stage.mapa{padding:90px 10px 32vh}
         }
       `}</style>
     </div>
