@@ -475,7 +475,7 @@ export default function FiscalidadClient({ email, perfil }) {
           </div>
         </div>
         <div className="top-right">
-          <a href="/recursos" className="volver">← Recursos</a>
+          <a href="/recursos" className="volver">Recursos</a>
           <MenuDrawer perfil={perfil} email={email} />
         </div>
       </header>
