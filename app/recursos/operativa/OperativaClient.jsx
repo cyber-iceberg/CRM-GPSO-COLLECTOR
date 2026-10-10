@@ -424,6 +424,42 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
       <style jsx global>{`
         .op-scene .nodo.portal .nv-orbe{width:84px;height:84px}
         .op-scene .nodo.portal.hub .nv-orbe{width:60px;height:60px}
+
+        /* --- tarjetas de contacto y formulario (se generan en funciones,
+               por eso van en global para que styled-jsx los estilice) --- */
+        .op-scene .ct-card{border:1px solid #1b2130;border-radius:12px;padding:14px;margin-bottom:12px;background:rgba(15,18,27,.6)}
+        .op-scene .ct-card.oculto{opacity:.55}
+        .op-scene .ct-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+        .op-scene .ct-ident b{display:flex;align-items:center;gap:8px;font-size:15px;color:#efe6d4;font-weight:600}
+        .op-scene .ct-ident i{display:block;font-style:normal;font-size:12px;color:#8b93a6;margin-top:2px}
+        .op-scene .ct-badge{font-size:8.5px;letter-spacing:.5px;text-transform:uppercase;color:#0a0c10;background:#8b93a6;border-radius:4px;padding:1px 6px;font-weight:700;margin-left:4px}
+        .op-scene .ct-admin{display:flex;gap:6px;flex:none}
+        .op-scene .ct-admin button{width:28px;height:28px;border-radius:8px;border:1px solid #1b2130;background:#12151c;color:#c9c3b4;cursor:pointer;font-size:13px;transition:border-color .2s,color .2s}
+        .op-scene .ct-admin button:hover{border-color:#c9a14d;color:#f0e2b6}
+        .op-scene .ct-admin button.del:hover{border-color:#e0876a;color:#e0876a}
+        .op-scene .ct-row{display:flex;align-items:center;gap:10px;width:100%;margin-top:8px;padding:10px 12px;border:1px solid #1b2130;border-radius:9px;background:#0d1017;color:#e9e6df;font-family:inherit;cursor:pointer;transition:border-color .2s}
+        .op-scene .ct-row:hover{border-color:#c9a14d}
+        .op-scene .ct-k{flex:none;min-width:62px;font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:#8b93a6;text-align:left}
+        .op-scene .ct-v{flex:1;text-align:left;font-size:13.5px;color:#ecdcae;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .op-scene .ct-copy{flex:none;color:#c9a14d;display:flex;align-items:center}
+        .op-scene .ct-nota{margin-top:8px;font-size:12px;line-height:1.45;color:#8b93a6}
+
+        .op-scene .cf-form{margin-top:10px;border:1px solid rgba(201,161,77,.3);border-radius:12px;padding:16px;background:rgba(201,161,77,.04)}
+        .op-scene .cf-title{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#c9a14d;font-weight:700;margin-bottom:12px}
+        .op-scene .cf-l{display:block;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:#8b93a6;margin-bottom:10px}
+        .op-scene .cf-l input{display:block;width:100%;margin-top:5px;background:#0d1017;border:1px solid #1b2130;border-radius:8px;padding:9px 11px;color:#ecdcae;font-family:inherit;font-size:14px}
+        .op-scene .cf-l input:focus{outline:none;border-color:#c9a14d}
+        .op-scene .cf-sel{display:block;width:100%;margin-top:5px;background:#0d1017;border:1px solid #1b2130;border-radius:8px;padding:9px 11px;color:#ecdcae;font-family:inherit;font-size:14px}
+        .op-scene .cf-sel:focus{outline:none;border-color:#c9a14d}
+        .op-scene .cf-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .op-scene .cf-check{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#c9c3b4;margin:2px 0 4px;cursor:pointer}
+        .op-scene .cf-check input{width:16px;height:16px;accent-color:#c9a14d}
+        .op-scene .cf-msg{margin:8px 0;font-size:12px;color:#e0876a}
+        .op-scene .cf-acc{display:flex;gap:8px;margin-top:12px}
+        .op-scene .cf-cancel{flex:none;padding:10px 14px;border-radius:9px;border:1px solid #1b2130;background:transparent;color:#8b93a6;font-family:inherit;font-size:13px;cursor:pointer}
+        .op-scene .cf-cancel:hover{border-color:#c9c3b4;color:#c9c3b4}
+        .op-scene .cf-save{flex:1;padding:10px 14px;border-radius:9px;border:none;background:linear-gradient(135deg,#e3c987,#c9a14d);color:#1a140a;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
+        .op-scene .cf-save:disabled{opacity:.6;cursor:default}
       `}</style>
 
       <style jsx>{`
