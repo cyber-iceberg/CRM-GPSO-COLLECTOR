@@ -17,6 +17,10 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { createClient } from '../../../lib/supabase/client';
 import MenuDrawer from '../../components/MenuDrawer';
 import NodoVisual from '../../components/NodoVisual';
+import EspanaMapa from './EspanaMapa';
+import { MAPA } from './espana-geo';
+
+const REGION_NOMBRE = Object.fromEntries(MAPA.regions.map(r => [r.id, r.name]));
 
 // ---------------------------------------------------------------------
 //  CONTRATOS · `archivo` = nombre EXACTO del .docx en /public/ (raíz)
@@ -97,6 +101,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
 
   const [rama, setRama] = useState(null);     // null | 'contratos' | 'contactos'
   const [sel, setSel] = useState(null);       // id del hijo seleccionado (contrato o categoría)
+  const [regionSel, setRegionSel] = useState(null); // comunidad seleccionada en el mapa ITV
   const [contactos, setContactos] = useState(contactosIniciales || []);
   const [userId, setUserId] = useState(null);
   const [form, setForm] = useState(FORM_VACIO);
@@ -129,8 +134,8 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // al cambiar de hijo seleccionado, resetea el formulario de admin
-  useEffect(() => { setForm(FORM_VACIO); setEditId(null); setMostrarForm(false); setMsg(null); }, [sel, rama]);
+  // al cambiar de hijo seleccionado, resetea el formulario de admin (y la comunidad si salimos de ITV)
+  useEffect(() => { setForm(FORM_VACIO); setEditId(null); setMostrarForm(false); setMsg(null); if (sel !== 'itv') setRegionSel(null); }, [sel, rama]);
 
   async function cargarContactos() {
     try {
@@ -146,6 +151,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
       categoria: catId, nombre: form.nombre.trim(), rol: form.rol.trim() || null,
       telefono: form.telefono.trim() || null, email: form.email.trim() || null,
       nota: form.nota.trim() || null, activo: !!form.activo,
+      region: catId === 'itv' ? (regionSel || null) : null,
     };
     let error;
     if (editId) { ({ error } = await supabase.from('contactos_operativa').update(payload).eq('id', editId)); }
@@ -188,7 +194,11 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
   const panelAbierto = !!rama;
   const contrato = sel && CONTRATOS.find(c => c.id === sel);
   const catSel = rama === 'contactos' && sel ? sel : null;
+  const esMapaITV = catSel === 'itv';
   const listaCat = catSel ? contactos.filter(c => c.categoria === catSel) : [];
+  // ITV por comunidad
+  const cuentaRegion = (rid) => contactos.filter(c => c.categoria === 'itv' && c.region === rid && c.activo !== false).length;
+  const listaReg = esMapaITV && regionSel ? contactos.filter(c => c.categoria === 'itv' && c.region === regionSel) : [];
 
   // etiqueta/sub de cada nodo (las categorías muestran recuento)
   const metaNodo = (n) => {
@@ -198,9 +208,41 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
   const tituloNodo = (n) => n.t || CAT_LABEL[n.id] || n.id;
   const subNodo = (n) => (n.kind === 'categoria' ? (CATEGORIAS.find(c => c.id === n.id)?.s) : null);
 
+  // ---- bloques de panel reutilizables (contactos / ITV) ----
+  const tarjetaContacto = (c) => (
+    <div key={c.id} className={'ct-card' + (c.activo === false ? ' oculto' : '')}>
+      <div className="ct-top">
+        <div className="ct-ident"><b>{c.nombre}{c.activo === false && <span className="ct-badge">oculto</span>}</b>{c.rol && <i>{c.rol}</i>}</div>
+        {esAdmin && (<div className="ct-admin"><button onClick={() => editar(c)} title="Editar">✎</button><button onClick={() => borrar(c)} title="Borrar" className="del">🗑</button></div>)}
+      </div>
+      {c.telefono && (<button className="ct-row" onClick={() => copiar(c.telefono, 'tel' + c.id)}><span className="ct-k">Teléfono</span><span className="ct-v">{c.telefono}</span><span className="ct-copy">{copiado === 'tel' + c.id ? '✓' : <IcoCopia />}</span></button>)}
+      {c.email && (<button className="ct-row" onClick={() => copiar(c.email, 'em' + c.id)}><span className="ct-k">Email</span><span className="ct-v">{c.email}</span><span className="ct-copy">{copiado === 'em' + c.id ? '✓' : <IcoCopia />}</span></button>)}
+      {c.nota && <div className="ct-nota">{c.nota}</div>}
+    </div>
+  );
+  const abrirForm = () => { setForm(FORM_VACIO); setEditId(null); setMostrarForm(true); };
+  const formAdmin = (titulo, cat, rolPH = 'Ej. Alemania → Levante') => (
+    <div className="cf-form">
+      <div className="cf-title">{editId ? 'Editar contacto' : 'Nuevo contacto'} · {titulo}</div>
+      <label className="cf-l">Nombre *<input value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} placeholder="Empresa o persona" /></label>
+      <label className="cf-l">Rol / nota corta<input value={form.rol} onChange={e => setForm({ ...form, rol: e.target.value })} placeholder={rolPH} /></label>
+      <div className="cf-grid">
+        <label className="cf-l">Teléfono<input value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} placeholder="+34 6…" /></label>
+        <label className="cf-l">Email<input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="correo@…" /></label>
+      </div>
+      <label className="cf-l">Nota<input value={form.nota} onChange={e => setForm({ ...form, nota: e.target.value })} placeholder="Opcional" /></label>
+      <label className="cf-check"><input type="checkbox" checked={form.activo} onChange={e => setForm({ ...form, activo: e.target.checked })} />Visible para los alumnos</label>
+      {msg && <div className="cf-msg">{msg}</div>}
+      <div className="cf-acc">
+        <button className="cf-cancel" onClick={() => { setMostrarForm(false); setEditId(null); setForm(FORM_VACIO); setMsg(null); }}>Cancelar</button>
+        <button className="cf-save" disabled={guardando} onClick={() => guardar(cat)}>{guardando ? 'Guardando…' : (editId ? 'Guardar cambios' : 'Añadir')}</button>
+      </div>
+    </div>
+  );
+
   return (
     <div className={'op-scene r-' + (rama || 'home') + (panelAbierto ? ' conPanel' : '')}
-      onMouseDown={(e) => { if (rama && !e.target.closest('.nodo') && !e.target.closest('.panel') && !e.target.closest('.op-top')) volverHome(); }}>
+      onMouseDown={(e) => { if (rama && !e.target.closest('.nodo') && !e.target.closest('.panel') && !e.target.closest('.op-top') && !e.target.closest('.mapa-wrap')) volverHome(); }}>
 
       {/* galaxia de fondo (imagen) + brillo por rama */}
       <div className="cielo" aria-hidden="true" />
@@ -228,32 +270,38 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
         </div>
       </header>
 
-      {/* zona de orbes */}
-      <div className="stage" key={rama || 'home'}>
-        <svg className="wires" viewBox="0 0 1100 920" preserveAspectRatio="none" aria-hidden="true">
-          {edges.map(([a, b], i) => {
-            const A = nodoPos[a], B = nodoPos[b]; if (!A || !B) return null;
-            const my = (A.y + B.y) / 2;
-            const az = (A.tono === 'azul' && B.tono === 'azul') || B.tono === 'azul';
-            return <path key={i} d={`M ${A.x} ${A.y} C ${A.x} ${my}, ${B.x} ${my}, ${B.x} ${B.y}`} fill="none"
-              stroke={az ? 'rgba(150,180,222,.30)' : 'rgba(201,161,77,.32)'} strokeWidth="1" />;
-          })}
-        </svg>
+      {/* zona central: mapa de ITV o constelación de orbes */}
+      {esMapaITV ? (
+        <div className="stage mapa">
+          <EspanaMapa conCount={cuentaRegion} sel={regionSel} onSelect={setRegionSel} />
+        </div>
+      ) : (
+        <div className="stage" key={rama || 'home'}>
+          <svg className="wires" viewBox="0 0 1100 920" preserveAspectRatio="none" aria-hidden="true">
+            {edges.map(([a, b], i) => {
+              const A = nodoPos[a], B = nodoPos[b]; if (!A || !B) return null;
+              const my = (A.y + B.y) / 2;
+              const az = (A.tono === 'azul' && B.tono === 'azul') || B.tono === 'azul';
+              return <path key={i} d={`M ${A.x} ${A.y} C ${A.x} ${my}, ${B.x} ${my}, ${B.x} ${B.y}`} fill="none"
+                stroke={az ? 'rgba(150,180,222,.30)' : 'rgba(201,161,77,.32)'} strokeWidth="1" />;
+            })}
+          </svg>
 
-        {nodos.map(n => (
-          <button key={n.id} className={'nodo ' + n.rol + (sel === n.id ? ' activo' : '')}
-            style={{ left: (n.x / 1100 * 100) + '%', top: (n.y / 920 * 100) + '%' }}
-            onClick={() => clickNodo(n)}>
-            <NodoVisual tono={n.tono} cerrado={!!n.ring} />
-            <span className="etq">
-              <span className="t">{tituloNodo(n)}</span>
-              <span className={'s' + (n.kind === 'contrato' ? ' dl' : '') + (n.kind === 'categoria' && metaNodo(n) === 'vacío' ? ' pend' : '')}>{metaNodo(n)}</span>
-              {subNodo(n) && <span className="s2">{subNodo(n)}</span>}
-              {n.abrir && <span className="abrir">Abrir →</span>}
-            </span>
-          </button>
-        ))}
-      </div>
+          {nodos.map(n => (
+            <button key={n.id} className={'nodo ' + n.rol + (sel === n.id ? ' activo' : '')}
+              style={{ left: (n.x / 1100 * 100) + '%', top: (n.y / 920 * 100) + '%' }}
+              onClick={() => clickNodo(n)}>
+              <NodoVisual tono={n.tono} cerrado={!!n.ring} />
+              <span className="etq">
+                <span className="t">{tituloNodo(n)}</span>
+                <span className={'s' + (n.kind === 'contrato' ? ' dl' : '') + (n.kind === 'categoria' && metaNodo(n) === 'vacío' ? ' pend' : '')}>{metaNodo(n)}</span>
+                {subNodo(n) && <span className="s2">{subNodo(n)}</span>}
+                {n.abrir && <span className="abrir">Abrir →</span>}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* panel */}
       <aside className={'panel' + (panelAbierto ? ' open' : '')} aria-live="polite">
@@ -290,10 +338,15 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
         {rama === 'contactos' && (
           <>
             <div className="phead">
-              <div className="chips"><span className="chip gold">Contactos</span>{catSel && <span className="chip">{CAT_LABEL[catSel]}</span>}{esAdmin && <span className="chip">admin</span>}</div>
-              <h2>{catSel ? CAT_LABEL[catSel] : 'Contactos'}</h2>
+              <div className="chips">
+                <span className="chip gold">{esMapaITV ? 'ITV' : 'Contactos'}</span>
+                {esMapaITV ? (regionSel && <span className="chip">{REGION_NOMBRE[regionSel]}</span>) : (catSel && <span className="chip">{CAT_LABEL[catSel]}</span>)}
+                {esAdmin && <span className="chip">admin</span>}
+              </div>
+              <h2>{esMapaITV ? (regionSel ? REGION_NOMBRE[regionSel] : 'ITV por comunidad') : (catSel ? CAT_LABEL[catSel] : 'Contactos')}</h2>
             </div>
             <div className="pbody">
+              {/* ---- elegir bloque ---- */}
               {!catSel && (
                 <>
                   <p className="n-lead">Tu agenda de confianza por bloques. Toca un orbe para abrir su bloque.</p>
@@ -306,43 +359,38 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
                   </div>
                 </>
               )}
-              {catSel && (
+
+              {/* ---- ITV: mapa de España (el mapa va en el centro; aquí la comunidad) ---- */}
+              {esMapaITV && (
+                <>
+                  {!regionSel && <p className="n-lead">Toca tu comunidad en el mapa para ver sus ITV de confianza.</p>}
+                  {regionSel && (
+                    <>
+                      {listaReg.length === 0 && (
+                        <p className="n-lead" style={{ color: '#8b93a6' }}>
+                          {esAdmin ? `Aún no hay ITV guardadas en ${REGION_NOMBRE[regionSel]}. Añade la primera abajo.` : `Aún no hay ITV guardadas en ${REGION_NOMBRE[regionSel]}.`}
+                        </p>
+                      )}
+                      {listaReg.map(tarjetaContacto)}
+                      {esAdmin && !mostrarForm && (<button className="cf-add" onClick={abrirForm}>+ Añadir ITV a {REGION_NOMBRE[regionSel]}</button>)}
+                      {esAdmin && mostrarForm && formAdmin(`ITV · ${REGION_NOMBRE[regionSel]}`, 'itv', 'Ej. sin cita previa')}
+                    </>
+                  )}
+                  <button className="link-volver" onClick={() => setSel(null)}>← Todos los bloques</button>
+                </>
+              )}
+
+              {/* ---- otras categorías: lista normal ---- */}
+              {catSel && !esMapaITV && (
                 <>
                   {listaCat.length === 0 && (
                     <p className="n-lead" style={{ color: '#8b93a6' }}>
                       {esAdmin ? 'Aún no hay contactos en este bloque. Añade el primero abajo.' : 'Aún no hay contactos en este bloque.'}
                     </p>
                   )}
-                  {listaCat.map(c => (
-                    <div key={c.id} className={'ct-card' + (c.activo === false ? ' oculto' : '')}>
-                      <div className="ct-top">
-                        <div className="ct-ident"><b>{c.nombre}{c.activo === false && <span className="ct-badge">oculto</span>}</b>{c.rol && <i>{c.rol}</i>}</div>
-                        {esAdmin && (<div className="ct-admin"><button onClick={() => editar(c)} title="Editar">✎</button><button onClick={() => borrar(c)} title="Borrar" className="del">🗑</button></div>)}
-                      </div>
-                      {c.telefono && (<button className="ct-row" onClick={() => copiar(c.telefono, 'tel' + c.id)}><span className="ct-k">Teléfono</span><span className="ct-v">{c.telefono}</span><span className="ct-copy">{copiado === 'tel' + c.id ? '✓' : <IcoCopia />}</span></button>)}
-                      {c.email && (<button className="ct-row" onClick={() => copiar(c.email, 'em' + c.id)}><span className="ct-k">Email</span><span className="ct-v">{c.email}</span><span className="ct-copy">{copiado === 'em' + c.id ? '✓' : <IcoCopia />}</span></button>)}
-                      {c.nota && <div className="ct-nota">{c.nota}</div>}
-                    </div>
-                  ))}
-                  {esAdmin && !mostrarForm && (<button className="cf-add" onClick={() => { setForm(FORM_VACIO); setEditId(null); setMostrarForm(true); }}>+ Añadir contacto a {CAT_LABEL[catSel]}</button>)}
-                  {esAdmin && mostrarForm && (
-                    <div className="cf-form">
-                      <div className="cf-title">{editId ? 'Editar contacto' : 'Nuevo contacto'} · {CAT_LABEL[catSel]}</div>
-                      <label className="cf-l">Nombre *<input value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} placeholder="Empresa o persona" /></label>
-                      <label className="cf-l">Rol / zona<input value={form.rol} onChange={e => setForm({ ...form, rol: e.target.value })} placeholder="Ej. Alemania → Levante" /></label>
-                      <div className="cf-grid">
-                        <label className="cf-l">Teléfono<input value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} placeholder="+34 6…" /></label>
-                        <label className="cf-l">Email<input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="correo@…" /></label>
-                      </div>
-                      <label className="cf-l">Nota<input value={form.nota} onChange={e => setForm({ ...form, nota: e.target.value })} placeholder="Opcional" /></label>
-                      <label className="cf-check"><input type="checkbox" checked={form.activo} onChange={e => setForm({ ...form, activo: e.target.checked })} />Visible para los alumnos</label>
-                      {msg && <div className="cf-msg">{msg}</div>}
-                      <div className="cf-acc">
-                        <button className="cf-cancel" onClick={() => { setMostrarForm(false); setEditId(null); setForm(FORM_VACIO); setMsg(null); }}>Cancelar</button>
-                        <button className="cf-save" disabled={guardando} onClick={() => guardar(catSel)}>{guardando ? 'Guardando…' : (editId ? 'Guardar cambios' : 'Añadir')}</button>
-                      </div>
-                    </div>
-                  )}
+                  {listaCat.map(tarjetaContacto)}
+                  {esAdmin && !mostrarForm && (<button className="cf-add" onClick={abrirForm}>+ Añadir contacto a {CAT_LABEL[catSel]}</button>)}
+                  {esAdmin && mostrarForm && formAdmin(CAT_LABEL[catSel], catSel)}
                   <button className="link-volver" onClick={() => setSel(null)}>← Todos los bloques</button>
                 </>
               )}
@@ -388,6 +436,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
 
         .stage{position:absolute;inset:0;z-index:2;animation:fadein .5s ease both}
         @keyframes fadein{from{opacity:0}to{opacity:1}}
+        .stage.mapa{display:flex;align-items:center;justify-content:center;padding:96px 24px 30px;padding-right:466px}
         .wires{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 
         .nodo{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:11px;
@@ -467,12 +516,14 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
         .cf-save:disabled{opacity:.6;cursor:default}
 
         @media (max-width:1040px){
-          .stage{transform:scale(.8);transform-origin:top left}
+          .stage:not(.mapa){transform:scale(.8);transform-origin:top left}
+          .stage.mapa{padding-right:420px}
         }
         @media (max-width:760px){
-          .panel{top:auto;left:0;right:0;width:auto;max-height:76vh;border-left:none;border-top:1px solid #1b2130;border-radius:16px 16px 0 0;transform:translateY(105%)}
+          .panel{top:auto;left:0;right:0;width:auto;max-height:70vh;border-left:none;border-top:1px solid #1b2130;border-radius:16px 16px 0 0;transform:translateY(105%)}
           .panel.open{transform:translateY(0)}
-          .stage{transform:scale(.62);transform-origin:top center;left:0;right:0}
+          .stage:not(.mapa){transform:scale(.62);transform-origin:top center;left:0;right:0}
+          .stage.mapa{padding:84px 14px 30vh;align-items:flex-start}
         }
       `}</style>
     </div>
