@@ -53,9 +53,9 @@ export default function EspanaMapa({ conCount = () => 0, sel = null, onSelect = 
 
       <style jsx>{`
         .mapa-wrap{width:100%;max-width:760px;margin:0 auto;padding:0 10px;transform-origin:50% 46%;
-          animation:mapaIn .95s cubic-bezier(.16,.82,.24,1) both}
+          animation:mapaIn 1.1s cubic-bezier(.16,.82,.24,1) both}
         @keyframes mapaIn{
-          0%{opacity:0;transform:scale(.26) translateY(14px);filter:blur(8px)}
+          0%{opacity:0;transform:scale(.12) translateY(18px);filter:blur(11px)}
           55%{opacity:1}
           100%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}
         }
