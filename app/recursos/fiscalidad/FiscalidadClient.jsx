@@ -711,6 +711,12 @@ export default function FiscalidadClient({ email, perfil }) {
           .viewport{padding:84px 16px 30px}
           .viewport.conPanel,.viewport.conPanelAncho{right:0}
         }
+        @media (max-width:640px){
+          .fisc-top{padding:12px 14px 10px}
+          .sublabel{display:none}
+          .volver{padding:6px 11px;font-size:11px;letter-spacing:.8px}
+          .top-right{gap:10px}
+        }
       `}</style>
     </div>
   );
