@@ -207,7 +207,7 @@ export default function MundoClient({ email, perfil }) {
           </div>
         </div>
         <div className="top-right">
-          <a href="/" className="volver">← Inicio</a>
+          <a href="/" className="volver">Inicio</a>
           <MenuDrawer perfil={perfil} email={email} />
         </div>
       </header>
