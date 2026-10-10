@@ -24,8 +24,9 @@ const hook = (t) => `<div class="n-hook">${t}</div>`;
 // ---------------------------------------------------------------------
 //  CONTRATOS · plantillas .docx (van en /public/contratos/<archivo>)
 // ---------------------------------------------------------------------
-// IMPORTANTE: `archivo` = nombre EXACTO del .docx en /public/contratos/
+// IMPORTANTE: `archivo` = nombre EXACTO del .docx en /public/ (raíz)
 // (tal cual lo subiste a GitHub, con mayúsculas, guiones bajos y espacios).
+// Si algún día los mueves a /public/contratos/, cambia la url de abajo a '/contratos/'.
 const CONTRATOS = [
   { id: 'c_reserva',        t: 'Reserva y Compra',         archivo: 'Plantilla_Contrato_Reserva_Compra_Generica.docx',
     desc: 'Reserva, validación y compraventa de la unidad importada. El contrato completo de principio a fin.' },
@@ -76,7 +77,7 @@ const NODES = (() => {
   CONTRATOS.forEach((c, i) => {
     N[c.id] = {
       x: 940, y: 190 + i * 120, t: c.t, s: 'descargar · .docx', esCaso: true, revealBy: ['contratos'],
-      tipo: 'contrato', url: '/contratos/' + encodeURI(c.archivo), archivo: c.archivo, desc: c.desc,
+      tipo: 'contrato', url: '/' + encodeURI(c.archivo), archivo: c.archivo, desc: c.desc,
     };
   });
   CATEGORIAS.forEach((c, i) => {
