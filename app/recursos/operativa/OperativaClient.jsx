@@ -282,8 +282,8 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
           </div>
         </div>
         <div className="top-right">
-          {rama && <button className="volver" onClick={atras}>← Volver</button>}
-          <a href="/recursos" className="volver recursos-link">← Recursos</a>
+          {rama && <button className="volver" onClick={atras}>Volver</button>}
+          <a href="/recursos" className="volver recursos-link">Recursos</a>
           <MenuDrawer perfil={perfil} email={email} />
         </div>
       </header>
@@ -383,7 +383,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
                 <>
                   {regionSel ? (
                     <>
-                      <button className="link-mapa" onClick={() => setRegionSel(null)}>← Ver mapa completo</button>
+                      <button className="link-mapa" onClick={() => setRegionSel(null)}>Ver mapa completo</button>
                       {listaReg.length === 0 && (
                         <p className="n-lead" style={{ color: '#8b93a6' }}>
                           {esAdmin ? `Aún no hay ITV guardadas en ${REGION_NOMBRE[regionSel]}. Añade la primera abajo.` : `Aún no hay ITV guardadas en ${REGION_NOMBRE[regionSel]}.`}
