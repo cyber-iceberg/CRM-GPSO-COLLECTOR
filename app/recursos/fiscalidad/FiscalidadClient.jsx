@@ -328,6 +328,7 @@ export default function FiscalidadClient({ email, perfil }) {
   const [lit, setLit] = useState(null);
   const [hov, setHov] = useState(null);
   const [cosmos, setCosmos] = useState(null);
+  const [esc, setEsc] = useState(1); // escala del lienzo: zoom-out en móvil para ver el conjunto
   const viewRef = useRef(null);
   const cosmosRef = useRef(null);
   const haloRef = useRef(null);
@@ -339,6 +340,17 @@ export default function FiscalidadClient({ email, perfil }) {
   useEffect(() => {
     document.body.classList.add('ocultar-theme-toggle');
     return () => document.body.classList.remove('ocultar-theme-toggle');
+  }, []);
+
+  // escala del lienzo según el ancho (en móvil se aleja para ver el conjunto)
+  useEffect(() => {
+    const calc = () => {
+      const w = window.innerWidth;
+      setEsc(w <= 640 ? Math.max(0.42, Math.min(0.62, w / 680)) : 1);
+    };
+    calc();
+    window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
   }, []);
 
   useEffect(() => {
@@ -361,7 +373,10 @@ export default function FiscalidadClient({ email, perfil }) {
       if (dist > 40 && dist < 240) links.push({ a, b });
     }
     setCosmos({ dots, links });
-    if (viewRef.current) viewRef.current.scrollTo({ left: 0, top: 180 });
+    if (viewRef.current) {
+      const e0 = window.innerWidth <= 640 ? Math.max(0.42, Math.min(0.62, window.innerWidth / 680)) : 1;
+      viewRef.current.scrollTo({ left: 0, top: 180 * e0 });
+    }
 
     if (reduceRef.current) return;
     let mx = -600, my = -600, hx = -600, hy = -600, raf;
@@ -431,7 +446,7 @@ export default function FiscalidadClient({ email, perfil }) {
     setLit(iluminar(id, nx));
     if (viewRef.current) {
       const anchoUtil = viewRef.current.clientWidth;
-      const destino = Math.max(0, NODES[id].x + 380 - anchoUtil * 0.62);
+      const destino = Math.max(0, (NODES[id].x + 380) * esc - anchoUtil * 0.62);
       viewRef.current.scrollTo({ left: destino, behavior: 'smooth' });
     }
   };
@@ -475,6 +490,7 @@ export default function FiscalidadClient({ email, perfil }) {
           </div>
         </div>
         <div className="top-right">
+          {sel && <button className="volver" onClick={cerrar}>Volver</button>}
           <a href="/recursos" className="volver">Recursos</a>
           <MenuDrawer perfil={perfil} email={email} />
         </div>
@@ -483,7 +499,8 @@ export default function FiscalidadClient({ email, perfil }) {
       <div className={'viewport' + (n ? (esComp ? ' conPanelAncho' : ' conPanel') : '')} ref={viewRef}
         onMouseDown={panDown} onMouseMove={panMove} onMouseUp={panUp} onMouseLeave={panUp}
         onTouchStart={panDown} onTouchMove={panMove} onTouchEnd={panUp}>
-        <div className={'canvas' + (lit ? ' dim' : '')}>
+        <div className="lienzo" style={{ width: 2280 * esc, height: 1240 * esc }}>
+        <div className={'canvas' + (lit ? ' dim' : '')} style={{ transform: 'scale(' + esc + ')', transformOrigin: '0 0' }}>
 
           <svg className="cosmos" ref={cosmosRef} viewBox="0 0 2280 1240" aria-hidden="true">
             {cosmos && cosmos.links.map((l, i) => (
@@ -535,6 +552,7 @@ export default function FiscalidadClient({ email, perfil }) {
               </span>
             </button>
           ))}
+        </div>
         </div>
       </div>
 
@@ -633,13 +651,16 @@ export default function FiscalidadClient({ email, perfil }) {
         .brand-wrap{display:flex;align-items:center;gap:12px}
         .sublabel{font-size:9.5px;letter-spacing:2.5px;color:#8b93a3;font-weight:700;text-transform:uppercase;margin-top:3px}
         .top-right{display:flex;align-items:center;gap:16px}
-        .volver{font-size:12px;color:#c9c3b4;text-decoration:none;text-transform:uppercase;letter-spacing:1.2px;border:1px solid rgba(201,161,77,.35);border-radius:20px;padding:7px 14px;background:rgba(18,21,28,.5);backdrop-filter:blur(6px);transition:all .25s}
-        .volver:hover{color:#f0e2b6;border-color:rgba(201,161,77,.7);background:rgba(18,21,28,.75)}
+        .volver{font-size:12px;color:#e7ddc8;text-decoration:none;text-transform:uppercase;letter-spacing:1.1px;font-weight:600;
+          border:1px solid rgba(201,161,77,.45);border-radius:11px;padding:8px 14px;cursor:pointer;font-family:inherit;transition:all .2s;
+          background:linear-gradient(180deg,rgba(44,37,27,.9),rgba(20,17,14,.9));box-shadow:0 2px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,240,205,.08)}
+        .volver:hover{color:#fff;border-color:rgba(232,163,61,.8);background:linear-gradient(180deg,rgba(60,50,34,.95),rgba(28,23,18,.95))}
 
         .viewport{position:absolute;inset:0;overflow:auto;z-index:2;scrollbar-width:none;-ms-overflow-style:none;cursor:grab;padding:90px 40px 40px;transition:right .38s cubic-bezier(.22,.9,.3,1)}
         .viewport.conPanel{right:420px}
         .viewport.conPanelAncho{right:560px}
-        .canvas{position:relative;width:2280px;height:1240px}
+        .lienzo{position:relative}
+        .canvas{position:absolute;top:0;left:0;width:2280px;height:1240px}
 
         .cosmos{position:absolute;inset:-40px;z-index:1;width:calc(100% + 80px);height:calc(100% + 80px);will-change:transform}
         .cosmos line{stroke:rgba(139,147,163,.09);stroke-width:.6}
