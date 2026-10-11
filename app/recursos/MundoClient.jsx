@@ -302,8 +302,10 @@ export default function MundoClient({ email, perfil }) {
         .brand-wrap{display:flex;align-items:center;gap:12px}
         .sublabel{font-size:9.5px;letter-spacing:2.5px;color:#8b93a3;font-weight:700;text-transform:uppercase;margin-top:3px}
         .top-right{display:flex;align-items:center;gap:16px}
-        .volver{font-size:12px;color:#c9c3b4;text-decoration:none;text-transform:uppercase;letter-spacing:1.2px;border:1px solid rgba(201,161,77,.35);border-radius:20px;padding:7px 14px;background:rgba(18,21,28,.5);backdrop-filter:blur(6px);transition:all .25s}
-        .volver:hover{color:#f0e2b6;border-color:rgba(201,161,77,.7);background:rgba(18,21,28,.75)}
+        .volver{font-size:12px;color:#e7ddc8;text-decoration:none;text-transform:uppercase;letter-spacing:1.1px;font-weight:600;
+          border:1px solid rgba(201,161,77,.45);border-radius:11px;padding:8px 14px;cursor:pointer;font-family:inherit;transition:all .2s;
+          background:linear-gradient(180deg,rgba(44,37,27,.9),rgba(20,17,14,.9));box-shadow:0 2px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,240,205,.08)}
+        .volver:hover{color:#fff;border-color:rgba(232,163,61,.8);background:linear-gradient(180deg,rgba(60,50,34,.95),rgba(28,23,18,.95))}
 
         .titulo{position:absolute;top:90px;left:0;right:0;z-index:20;text-align:center;pointer-events:none}
         .titulo h1{font-family:var(--font-cormorant),serif;font-weight:600;font-size:clamp(24px,3.6vw,38px);color:#ecdcae;margin:0}
