@@ -135,6 +135,8 @@ export default function HomeClient({ email, perfil, stats = {} }) {
 
   return (
     <div className="hub-scene" ref={sceneRef}>
+      {/* precarga la imagen-héroe para que NO aparezca después del texto */}
+      <link rel="preload" as="image" href={HERO} fetchPriority="high" />
       {/* ===== fondos ===== */}
       <div className="hc-sky" aria-hidden="true" />
       <div className="hc-layer hc-far" aria-hidden="true">
@@ -265,7 +267,8 @@ export default function HomeClient({ email, perfil, stats = {} }) {
         /* HERO: una sola imagen (coche) fundida al cosmos. --hc-hero-h y
            background-position son las palancas si quieres ver más/menos coche. */
         .hub-scene .hc-img{position:fixed;top:0;left:0;right:0;height:820px;z-index:1;pointer-events:none;
-          background-position:center 48%;background-size:cover;background-repeat:no-repeat;transform:scale(1.04);will-change:transform;
+          background-position:center 54%;background-size:cover;background-repeat:no-repeat;transform:scale(1.04);will-change:transform;
+          animation:hcImgIn .6s ease both;
           -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 40%,rgba(0,0,0,.6) 72%,rgba(0,0,0,.15) 90%,rgba(0,0,0,0) 100%);
                   mask-image:linear-gradient(to bottom,#000 0%,#000 40%,rgba(0,0,0,.6) 72%,rgba(0,0,0,.15) 90%,rgba(0,0,0,0) 100%)}
         .hub-scene .hc-imgScrim{position:fixed;top:0;left:0;right:0;height:820px;z-index:1;pointer-events:none;background:
@@ -281,7 +284,7 @@ export default function HomeClient({ email, perfil, stats = {} }) {
         .hub-scene .hc-brand{display:flex;align-items:center;gap:12px}
         .hub-scene .hc-plat{font-size:9.5px;letter-spacing:2.5px;color:#b9c0cf;font-weight:700;text-transform:uppercase;margin-top:2px}
 
-        .hub-scene .hc-greet{margin-top:34px;margin-bottom:20px}
+        .hub-scene .hc-greet{margin-top:34px;margin-bottom:23px}
         .hub-scene .hc-kick{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#c8cedb;font-weight:700;margin-bottom:12px}
         .hub-scene .hc-title{font-size:clamp(34px,5.2vw,52px);line-height:.99;letter-spacing:-1.4px;margin:0;text-shadow:0 4px 34px rgba(0,0,0,.8);max-width:15ch}
         .hub-scene .hc-serif{color:var(--red-soft,#e85a4f)}
@@ -297,6 +300,7 @@ export default function HomeClient({ email, perfil, stats = {} }) {
         .hub-scene .hc-chip.live{border-color:rgba(232,68,59,.55);background:linear-gradient(90deg,rgba(198,26,26,.24),rgba(12,15,24,.5))}
         .hub-scene .hc-dotlive{width:8px;height:8px;border-radius:50%;background:#e85a4f;box-shadow:0 0 0 0 rgba(232,90,79,.7);animation:hcPl 1.8s infinite}
         @keyframes hcPl{0%{box-shadow:0 0 0 0 rgba(232,90,79,.6)}70%{box-shadow:0 0 0 7px rgba(232,90,79,0)}100%{box-shadow:0 0 0 0 rgba(232,90,79,0)}}
+        @keyframes hcImgIn{from{opacity:0}to{opacity:1}}
 
         /* ----- bento ----- */
         .hub-scene .hc-bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:160px;gap:15px;perspective:1200px;
@@ -316,14 +320,13 @@ export default function HomeClient({ email, perfil, stats = {} }) {
         .hub-scene .hc-formacion{grid-area:formacion}
         .hub-scene .hc-nexocar{grid-area:nexocar}
 
-        .hub-scene .hc-card{position:relative;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.17);cursor:pointer;
-          background:linear-gradient(180deg,rgba(32,36,50,.46),rgba(15,18,28,.6));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-          box-shadow:inset 0 1px 0 rgba(255,255,255,.06);transition:transform .18s ease,border-color .25s,box-shadow .25s;transform-style:preserve-3d}
-        .hub-scene .hc-card:hover{border-color:rgba(232,163,61,.5);box-shadow:0 20px 50px rgba(0,0,0,.5)}
-        .hub-scene .hc-glow{position:absolute;top:-30%;right:-15%;width:55%;height:70%;border-radius:50%;filter:blur(34px);opacity:.4;z-index:0}
-        .hub-scene .hc-central .hc-glow{width:80%;height:75%;opacity:.5}
+        .hub-scene .hc-card{position:relative;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.12);cursor:pointer;
+          background:linear-gradient(180deg,rgba(18,21,31,.74),rgba(11,13,21,.84));backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+          box-shadow:inset 0 1px 0 rgba(255,255,255,.05);transition:transform .18s ease,border-color .25s,box-shadow .25s;transform-style:preserve-3d}
+        .hub-scene .hc-card:hover{border-color:rgba(232,163,61,.45);box-shadow:0 18px 44px rgba(0,0,0,.45)}
+        .hub-scene .hc-glow{display:none}          /* sin resplandor de color: tarjetas limpias */
         .hub-scene .hc-shine{position:absolute;inset:0;z-index:1;opacity:0;transition:opacity .25s;
-          background:radial-gradient(240px 240px at var(--mx,50%) var(--my,0%),rgba(255,255,255,.1),transparent 60%)}
+          background:radial-gradient(240px 240px at var(--mx,50%) var(--my,0%),rgba(255,255,255,.06),transparent 60%)}
         .hub-scene .hc-card:hover .hc-shine{opacity:1}
         .hub-scene .hc-c{position:relative;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;height:100%;padding:19px}
         .hub-scene .g-red{background:radial-gradient(circle,rgba(198,26,26,.6),transparent 70%)}
