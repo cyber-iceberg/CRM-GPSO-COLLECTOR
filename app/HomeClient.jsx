@@ -95,12 +95,19 @@ export default function HomeClient({ email, perfil, stats = {} }) {
       <div className="hub-scene" ref={sceneRef}>
         <link rel="preload" as="image" href={HERO} fetchPriority="high" />
 
-        {/* carga */}
-        <div className={'hc-load' + (listo ? ' done' : '')} aria-hidden={listo}>
-          <div className="hc-load-in">
-            <div className="hc-load-logo"><img src="/collector.jpg" alt="GPSO" /></div>
-            <div className="hc-spin" />
-            <div className="hc-load-tx">Preparando tu central…</div>
+        {/* carga · estilos EN LÍNEA para cubrir desde el primer pintado (sin FOUC) */}
+        <div aria-hidden={listo} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#070910', display: 'grid', placeItems: 'center', opacity: listo ? 0 : 1, pointerEvents: listo ? 'none' : 'auto', transition: 'opacity .5s ease' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+            <div style={{ width: 68, height: 68, borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(201,161,77,.4)' }}>
+              <img src="/collector.jpg" alt="GPSO" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            </div>
+            <svg width="34" height="34" viewBox="0 0 50 50" aria-hidden="true">
+              <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(201,161,77,.18)" strokeWidth="5" />
+              <circle cx="25" cy="25" r="20" fill="none" stroke="#e3c987" strokeWidth="5" strokeLinecap="round" strokeDasharray="80 150">
+                <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.9s" repeatCount="indefinite" />
+              </circle>
+            </svg>
+            <div style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 13, color: '#9aa3b2' }}>Preparando tu central…</div>
           </div>
         </div>
 
@@ -219,15 +226,6 @@ export default function HomeClient({ email, perfil, stats = {} }) {
             font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
           @media (max-width:860px){ .hub-scene{margin-left:0} }
 
-          .hub-scene .hc-load{position:fixed;inset:0;z-index:200;background:#070910;display:grid;place-items:center;transition:opacity .5s ease;opacity:1}
-          .hub-scene .hc-load.done{opacity:0;pointer-events:none}
-          .hub-scene .hc-load-in{display:flex;flex-direction:column;align-items:center;gap:18px}
-          .hub-scene .hc-load-logo{width:68px;height:68px;border-radius:18px;overflow:hidden;border:1px solid rgba(201,161,77,.4)}
-          .hub-scene .hc-load-logo img{width:100%;height:100%;object-fit:cover}
-          .hub-scene .hc-spin{width:30px;height:30px;border-radius:50%;border:2.5px solid rgba(201,161,77,.2);border-top-color:#e3c987;animation:hcSpin .8s linear infinite}
-          @keyframes hcSpin{to{transform:rotate(360deg)}}
-          .hub-scene .hc-load-tx{font-size:13px;color:#9aa3b2}
-
           .hub-scene .hc-sky{position:fixed;inset:0;z-index:0;background:#070910}
           .hub-scene .hc-img{position:fixed;inset:0;z-index:0;background-position:center 54%;background-size:cover;background-repeat:no-repeat;transform:scale(1.05);will-change:transform;animation:hcImgIn .7s ease both}
           @keyframes hcImgIn{from{opacity:0}to{opacity:1}}
@@ -249,7 +247,7 @@ export default function HomeClient({ email, perfil, stats = {} }) {
           .hub-scene .hc-sub{font-family:'Cormorant',Georgia,serif;font-style:italic;font-weight:600;font-size:clamp(20px,2.2vw,26px);color:#e85a4f;margin-top:6px}
 
           /* métricas pequeñas */
-          .hub-scene .hc-metrics{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:12px;margin:4px 0 20px;max-width:860px}
+          .hub-scene .hc-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:4px auto 20px;max-width:820px}
           .hub-scene .hc-mt{border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 15px;background:rgba(13,16,24,.58);backdrop-filter:blur(14px)}
           .hub-scene .hc-mt.key{border-color:rgba(232,68,59,.4);background:linear-gradient(120deg,rgba(198,26,26,.18),rgba(13,16,24,.58) 60%)}
           .hub-scene .hc-lab{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:#9aa3b2;font-weight:600;display:flex;align-items:center;gap:7px}
@@ -293,8 +291,9 @@ export default function HomeClient({ email, perfil, stats = {} }) {
           .hub-scene .hc-go svg{color:#e3c987;transition:transform .2s}
           .hub-scene .hc-card:hover .hc-go svg{transform:translateX(3px)}
 
-          /* Central (jefa) */
-          .hub-scene .hc-central{padding:30px 32px}
+          /* Central (jefa) · contenido arriba, no centrado */
+          .hub-scene .hc-central{padding:26px 32px;justify-content:flex-start}
+          .hub-scene .hc-central .hc-body{margin-top:18px}
           .hub-scene .hc-central .hc-ctop{align-items:flex-start}
           .hub-scene .hc-central .hc-ic.big{width:54px;height:54px}
           .hub-scene .hc-central .hc-ct{font-size:32px;letter-spacing:-.8px;margin-bottom:8px}
