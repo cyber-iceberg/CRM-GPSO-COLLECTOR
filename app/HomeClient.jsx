@@ -53,7 +53,7 @@ export default function HomeClient({ email, perfil, stats }) {
   ];
 
   return (
-    <div className="gpso-bg" style={{ minHeight: '100vh' }}>
+    <div className="gpso-bg hub-page" style={{ minHeight: '100vh' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '22px 22px 60px' }}>
 
         {/* topbar */}
@@ -116,9 +116,10 @@ export default function HomeClient({ email, perfil, stats }) {
 
           <Acc onClick={() => router.push('/recursos')} tour="t-recursos"
             img="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1000"
-            badge="⬡ Guía práctica" badgeClass="stock"
-            titulo="Recursos" desc="Plantillas, documentos y herramientas para ejecutar cada paso."
-            icon={<FolderOpen size={16} />} />
+            badge="✦ El universo del importador" badgeClass="stock"
+            titulo="Recursos"
+            desc="Tu mapa de plantillas, contratos y contactos de confianza —transporte, gestorías, ITV y más— para cerrar cada operación sin improvisar."
+            icon={<FolderOpen size={16} />} cta="Explorar el universo" />
 
           <Acc onClick={() => window.open(URL_NEXOCAR, '_blank', 'noopener,noreferrer')} tour="t-nexocar"
             img="https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=1000"
@@ -142,7 +143,7 @@ export default function HomeClient({ email, perfil, stats }) {
   );
 }
 
-function Acc({ onClick, img, badge, badgeClass, titulo, desc, icon, externo, tour }) {
+function Acc({ onClick, img, badge, badgeClass, titulo, desc, icon, externo, tour, cta }) {
   return (
     <div className="acc-card" data-tour={tour} onClick={onClick}>
       <div className="acc-bg" style={{ backgroundImage: `url('${img}')` }} />
@@ -152,7 +153,7 @@ function Acc({ onClick, img, badge, badgeClass, titulo, desc, icon, externo, tou
         <div className="acc-mid">
           <h2 className="display" style={{ fontSize: 23, color: '#fff' }}>{titulo}</h2>
           <p className="acc-desc">{desc}</p>
-          <span className="acc-go">{icon} Entrar {externo ? '↗' : <ArrowRight size={15} />}</span>
+          <span className="acc-go">{icon} {cta || 'Entrar'} {externo ? '↗' : <ArrowRight size={15} />}</span>
         </div>
       </div>
     </div>
