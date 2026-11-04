@@ -281,7 +281,7 @@ export default function HomeClient({ email, perfil, stats = {} }) {
         .hub-scene .hc-brand{display:flex;align-items:center;gap:12px}
         .hub-scene .hc-plat{font-size:9.5px;letter-spacing:2.5px;color:#b9c0cf;font-weight:700;text-transform:uppercase;margin-top:2px}
 
-        .hub-scene .hc-greet{margin-top:34px;margin-bottom:15px}
+        .hub-scene .hc-greet{margin-top:34px;margin-bottom:20px}
         .hub-scene .hc-kick{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#c8cedb;font-weight:700;margin-bottom:12px}
         .hub-scene .hc-title{font-size:clamp(34px,5.2vw,52px);line-height:.99;letter-spacing:-1.4px;margin:0;text-shadow:0 4px 34px rgba(0,0,0,.8);max-width:15ch}
         .hub-scene .hc-serif{color:var(--red-soft,#e85a4f)}
