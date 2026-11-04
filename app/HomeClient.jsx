@@ -23,8 +23,7 @@ const URL_STOCK = 'https://gpsocollector.com/acceso';
 const URL_FORMACION = 'https://academy.gpsocollector.com';
 const URL_NEXOCAR = 'https://nexocar.app';
 
-const HERO = '/hero-galaxy.webp';            // coche + galaxia (arriba)
-const HERO_B = '/hero-cosmos-bottom.webp';   // carretera + ciudad (abajo)
+const HERO = '/hero-galaxy.webp';            // imagen-héroe única (el Porsche)
 
 function saludoPorHora(h) {
   if (h < 6) return 'Buenas noches';
@@ -146,8 +145,6 @@ export default function HomeClient({ email, perfil, stats = {} }) {
       </div>
       <div className="hc-img" style={{ backgroundImage: `url('${HERO}')` }} aria-hidden="true" />
       <div className="hc-imgScrim" aria-hidden="true" />
-      <div className="hc-imgB" style={{ backgroundImage: `url('${HERO_B}')` }} aria-hidden="true" />
-      <div className="hc-imgBScrim" aria-hidden="true" />
 
       {/* ===== contenido ===== */}
       <div className="hc-page">
@@ -265,30 +262,26 @@ export default function HomeClient({ email, perfil, stats = {} }) {
         .hub-scene .hc-near{animation:hcDrift 60s linear infinite}
         @keyframes hcDrift{from{translate:0 0}to{translate:26px -16px}}
 
-        .hub-scene .hc-img{position:fixed;top:0;left:0;right:0;height:540px;z-index:1;pointer-events:none;
-          background-position:center 56%;background-size:cover;background-repeat:no-repeat;transform:scale(1.05);will-change:transform;
-          -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 34%,rgba(0,0,0,.5) 66%,rgba(0,0,0,.12) 88%,rgba(0,0,0,0) 100%);
-                  mask-image:linear-gradient(to bottom,#000 0%,#000 34%,rgba(0,0,0,.5) 66%,rgba(0,0,0,.12) 88%,rgba(0,0,0,0) 100%)}
-        .hub-scene .hc-imgScrim{position:fixed;top:0;left:0;right:0;height:540px;z-index:1;pointer-events:none;background:
-          linear-gradient(110deg, rgba(6,8,16,.7) 0%, rgba(6,8,16,.28) 32%, rgba(6,8,16,0) 60%),
-          linear-gradient(180deg, rgba(6,8,16,0) 34%, rgba(6,8,16,.42) 62%, rgba(6,8,16,.84) 84%, rgba(6,8,16,.97) 96%, #060810 100%)}
-        .hub-scene .hc-imgB{position:fixed;left:0;right:0;bottom:0;height:660px;z-index:0;pointer-events:none;
-          background-position:center bottom;background-size:cover;background-repeat:no-repeat;will-change:transform;
-          -webkit-mask-image:linear-gradient(to top,#000 0%,#000 52%,rgba(0,0,0,.55) 78%,rgba(0,0,0,0) 100%);
-                  mask-image:linear-gradient(to top,#000 0%,#000 52%,rgba(0,0,0,.55) 78%,rgba(0,0,0,0) 100%)}
-        .hub-scene .hc-imgBScrim{position:fixed;left:0;right:0;bottom:0;height:660px;z-index:0;pointer-events:none;
-          background:linear-gradient(0deg, rgba(6,8,16,.35) 0%, rgba(6,8,16,.12) 30%, rgba(6,8,16,0) 58%)}
+        /* HERO: una sola imagen (coche) fundida al cosmos. --hc-hero-h y
+           background-position son las palancas si quieres ver más/menos coche. */
+        .hub-scene .hc-img{position:fixed;top:0;left:0;right:0;height:820px;z-index:1;pointer-events:none;
+          background-position:center 48%;background-size:cover;background-repeat:no-repeat;transform:scale(1.04);will-change:transform;
+          -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 40%,rgba(0,0,0,.6) 72%,rgba(0,0,0,.15) 90%,rgba(0,0,0,0) 100%);
+                  mask-image:linear-gradient(to bottom,#000 0%,#000 40%,rgba(0,0,0,.6) 72%,rgba(0,0,0,.15) 90%,rgba(0,0,0,0) 100%)}
+        .hub-scene .hc-imgScrim{position:fixed;top:0;left:0;right:0;height:820px;z-index:1;pointer-events:none;background:
+          linear-gradient(115deg, rgba(6,8,16,.5) 0%, rgba(6,8,16,.16) 36%, rgba(6,8,16,0) 66%),
+          linear-gradient(180deg, rgba(6,8,16,0) 58%, rgba(6,8,16,.4) 80%, rgba(6,8,16,.85) 93%, #060810 100%)}
         @media (prefers-reduced-motion:reduce){
           .hub-scene .hc-far i,.hub-scene .hc-near i,.hub-scene .hc-near{animation:none}
         }
 
         /* ----- layout ----- */
-        .hub-scene .hc-page{position:relative;z-index:3;max-width:1040px;margin:0 auto;padding:26px 26px 340px}
+        .hub-scene .hc-page{position:relative;z-index:3;max-width:1040px;margin:0 auto;padding:26px 26px 90px}
         .hub-scene .hc-top{display:flex;justify-content:space-between;align-items:center}
         .hub-scene .hc-brand{display:flex;align-items:center;gap:12px}
         .hub-scene .hc-plat{font-size:9.5px;letter-spacing:2.5px;color:#b9c0cf;font-weight:700;text-transform:uppercase;margin-top:2px}
 
-        .hub-scene .hc-greet{margin-top:34px;margin-bottom:96px}
+        .hub-scene .hc-greet{margin-top:34px;margin-bottom:235px}
         .hub-scene .hc-kick{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#c8cedb;font-weight:700;margin-bottom:12px}
         .hub-scene .hc-title{font-size:clamp(34px,5.2vw,52px);line-height:.99;letter-spacing:-1.4px;margin:0;text-shadow:0 4px 34px rgba(0,0,0,.8);max-width:15ch}
         .hub-scene .hc-serif{color:var(--red-soft,#e85a4f)}
@@ -323,8 +316,8 @@ export default function HomeClient({ email, perfil, stats = {} }) {
         .hub-scene .hc-formacion{grid-area:formacion}
         .hub-scene .hc-nexocar{grid-area:nexocar}
 
-        .hub-scene .hc-card{position:relative;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.1);cursor:pointer;
-          background:linear-gradient(180deg,rgba(12,15,24,.42),rgba(8,10,17,.66));backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px);
+        .hub-scene .hc-card{position:relative;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.17);cursor:pointer;
+          background:linear-gradient(180deg,rgba(32,36,50,.46),rgba(15,18,28,.6));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
           box-shadow:inset 0 1px 0 rgba(255,255,255,.06);transition:transform .18s ease,border-color .25s,box-shadow .25s;transform-style:preserve-3d}
         .hub-scene .hc-card:hover{border-color:rgba(232,163,61,.5);box-shadow:0 20px 50px rgba(0,0,0,.5)}
         .hub-scene .hc-glow{position:absolute;top:-30%;right:-15%;width:55%;height:70%;border-radius:50%;filter:blur(34px);opacity:.4;z-index:0}
@@ -374,12 +367,10 @@ export default function HomeClient({ email, perfil, stats = {} }) {
               "nexocar nexocar"}
         }
         @media (max-width:560px){
-          .hub-scene .hc-page{padding:20px 15px 300px}
-          .hub-scene .hc-img{height:380px;background-position:center 60%}
-          .hub-scene .hc-imgScrim{height:380px}
-          .hub-scene .hc-imgB{height:440px}
-          .hub-scene .hc-imgBScrim{height:440px}
-          .hub-scene .hc-greet{margin-top:26px;margin-bottom:56px}
+          .hub-scene .hc-page{padding:20px 15px 80px}
+          .hub-scene .hc-img{height:470px;background-position:center 50%}
+          .hub-scene .hc-imgScrim{height:470px}
+          .hub-scene .hc-greet{margin-top:26px;margin-bottom:150px}
           .hub-scene .hc-title{font-size:32px}
           .hub-scene .hc-bento{grid-template-columns:1fr;grid-auto-rows:auto;
             grid-template-areas:"central" "perito" "vip" "recursos" "stock" "formacion" "nexocar"}
