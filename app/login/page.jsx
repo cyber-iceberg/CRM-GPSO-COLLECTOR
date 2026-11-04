@@ -1,11 +1,12 @@
 'use client';
 
 // =====================================================================
-//  GPSO COLLECTOR · LOGIN  ·  app/login/page.jsx  (v5)
-//  Logo unificado + FEEDBACK de carga: overlay "Entrando…" a pantalla
-//  completa para que no haya momento en blanco tras pulsar ENTRAR.
-//  v5.1: botón ENTRAR con degradado rojo (antes salía blanco por el
-//        token --btn-grad del tema por defecto).
+//  GPSO COLLECTOR · LOGIN  ·  app/login/page.jsx  (v6)
+//  v6: Panel de BIENVENIDA para nuevos miembros — les explica que el
+//      siguiente paso es crear cuenta y que usen el MISMO email de la
+//      formación en vídeo para que el acceso se active más rápido.
+//      Incluye atajo directo a la pestaña "Crear cuenta".
+//  v5.1: botón ENTRAR con degradado rojo (el token --btn-grad salía blanco).
 // =====================================================================
 
 import { useState } from 'react';
@@ -59,7 +60,7 @@ export default function LoginPage() {
   function traducir(msg) {
     if (!msg) return 'Algo ha fallado. Inténtalo de nuevo.';
     if (msg.includes('Invalid login')) return 'Email o contraseña incorrectos.';
-    if (msg.includes('already registered')) return 'Ese email ya tiene cuenta.';
+    if (msg.includes('already registered')) return 'Ese email ya tiene cuenta. Prueba a entrar.';
     if (msg.includes('Email not confirmed')) return 'Email sin confirmar. Avisa al admin.';
     if (msg.includes('at least 6')) return 'La contraseña necesita al menos 6 caracteres.';
     return msg;
@@ -99,7 +100,41 @@ export default function LoginPage() {
 
         <div style={{ height: 1, background: 'var(--card-bd)' }} />
 
-        <div style={{ padding: '22px 26px 26px' }}>
+        {/* ===== BIENVENIDA · NUEVOS MIEMBROS ===== */}
+        <div style={{
+          margin: '18px 26px 0',
+          padding: '14px 16px',
+          borderRadius: 14,
+          border: '1px solid rgba(201,161,77,.34)',
+          background: 'linear-gradient(180deg, rgba(201,161,77,.11), rgba(201,161,77,.025))',
+          boxShadow: 'inset 0 1px 0 rgba(255,240,205,.07)'
+        }}>
+          <div style={{
+            fontSize: 12.5, fontWeight: 800, letterSpacing: .4,
+            color: '#e3c987', marginBottom: 6,
+            display: 'flex', alignItems: 'center', gap: 7, textTransform: 'uppercase'
+          }}>
+            <span style={{ fontSize: 13 }}>✦</span> Bienvenido a tu Central
+          </div>
+          <div style={{ fontSize: 12.5, lineHeight: 1.62, color: '#c7bfb0' }}>
+            ¿Es tu primera vez? Tu siguiente paso es <b style={{ color: '#e7ddc8' }}>crear tu cuenta</b>.
+            Usa <b style={{ color: '#e7ddc8' }}>el mismo email</b> con el que te registraste en la formación
+            en vídeo y tu acceso se activará mucho más rápido. Créala y descubre lo que te espera dentro.
+          </div>
+          {modo === 'login' && (
+            <button
+              onClick={() => { setModo('registro'); setError(''); setOk(''); }}
+              style={{
+                marginTop: 11, background: 'none', border: 'none', cursor: 'pointer',
+                color: '#e3c987', fontWeight: 700, fontSize: 12.5, padding: 0,
+                display: 'inline-flex', alignItems: 'center', gap: 6
+              }}>
+              Crear mi cuenta ahora →
+            </button>
+          )}
+        </div>
+
+        <div style={{ padding: '18px 26px 26px' }}>
           <div className="seg" style={{ display: 'flex', width: '100%', marginBottom: 18 }}>
             <button className={`seg-btn ${modo === 'login' ? 'active' : ''}`} style={{ flex: 1, justifyContent: 'center', ...(modo === 'login' ? segActivo : {}) }}
               onClick={() => { setModo('login'); setError(''); setOk(''); }}>Entrar</button>
@@ -116,6 +151,11 @@ export default function LoginPage() {
           <div style={{ marginBottom: 12 }}>
             <label className="etiqueta">Email</label>
             <input className="campo" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tucorreo@email.com" autoComplete="email" />
+            {modo === 'registro' && (
+              <div style={{ fontSize: 11, color: 'var(--gray-mid)', marginTop: 5, lineHeight: 1.4 }}>
+                El mismo que usaste en la formación en vídeo.
+              </div>
+            )}
           </div>
           <div style={{ marginBottom: 12 }}>
             <label className="etiqueta">Contraseña</label>
