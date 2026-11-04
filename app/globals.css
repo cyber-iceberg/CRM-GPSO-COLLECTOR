@@ -247,6 +247,7 @@ body.ocultar-theme-toggle .theme-toggle{ display:none !important; }
 .acc-badge.leads{ background:rgba(198,26,26,.55); border:1px solid rgba(232,68,59,.7); color:#ffffff; }
 .acc-badge.vip{ background:rgba(180,120,30,.5); border:1px solid rgba(232,163,61,.75); color:#fff4e0; }
 .acc-badge.stock{ background:rgba(70,110,160,.5); border:1px solid rgba(150,185,225,.7); color:#eaf3ff; }
+.acc-badge.perito{ background:rgba(52,116,150,.52); border:1px solid rgba(132,192,224,.72); color:#e7f5fc; }
 .acc-mid{ align-self:end; }              /* titulo + descripcion pegados a la base */
 .acc-card h2{ margin-bottom:6px; }
 .acc-desc{ font-size:13px; color:rgba(255,255,255,.72); line-height:1.5; min-height:39px; }  /* 2 lineas fijas */
