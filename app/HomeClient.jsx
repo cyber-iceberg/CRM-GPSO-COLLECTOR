@@ -115,7 +115,7 @@ export default function HomeClient({ email, perfil, stats }) {
             icon={<GraduationCap size={16} />} externo />
 
           <Acc onClick={() => router.push('/recursos')} tour="t-recursos"
-            img="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1000"
+            img="/cosmos.jpg"
             badge="✦ El universo del importador" badgeClass="stock"
             titulo="Recursos"
             desc="Tu mapa de plantillas, contratos y contactos de confianza —transporte, gestorías, ITV y más— para cerrar cada operación sin improvisar."
