@@ -32,5 +32,18 @@ export default async function OperativaPage() {
     .order('orden', { ascending: true })
     .order('created_at', { ascending: true });
 
-  return <OperativaClient email={user.email} perfil={perfil} contactosIniciales={contactos || []} />;
+  const { data: contratos } = await supabase
+    .from('contratos_operativa')
+    .select('*')
+    .order('orden', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  return (
+    <OperativaClient
+      email={user.email}
+      perfil={perfil}
+      contactosIniciales={contactos || []}
+      contratosIniciales={contratos || []}
+    />
+  );
 }
