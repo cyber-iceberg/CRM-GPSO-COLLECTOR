@@ -23,19 +23,20 @@ import { MAPA } from './espana-geo';
 const REGION_NOMBRE = Object.fromEntries(MAPA.regions.map(r => [r.id, r.name]));
 
 // ---------------------------------------------------------------------
-//  CONTRATOS · `archivo` = nombre EXACTO del .docx en /public/ (raíz)
+//  CONTRATOS · ahora viven en Supabase (tabla contratos_operativa).
+//  El admin los crea/edita/borra desde la web y sube el .docx a Storage.
+//  POOL_CONTRATOS = posiciones de los orbes hijos (se asignan por orden).
 // ---------------------------------------------------------------------
-const CONTRATOS = [
-  { id: 'c_reserva',        t: 'Reserva y Compra',         archivo: 'Plantilla_Contrato_Reserva_Compra_Generica.docx',
-    desc: 'Reserva, validación y compraventa de la unidad importada. El contrato completo de principio a fin.' },
-  { id: 'c_compraventa',    t: 'Compraventa',              archivo: 'Plantilla_Contrato_Compraventa_Generica.docx',
-    desc: 'Plantilla única de compraventa, tanto si el coche ya está en stock como si está pendiente de importar.' },
-  { id: 'c_intermediacion', t: 'Intermediación',           archivo: 'Plantilla_Contrato_Intermediacion_Generica.docx',
-    desc: 'El cliente compra directamente al vendedor; tú cobras honorarios de intermediación. El coche nunca es tuyo.' },
-  { id: 'c_matriculacion',  t: 'Gestión de matriculación', archivo: 'Plantilla Contrato Gestion Matriculacion Espana - Generica Alumnos.docx',
-    desc: 'Solo el trámite técnico y documental en España, para coches que el cliente ya tiene fuera.' },
+const POOL_CONTRATOS = [
+  { x: 170, y: 520 }, { x: 430, y: 505 }, { x: 250, y: 690 }, { x: 500, y: 675 },
+  { x: 150, y: 845 }, { x: 410, y: 835 }, { x: 600, y: 560 }, { x: 590, y: 760 },
 ];
-const docUrl = (archivo) => '/' + encodeURI(archivo);
+// Enlace de descarga: URL de Storage (http) o ruta en /public ('/archivo.docx')
+const hrefArchivo = (c) => {
+  const u = (c && c.archivo_url) || '';
+  return u.startsWith('/') ? '/' + encodeURI(u.slice(1)) : u;
+};
+const FORMC_VACIO = { titulo: '', descripcion: '', activo: true };
 
 // Bloques de contactos (coinciden con la columna `categoria` de la BBDD)
 const CATEGORIAS = [
@@ -60,11 +61,8 @@ const LAYOUT = {
   ],
   contratos: [
     { id: 'op',  x: 470, y: 110, rol: 'raiz',       tono: 'oro', t: 'Operativa', s: 'volver', kind: 'op' },
-    { id: 'hub', x: 300, y: 330, rol: 'portal hub', tono: 'oro', t: 'Contratos', s: '4 plantillas', kind: 'hub' },
-    { id: 'c_reserva',        x: 165, y: 535, rol: 'caso', tono: 'oro', t: 'Reserva y Compra',         s: 'descargar', kind: 'contrato' },
-    { id: 'c_compraventa',    x: 440, y: 548, rol: 'caso', tono: 'oro', t: 'Compraventa',              s: 'descargar', kind: 'contrato' },
-    { id: 'c_intermediacion', x: 255, y: 725, rol: 'caso', tono: 'oro', t: 'Intermediación',           s: 'descargar', kind: 'contrato' },
-    { id: 'c_matriculacion',  x: 510, y: 718, rol: 'caso', tono: 'oro', t: 'Gestión de matriculación', s: 'descargar', kind: 'contrato' },
+    { id: 'hub', x: 300, y: 330, rol: 'portal hub', tono: 'oro', t: 'Contratos', s: 'plantillas', kind: 'hub' },
+    // los orbes de cada contrato se generan desde la BBDD (ver `nodos` más abajo)
   ],
   contactos: [
     { id: 'op',  x: 470, y: 110, rol: 'raiz',       tono: 'azul', t: 'Operativa', s: 'volver', kind: 'op' },
@@ -79,7 +77,7 @@ const LAYOUT = {
 };
 const EDGES = {
   home:      [['op', 'contratos'], ['op', 'contactos']],
-  contratos: [['op', 'hub'], ['hub', 'c_reserva'], ['hub', 'c_compraventa'], ['hub', 'c_intermediacion'], ['hub', 'c_matriculacion']],
+  contratos: [['op', 'hub']],
   contactos: [['op', 'hub'], ['hub', 'transporte'], ['hub', 'peritacion'], ['hub', 'matriculacion'], ['hub', 'homologacion'], ['hub', 'itv'], ['hub', 'otros']],
 };
 
@@ -95,7 +93,7 @@ const IcoCopia = () => (
 );
 const FORM_VACIO = { nombre: '', rol: '', telefono: '', email: '', nota: '', activo: true, region: '' };
 
-export default function OperativaClient({ email, perfil, contactosIniciales = [] }) {
+export default function OperativaClient({ email, perfil, contactosIniciales = [], contratosIniciales = [] }) {
   const esAdmin = perfil && perfil.rol === 'admin';
   const supabase = useMemo(() => createClient(), []);
 
@@ -112,6 +110,15 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
   const [copiado, setCopiado] = useState(null);
   const [cosmos, setCosmos] = useState(null);
 
+  // --- contratos (gestionables por el admin) ---
+  const [contratosDB, setContratosDB] = useState(contratosIniciales || []);
+  const [formC, setFormC] = useState(FORMC_VACIO);
+  const [editCId, setEditCId] = useState(null);
+  const [mostrarFormC, setMostrarFormC] = useState(false);
+  const [guardandoC, setGuardandoC] = useState(false);
+  const [msgC, setMsgC] = useState(null);
+  const [archivoFile, setArchivoFile] = useState(null);
+
   useEffect(() => {
     document.body.classList.add('ocultar-theme-toggle');
     return () => document.body.classList.remove('ocultar-theme-toggle');
@@ -122,6 +129,7 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
     (async () => {
       try { const { data } = await supabase.auth.getUser(); if (vivo && data?.user) setUserId(data.user.id); } catch {}
       cargarContactos();
+      cargarContratos();
     })();
     const dots = [];
     for (let i = 0; i < 150; i++) dots.push({
@@ -135,7 +143,11 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
   }, []);
 
   // al cambiar de hijo seleccionado, resetea el formulario de admin (y la comunidad si salimos de ITV)
-  useEffect(() => { setForm(FORM_VACIO); setEditId(null); setMostrarForm(false); setMsg(null); if (sel !== 'itv') setRegionSel(null); }, [sel, rama]);
+  useEffect(() => {
+    setForm(FORM_VACIO); setEditId(null); setMostrarForm(false); setMsg(null);
+    setFormC(FORMC_VACIO); setEditCId(null); setMostrarFormC(false); setMsgC(null); setArchivoFile(null);
+    if (sel !== 'itv') setRegionSel(null);
+  }, [sel, rama]);
 
   async function cargarContactos() {
     try {
@@ -177,11 +189,90 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
   }
   function copiar(txt, id) { try { navigator.clipboard?.writeText(txt); } catch {} setCopiado(id); setTimeout(() => setCopiado(null), 1500); }
 
+  // ---- CONTRATOS (admin) ----
+  async function cargarContratos() {
+    try {
+      const { data, error } = await supabase.from('contratos_operativa').select('*')
+        .order('orden', { ascending: true }).order('created_at', { ascending: true });
+      if (!error && data) setContratosDB(data);
+    } catch {}
+  }
+  const abrirFormContrato = () => { setFormC(FORMC_VACIO); setEditCId(null); setArchivoFile(null); setMsgC(null); setMostrarFormC(true); };
+  const editarContrato = (c) => {
+    setEditCId(c.id);
+    setFormC({ titulo: c.titulo || '', descripcion: c.descripcion || '', activo: c.activo !== false });
+    setArchivoFile(null); setMsgC(null); setMostrarFormC(true);
+  };
+  const cancelarFormContrato = () => { setMostrarFormC(false); setEditCId(null); setFormC(FORMC_VACIO); setArchivoFile(null); setMsgC(null); };
+  async function borrarContrato(c) {
+    if (typeof window !== 'undefined' && !window.confirm(`¿Borrar "${c.titulo}"? No se puede deshacer.`)) return;
+    const { error } = await supabase.from('contratos_operativa').delete().eq('id', c.id);
+    if (error) { setMsgC('Error al borrar: ' + error.message); return; }
+    if (sel === c.id) setSel(null);
+    cargarContratos();
+  }
+  async function guardarContrato() {
+    if (!formC.titulo.trim()) { setMsgC('Pon un título.'); return; }
+    if (!editCId && !archivoFile) { setMsgC('Adjunta el archivo del contrato (.docx o .pdf).'); return; }
+    setGuardandoC(true); setMsgC(null);
+    try {
+      const actual = contratosDB.find(c => c.id === editCId);
+      let archivo_url = actual?.archivo_url || null;
+      let archivo_nombre = actual?.archivo_nombre || null;
+
+      if (archivoFile) {
+        const safe = archivoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `${Date.now()}_${safe}`;
+        const { error: upErr } = await supabase.storage.from('contratos')
+          .upload(path, archivoFile, { upsert: false, contentType: archivoFile.type || undefined });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from('contratos').getPublicUrl(path);
+        archivo_url = pub.publicUrl;
+        archivo_nombre = archivoFile.name;
+      }
+
+      const payload = {
+        titulo: formC.titulo.trim(),
+        descripcion: formC.descripcion.trim() || null,
+        archivo_url, archivo_nombre, activo: !!formC.activo,
+      };
+      let error;
+      if (editCId) { ({ error } = await supabase.from('contratos_operativa').update(payload).eq('id', editCId)); }
+      else {
+        const orden = (contratosDB.length ? Math.max(...contratosDB.map(c => c.orden || 0)) : 0) + 1;
+        ({ error } = await supabase.from('contratos_operativa').insert({ ...payload, orden, creado_por: userId || null }));
+      }
+      if (error) throw error;
+      setFormC(FORMC_VACIO); setEditCId(null); setArchivoFile(null); setMostrarFormC(false); cargarContratos();
+    } catch (e) {
+      setMsgC('Error al guardar: ' + (e?.message || e));
+    }
+    setGuardandoC(false);
+  }
+
   const cuenta = (cid) => contactos.filter(c => c.categoria === cid && c.activo !== false).length;
 
   // ---- navegación de orbes ----
-  const nodos = LAYOUT[rama || 'home'];
-  const edges = EDGES[rama || 'home'];
+  const contratosOrden = useMemo(
+    () => (contratosDB || []).slice().sort((a, b) => (a.orden || 0) - (b.orden || 0)),
+    [contratosDB]
+  );
+  const nodos = useMemo(() => {
+    if (rama === 'contratos') {
+      const hijos = contratosOrden.slice(0, POOL_CONTRATOS.length).map((c, i) => ({
+        id: c.id, ...POOL_CONTRATOS[i], rol: 'caso', tono: 'oro',
+        t: c.titulo, s: 'descargar', kind: 'contrato',
+      }));
+      return [...LAYOUT.contratos, ...hijos];
+    }
+    return LAYOUT[rama || 'home'];
+  }, [rama, contratosOrden]);
+  const edges = useMemo(() => {
+    if (rama === 'contratos') {
+      return [['op', 'hub'], ...contratosOrden.slice(0, POOL_CONTRATOS.length).map(c => ['hub', c.id])];
+    }
+    return EDGES[rama || 'home'];
+  }, [rama, contratosOrden]);
   const nodoPos = Object.fromEntries(nodos.map(n => [n.id, n]));
 
   function clickNodo(n) {
@@ -199,7 +290,9 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
   };
 
   const panelAbierto = !!rama;
-  const contrato = sel && CONTRATOS.find(c => c.id === sel);
+  const contrato = sel && contratosDB.find(c => c.id === sel);
+  const contratosVisibles = contratosOrden.filter(c => esAdmin || c.activo !== false);
+  const editC = contratosDB.find(c => c.id === editCId);
   const catSel = rama === 'contactos' && sel ? sel : null;
   const esMapaITV = catSel === 'itv';
   const listaCat = catSel ? contactos.filter(c => c.categoria === catSel) : [];
@@ -254,6 +347,25 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
       <div className="cf-acc">
         <button className="cf-cancel" onClick={() => { setMostrarForm(false); setEditId(null); setForm(FORM_VACIO); setMsg(null); }}>Cancelar</button>
         <button className="cf-save" disabled={guardando} onClick={() => guardar(cat)}>{guardando ? 'Guardando…' : (editId ? 'Guardar cambios' : 'Añadir')}</button>
+      </div>
+    </div>
+  );
+
+  // formulario de alta/edición de CONTRATO (con subida de archivo)
+  const formContrato = () => (
+    <div className="cf-form">
+      <div className="cf-title">{editCId ? 'Editar contrato' : 'Nuevo contrato'}</div>
+      <label className="cf-l">Título *<input value={formC.titulo} onChange={e => setFormC({ ...formC, titulo: e.target.value })} placeholder="Ej. Compraventa" /></label>
+      <label className="cf-l">Descripción<input value={formC.descripcion} onChange={e => setFormC({ ...formC, descripcion: e.target.value })} placeholder="Para qué sirve este contrato" /></label>
+      <label className="cf-l">Archivo {editCId ? '(déjalo vacío para mantener el actual)' : '*'}
+        <input className="cf-file" type="file" accept=".docx,.doc,.pdf" onChange={e => setArchivoFile((e.target.files && e.target.files[0]) || null)} />
+      </label>
+      {editCId && editC?.archivo_nombre && !archivoFile && <div className="cf-actual">Actual: {editC.archivo_nombre}</div>}
+      <label className="cf-check"><input type="checkbox" checked={formC.activo} onChange={e => setFormC({ ...formC, activo: e.target.checked })} />Visible para los alumnos</label>
+      {msgC && <div className="cf-msg">{msgC}</div>}
+      <div className="cf-acc">
+        <button className="cf-cancel" onClick={cancelarFormContrato}>Cancelar</button>
+        <button className="cf-save" disabled={guardandoC} onClick={guardarContrato}>{guardandoC ? 'Guardando…' : (editCId ? 'Guardar cambios' : 'Añadir')}</button>
       </div>
     </div>
   );
@@ -326,27 +438,53 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
         {rama === 'contratos' && (
           <>
             <div className="phead">
-              <div className="chips"><span className="chip gold">Contratos</span><span className="chip">.docx</span></div>
-              <h2>{contrato ? contrato.t : 'Contratos'}</h2>
+              <div className="chips">
+                <span className="chip gold">Contratos</span><span className="chip">.docx</span>
+                {esAdmin && <span className="chip">admin</span>}
+              </div>
+              <h2>{contrato ? contrato.titulo : 'Contratos'}</h2>
             </div>
             <div className="pbody">
               {contrato ? (
                 <>
-                  <p className="n-lead">{contrato.desc}</p>
-                  <a className="dl-btn" href={docUrl(contrato.archivo)} download><IcoDescarga /> Descargar plantilla</a>
-                  <div className="dl-file">{contrato.archivo}</div>
+                  {contrato.descripcion && <p className="n-lead">{contrato.descripcion}</p>}
+                  {contrato.archivo_url ? (
+                    <>
+                      <a className="dl-btn" href={hrefArchivo(contrato)} download target="_blank" rel="noopener noreferrer"><IcoDescarga /> Descargar plantilla</a>
+                      {contrato.archivo_nombre && <div className="dl-file">{contrato.archivo_nombre}</div>}
+                    </>
+                  ) : (
+                    <p className="n-lead" style={{ color: '#8b93a6' }}>Este contrato aún no tiene archivo adjunto.</p>
+                  )}
+                  {esAdmin && !mostrarFormC && (
+                    <div className="ct-admin-row">
+                      <button className="ct-edit" onClick={() => editarContrato(contrato)}>Editar contrato</button>
+                      <button className="ct-del" onClick={() => borrarContrato(contrato)}>Borrar</button>
+                    </div>
+                  )}
+                  {esAdmin && mostrarFormC && formContrato()}
                   <button className="link-volver" onClick={() => setSel(null)}>← Todos los contratos</button>
                 </>
               ) : (
                 <>
-                  <p className="n-lead">Cuatro plantillas cubren todas las formas de operar. Descárgalas, ábrelas en Word y rellénalas.</p>
-                  {CONTRATOS.map(c => (
-                    <div key={c.id} className="ct-card">
-                      <div className="ct-top"><div className="ct-ident"><b>{c.t}</b></div></div>
-                      <div className="ct-nota">{c.desc}</div>
-                      <a className="dl-btn sm" href={docUrl(c.archivo)} download><IcoDescarga /> Descargar</a>
+                  <p className="n-lead">Estas plantillas cubren todas las formas de operar. Descárgalas, ábrelas en Word y rellénalas.</p>
+                  {contratosVisibles.length === 0 && (
+                    <p className="n-lead" style={{ color: '#8b93a6' }}>
+                      {esAdmin ? 'Aún no hay contratos. Añade el primero abajo.' : 'Aún no hay contratos disponibles.'}
+                    </p>
+                  )}
+                  {contratosVisibles.map(c => (
+                    <div key={c.id} className={'ct-card' + (c.activo === false ? ' oculto' : '')}>
+                      <div className="ct-top">
+                        <div className="ct-ident"><b>{c.titulo}{c.activo === false && <span className="ct-badge">oculto</span>}</b></div>
+                        {esAdmin && (<div className="ct-admin"><button onClick={() => editarContrato(c)} title="Editar">✎</button><button onClick={() => borrarContrato(c)} title="Borrar" className="del">🗑</button></div>)}
+                      </div>
+                      {c.descripcion && <div className="ct-nota">{c.descripcion}</div>}
+                      {c.archivo_url && <a className="dl-btn sm" href={hrefArchivo(c)} download target="_blank" rel="noopener noreferrer"><IcoDescarga /> Descargar</a>}
                     </div>
                   ))}
+                  {esAdmin && !mostrarFormC && (<button className="cf-add" onClick={abrirFormContrato}>+ Añadir contrato</button>)}
+                  {esAdmin && mostrarFormC && formContrato()}
                 </>
               )}
             </div>
@@ -467,6 +605,17 @@ export default function OperativaClient({ email, perfil, contactosIniciales = []
         .op-scene .cf-cancel:hover{border-color:#c9c3b4;color:#c9c3b4}
         .op-scene .cf-save{flex:1;padding:10px 14px;border-radius:9px;border:none;background:linear-gradient(135deg,#e3c987,#c9a14d);color:#1a140a;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
         .op-scene .cf-save:disabled{opacity:.6;cursor:default}
+        /* subida de archivo del contrato */
+        .op-scene .cf-file{display:block;width:100%;margin-top:6px;font-size:12px;color:#c9c3b4;font-family:inherit}
+        .op-scene .cf-file::file-selector-button{margin-right:10px;padding:7px 12px;border-radius:8px;border:1px solid rgba(201,161,77,.5);background:rgba(201,161,77,.1);color:#e3c987;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+        .op-scene .cf-file::file-selector-button:hover{background:rgba(201,161,77,.2)}
+        .op-scene .cf-actual{font-size:11px;color:#8b93a6;margin:-4px 0 10px;font-family:ui-monospace,monospace;word-break:break-all}
+        /* fila editar/borrar en el detalle de un contrato */
+        .op-scene .ct-admin-row{display:flex;gap:8px;margin-top:16px}
+        .op-scene .ct-edit{flex:1;padding:11px;border-radius:10px;border:1px dashed rgba(201,161,77,.5);background:transparent;color:#c9a14d;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s,border-color .2s}
+        .op-scene .ct-edit:hover{background:rgba(201,161,77,.08);border-color:#c9a14d}
+        .op-scene .ct-del{flex:none;padding:11px 16px;border-radius:10px;border:1px solid rgba(224,135,106,.45);background:transparent;color:#e0876a;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s,border-color .2s}
+        .op-scene .ct-del:hover{background:rgba(224,135,106,.1);border-color:#e0876a}
       `}</style>
 
       <style jsx>{`
