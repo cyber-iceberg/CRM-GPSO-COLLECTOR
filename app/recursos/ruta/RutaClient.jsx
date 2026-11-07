@@ -15,7 +15,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo } fr
 import { createClient } from '../../../lib/supabase/client';
 import {
   BookOpen, Search, ClipboardCheck, ShoppingCart, Truck, Crown,
-  Lock, Check, Play, ChevronRight, Flame, Zap, ArrowLeft, X, FileText, Sheet, Film,
+  Lock, Check, Play, ChevronRight, Flame, Zap, ArrowLeft, X, FileText, Sheet, Film, Volume2, VolumeX,
 } from 'lucide-react';
 
 const MAPA_ASPECT = 1914 / 822;
@@ -99,6 +99,13 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
   });
   const [estados, setEstados] = useState(() => NIV.map(n => n.estado || 'bloqueado'));
   const [destello, setDestello] = useState(null);   // flash al descubrir una parada
+  const [sonido, setSonido] = useState(false);       // banda sonora on/off
+  const audioRef = useRef(null);
+  const toggleSonido = () => {
+    const a = audioRef.current; if (!a) return;
+    if (sonido) { a.pause(); setSonido(false); }
+    else { a.volume = 0.5; a.play().then(() => setSonido(true)).catch(() => {}); }
+  };
 
   // medir el escenario
   useLayoutEffect(() => {
@@ -220,13 +227,17 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
               <defs>
                 {/* textura de nubes/niebla */}
                 <filter id="rv-cloud" x="-10%" y="-10%" width="120%" height="120%">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.005 0.009" numOctaves="4" seed="11" stitchTiles="stitch" result="n"/>
+                  <feTurbulence type="fractalNoise" baseFrequency="0.005 0.009" numOctaves="4" seed="11" stitchTiles="stitch" result="n">
+                    <animate attributeName="baseFrequency" dur="26s" values="0.005 0.009;0.0062 0.0108;0.005 0.009" repeatCount="indefinite"/>
+                  </feTurbulence>
                   <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.04  0 0 0 0 0.06  0 0 0 0 0.13  0 0 0 -1.4 1.15"/>
                 </filter>
                 {/* bordes de nube: desenfoca y deforma el claro para que NO sea un círculo */}
                 <filter id="rv-edge" x="-40%" y="-40%" width="180%" height="180%">
                   <feGaussianBlur stdDeviation="30" result="b"/>
-                  <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="5" result="t"/>
+                  <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="5" result="t">
+                    <animate attributeName="baseFrequency" dur="20s" values="0.013;0.0165;0.013" repeatCount="indefinite"/>
+                  </feTurbulence>
                   <feDisplacementMap in="b" in2="t" scale="110"/>
                 </filter>
                 {/* claro: centro 100% despejado (negro) y solo el borde se funde a nube */}
@@ -376,6 +387,12 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
             </div>
           </>
         )}
+
+        {/* banda sonora + botón on/off (siempre visible) */}
+        <audio ref={audioRef} src="/musica-mundo.mp3" loop preload="auto" />
+        <button className={'snd-btn' + (sonido ? ' on' : '')} onClick={toggleSonido} title={sonido ? 'Silenciar música' : 'Activar música'}>
+          {sonido ? <Volume2 size={19} /> : <VolumeX size={19} />}
+        </button>
       </div>
 
       <style jsx global>{`
@@ -384,6 +401,12 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         .stage{position:relative;width:100%;height:calc(100vh - 0px);min-height:560px;overflow:hidden;background:#05060b;border-radius:0}
         .stage.grab{cursor:grab}
         .stage.grab:active{cursor:grabbing}
+        /* botón de música */
+        .snd-btn{position:absolute;bottom:18px;left:18px;z-index:40;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;
+          background:rgba(9,11,18,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);color:#aeb7c6;cursor:pointer;
+          box-shadow:0 8px 22px rgba(0,0,0,.4);transition:color .2s,border-color .2s}
+        .snd-btn:hover{color:#f0d79a;border-color:rgba(201,161,77,.5)}
+        .snd-btn.on{color:#f0d79a;border-color:rgba(201,161,77,.55);box-shadow:0 0 0 1px rgba(201,161,77,.25),0 8px 22px rgba(201,161,77,.25)}
         .cam{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;transition:transform .72s cubic-bezier(.4,.0,.15,1)}
         .mapa{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;user-select:none;-webkit-user-drag:none}
 
