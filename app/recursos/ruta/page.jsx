@@ -54,6 +54,7 @@ export default async function RutaPage() {
         const estado = pg?.estado || (i === 0 ? 'en_curso' : 'bloqueado');
         const okIds = pg?.misiones_ok || [];
         return {
+          id: n.id,
           slug: n.slug, titulo: n.titulo, subtitulo: n.subtitulo, descripcion: n.descripcion,
           orden: n.orden, pos_x: Number(n.pos_x), pos_y: Number(n.pos_y),
           cam_zoom: Number(n.cam_zoom), icono: n.icono, xp: n.xp, escenario_url: n.escenario_url,
