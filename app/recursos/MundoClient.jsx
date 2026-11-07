@@ -25,14 +25,18 @@ import MenuDrawer from '../components/MenuDrawer';
 // ---------------------------------------------------------------------
 const MODULOS = [
   { id: 'fiscalidad',   t: 'Fiscalidad',   s: 'del importador',     marca: 'Mercedes',    img: '/mercedes.png',    activo: true, href: '/recursos/fiscalidad',
-    cx: 1000, cy: 700, conecta: ['negociacion', 'operativa', 'ventas'],
+    cx: 1000, cy: 700, conecta: ['negociacion', 'operativa', 'ruta'],
     desc: 'Quién, qué y cómo se factura cada operación — con coches reales.' },
   { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/ferrari.png',     activo: false,
-    cx: 680, cy: 440, conecta: ['ventas'],
+    cx: 680, cy: 440, conecta: ['ruta'],
     desc: 'Cómo negociar el precio en Alemania y cerrar la compra.' },
-  { id: 'ventas',       t: 'Ventas',       s: 'cerrar al cliente',  marca: 'Lamborghini', img: '/lamborghini.png', activo: false,
+  // LA RUTA DEL IMPORTADOR · mundo gamificado.
+  //   activo:false  → se muestra como "Próximamente" a los alumnos.
+  //   soloAdmin:true → pero TÚ (perfil.rol === 'admin') sí puedes entrar.
+  // Cuando esté listo para todos: pon activo:true y quita soloAdmin.
+  { id: 'ruta',         t: 'La Ruta',      s: 'del importador',     marca: 'Lamborghini', img: '/lamborghini.png', activo: false, soloAdmin: true, href: '/recursos/ruta',
     cx: 1000, cy: 320,
-    desc: 'Cómo presentar, cerrar y entregar la venta al cliente final.' },
+    desc: 'El mapa gamificado para convertirte en importador: misiones, niveles y tu coche recorriendo la ruta.' },
 
   // Operativa ocupa el sitio del Cupra (antes "Logística", en próximamente).
   // Constelación de utilidad: contratos descargables + contactos.
@@ -63,6 +67,9 @@ function layout(mods) {
 export default function MundoClient({ email, perfil }) {
   const router = useRouter();
   const nodos = useMemo(() => layout(MODULOS), []);
+  const esAdmin = perfil?.rol === 'admin';
+  // navegable si está activo para todos, o si es exclusivo de admin y tú eres admin
+  const puedeEntrar = (m) => m.activo || (m.soloAdmin && esAdmin);
 
   // conexiones calculadas UNA vez (no dependen del hover → no pueden petar)
   const conexiones = useMemo(() => {
@@ -157,7 +164,7 @@ export default function MundoClient({ email, perfil }) {
 
   const entrar = (m) => {
     if (dragRef.current && dragRef.current.moved) return; // no navegar si arrastró
-    if (m.activo && m.href) router.push(m.href);
+    if (puedeEntrar(m) && m.href) router.push(m.href);
   };
   const zoomBtn = (d) => setCam(c => ({ ...c, z: Math.min(1.8, Math.max(0.45, c.z + d)) }));
   // Encuadre inicial / centrar: en móvil aleja el zoom y encuadra TODO el universo.
@@ -245,7 +252,7 @@ export default function MundoClient({ email, perfil }) {
           </svg>
           {nodos.map((m, idx) => (
             <div key={m.id}
-              className={'nodo' + (m.activo ? ' activo' : ' pronto') + (hover === m.id ? ' hov' : '')}
+              className={'nodo' + (puedeEntrar(m) ? ' activo' : ' pronto') + (hover === m.id ? ' hov' : '')}
               style={{ left: m.cx, top: m.cy }}
               onMouseEnter={() => setHover(m.id)} onMouseLeave={() => setHover(null)}
               onClick={() => entrar(m)}>
@@ -260,7 +267,7 @@ export default function MundoClient({ email, perfil }) {
               {/* etiqueta */}
               <span className="etq">
                 <span className="e-t">{m.t}</span>
-                <span className="e-s">{m.activo ? m.s : 'próximamente'}</span>
+                <span className="e-s">{puedeEntrar(m) ? (m.soloAdmin ? 'solo admin' : m.s) : 'próximamente'}</span>
               </span>
             </div>
           ))}
@@ -277,7 +284,9 @@ export default function MundoClient({ email, perfil }) {
             <div className="tip" style={{ left: sx, top: sy - 120 * cam.z - 40 }}>
               <b>{m.t}</b>
               <span>{m.desc}</span>
-              {m.activo ? <em className="go">Entrar →</em> : <em className="soon">Próximamente</em>}
+              {puedeEntrar(m)
+                ? <em className="go">{m.soloAdmin ? 'Entrar · solo admin →' : 'Entrar →'}</em>
+                : <em className="soon">Próximamente</em>}
             </div>
           );
         })()}
