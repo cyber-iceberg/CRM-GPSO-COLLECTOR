@@ -120,7 +120,7 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
       const foco = NIV[cocheIdx] || NIV[0];
       // en móvil, en vista mapa centramos en el coche con algo de zoom para que se vea
       if (esMovil) {
-        const s = 1.9;
+        const s = 1.45;
         const tx = stage.w * 0.5 - s * (foco.pos_x/100 * CW);
         const ty = stage.h * 0.5 - s * (foco.pos_y/100 * CH);
         return { tx, ty, s };
@@ -189,6 +189,12 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
     }
   };
 
+  // ocultar el botón global de tema (claro/oscuro) mientras esta página está montada
+  useEffect(() => {
+    document.body.classList.add('ocultar-theme-toggle');
+    return () => document.body.classList.remove('ocultar-theme-toggle');
+  }, []);
+
   // cerrar con ESC
   useEffect(() => {
     const h = (e) => { if (e.key === 'Escape' && vista.modo === 'nivel') volver(); };
@@ -240,7 +246,7 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
           })}
 
           {/* coche-avatar aparcado en el nivel actual */}
-          <div className="coche" style={{ left: `${NIV[cocheIdx].pos_x}%`, top: `${NIV[cocheIdx].pos_y}%`, transform: `translate(-50%,-50%) scale(${1/cam.s})` }}>
+          <div className="coche" style={{ left: `${NIV[cocheIdx].pos_x}%`, top: `${NIV[cocheIdx].pos_y}%`, transform: `translate(-50%,-104%) scale(${1/cam.s})` }}>
             <span className="coche-ring" />
             <img className="coche-car" src={cocheSrc} alt="Tu coche" draggable="false" />
           </div>
@@ -293,9 +299,13 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         {/* escenario propio del nivel (entra desde el negro, nítido) */}
         {nivelAbierto?.escenario_url && tapar && !cargando && (
           <div className="escena" style={{ backgroundImage: `url(${nivelAbierto.escenario_url})` }}>
-            <span className="escena-ring" />
-            <div className="escena-car"><img className="coche-car-xl" src={cocheSrc} alt="Tu coche" draggable="false" /></div>
-            <span className="escena-lbl">🚗 Tu coche está aparcado aquí</span>
+            <div className="escena-coche">
+              <div className="coche-wrap">
+                <img className="coche-car-xl" src={cocheSrc} alt="Tu coche" draggable="false" />
+                <img className="coche-reflejo" src={cocheSrc} alt="" aria-hidden="true" draggable="false" />
+              </div>
+              <span className="escena-lbl">🚗 Tu coche está aparcado aquí</span>
+            </div>
           </div>
         )}
 
@@ -375,9 +385,9 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
 
         /* coche */
         .coche{position:absolute;transform-origin:center;z-index:5;pointer-events:none;transition:left 1.8s cubic-bezier(.45,.05,.2,1),top 1.8s cubic-bezier(.45,.05,.2,1)}
-        .coche-ring{position:absolute;left:50%;top:50%;width:94px;height:94px;transform:translate(-50%,-50%);border-radius:50%;
-          border:2px solid rgba(240,207,127,.7);box-shadow:0 0 0 5px rgba(240,207,127,.1),0 0 24px 6px rgba(240,207,127,.34)}
-        .coche-car{position:relative;z-index:2;width:88px;height:auto;display:block;filter:drop-shadow(0 7px 12px rgba(0,0,0,.6))}
+        .coche-ring{position:absolute;left:50%;top:70%;width:80px;height:80px;transform:translate(-50%,-50%);border-radius:50%;
+          border:2px solid rgba(240,207,127,.55);box-shadow:0 0 0 4px rgba(240,207,127,.08),0 0 22px 5px rgba(240,207,127,.28)}
+        .coche-car{position:relative;z-index:2;width:74px;height:auto;display:block;filter:drop-shadow(0 7px 12px rgba(0,0,0,.6))}
 
         /* HUD */
         .hud{position:absolute;top:20px;left:22px;right:22px;z-index:20;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;transition:opacity .4s}
@@ -411,12 +421,17 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         /* escenario propio del nivel */
         .escena{position:absolute;inset:0;z-index:15;background-size:cover;background-position:center;animation:escin .55s ease}
         @keyframes escin{from{opacity:0}to{opacity:1}}
-        .escena-car{position:absolute;left:36%;top:70%;transform:translate(-50%,-50%);z-index:2}
-        .coche-car-xl{width:190px;height:auto;display:block;filter:drop-shadow(0 12px 20px rgba(0,0,0,.7))}
-        .escena-ring{position:absolute;left:36%;top:70%;width:150px;height:34px;transform:translate(-50%,56px);border-radius:50%;
-          background:radial-gradient(ellipse,rgba(240,207,127,.4),transparent 70%);filter:blur(4px);z-index:1}
-        .escena-lbl{position:absolute;left:36%;top:70%;transform:translate(-50%,96px);white-space:nowrap;font-size:13px;font-weight:800;color:#f0d79a;
-          background:rgba(9,11,18,.8);padding:7px 14px;border-radius:30px;border:1px solid rgba(201,161,77,.5);z-index:3}
+        .escena-coche{position:absolute;left:25%;bottom:2%;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column-reverse;align-items:center;gap:12px;pointer-events:none}
+        .coche-wrap{position:relative;display:block}
+        /* sombra de contacto bajo las ruedas */
+        .coche-wrap::after{content:'';position:absolute;left:50%;bottom:11%;width:62%;height:7%;transform:translateX(-50%);
+          background:radial-gradient(ellipse,rgba(0,0,0,.6),transparent 72%);filter:blur(9px);z-index:0}
+        .coche-car-xl{position:relative;z-index:2;width:clamp(180px,23vw,320px);height:auto;display:block;filter:drop-shadow(0 14px 18px rgba(0,0,0,.55))}
+        /* reflejo en el asfalto mojado */
+        .coche-reflejo{position:absolute;left:0;top:0;width:100%;height:auto;z-index:1;transform:scaleY(-1);transform-origin:50% 100%;
+          opacity:.17;filter:blur(3px);
+          -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,.55),transparent 48%);mask-image:linear-gradient(to bottom,rgba(0,0,0,.55),transparent 48%)}
+        .escena-lbl{white-space:nowrap;font-size:13px;font-weight:800;color:#f0d79a;background:rgba(9,11,18,.82);padding:7px 14px;border-radius:30px;border:1px solid rgba(201,161,77,.5)}
 
         /* panel */
         .volver{position:absolute;top:22px;right:24px;z-index:26;display:flex;align-items:center;gap:7px;background:rgba(9,11,18,.72);backdrop-filter:blur(8px);
@@ -451,13 +466,15 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
           .wtitle{right:16px;bottom:14px}.wtitle b{font-size:24px}
           .hint{top:auto;bottom:80px;left:12px;right:12px;transform:none;white-space:normal;text-align:center;font-size:12px}
           /* panel como hoja inferior */
-          .panel{top:auto;bottom:0;left:0;right:0;width:auto;height:auto;max-height:72%;overflow-y:auto;overflow-x:hidden;padding:22px 20px 26px;justify-content:flex-start;
+          .panel{top:auto;bottom:0;left:0;right:0;width:auto;height:auto;max-height:60%;overflow-y:auto;overflow-x:hidden;padding:22px 20px 26px;justify-content:flex-start;
             background:linear-gradient(180deg,rgba(7,9,15,0),rgba(7,9,15,.9) 14%,rgba(7,9,15,.98));border-top-left-radius:22px;border-top-right-radius:22px;
             animation:pinm .4s ease}
           @keyframes pinm{from{transform:translateY(60px);opacity:0}to{transform:none;opacity:1}}
           .panel-x{display:grid;place-items:center;position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#dfe4ee;cursor:pointer}
-          .volver{top:auto;bottom:calc(72% + 10px);right:14px}
-          .escena-car,.escena-ring,.escena-lbl{left:50%;top:16%}
+          .volver{display:none}           /* en móvil se cierra con la X del panel */
+          .escena-lbl{display:none}        /* el coche grande ya se entiende */
+          .escena-coche{left:38%;bottom:auto;top:13%}
+          .coche-car-xl{width:42vw}
           .p-cta .btn{width:100%;justify-content:center}
         }
       `}</style>
