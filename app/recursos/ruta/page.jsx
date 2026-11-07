@@ -11,11 +11,18 @@ import RutaClient from './RutaClient';
 export const dynamic = 'force-dynamic';
 
 export default async function RutaPage() {
-  let mundo = null, niveles = null, perfil = null;
+  let mundo = null, niveles = null, perfil = null, esAdmin = false;
 
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
+
+    // ¿es admin? (para poder entrar a todos los niveles y revisar)
+    if (user) {
+      const { data: pa } = await supabase
+        .from('perfiles_alumno').select('rol').eq('id', user.id).single();
+      esAdmin = pa?.rol === 'admin';
+    }
 
     // Mundo 1
     const { data: m } = await supabase
@@ -68,5 +75,5 @@ export default async function RutaPage() {
     mundo = null; niveles = null; perfil = null;
   }
 
-  return <RutaClient mundo={mundo} niveles={niveles} perfil={perfil} />;
+  return <RutaClient mundo={mundo} niveles={niveles} perfil={perfil} esAdmin={esAdmin} />;
 }
