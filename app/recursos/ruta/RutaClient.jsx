@@ -90,6 +90,7 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
   const [stage, setStage] = useState({ w: 1200, h: 700 });
   const [vista, setVista] = useState({ modo: 'mapa', idx: null });
   const [cargando, setCargando] = useState(false);
+  const [tapar, setTapar] = useState(false);   // blackout: entra DESPUÉS del zoom
   const [cocheIdx, setCocheIdx] = useState(() => {
     const i = NIV.findIndex(n => n.estado === 'en_curso');
     return i >= 0 ? i : 0;
@@ -136,14 +137,26 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
 
   const accesible = (i) => admin || estados[i] === 'en_curso' || estados[i] === 'disponible' || estados[i] === 'completado';
 
-  const entrar = useCallback((i) => {
+  const entrar = (i) => {
     if (!accesible(i)) return;
-    setCargando(true);
-    setVista({ modo: 'nivel', idx: i });
-    setTimeout(() => setCargando(false), 680);
-  }, [estados]);
+    setTapar(false); setCargando(false);
+    setVista({ modo: 'nivel', idx: i });        // 1) la cámara hace ZOOM (visible) → aspecto de juego
+    const url = NIV[i]?.escenario_url;
+    // 2) justo cuando el mapa empezaría a verse borroso, entra el blackout + spinner
+    setTimeout(() => { setTapar(true); setCargando(true); }, 420);
+    // 3) precarga la imagen y la revela nítida desde el negro
+    const total = 1150, t0 = Date.now();
+    const done = () => setTimeout(() => setCargando(false), Math.max(0, total - (Date.now() - t0)));
+    if (url && typeof window !== 'undefined') {
+      const img = new window.Image();
+      img.onload = done; img.onerror = done; img.src = url;
+      setTimeout(done, 2600); // tope de seguridad
+    } else {
+      setTimeout(() => setCargando(false), total);
+    }
+  };
 
-  const volver = () => setVista({ modo: 'mapa', idx: null });
+  const volver = () => { setVista({ modo: 'mapa', idx: null }); setTapar(false); setCargando(false); };
 
   // completar nivel (demo): desbloquea el siguiente y el coche conduce hasta él
   const completar = (i) => {
@@ -272,8 +285,11 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
           </div>
         )}
 
-        {/* escenario propio del nivel (crossfade sobre el mapa) */}
-        {nivelAbierto?.escenario_url && !cargando && (
+        {/* blackout: entra DESPUÉS del zoom, justo antes de que el mapa se vea borroso */}
+        {vista.modo === 'nivel' && nivelAbierto?.escenario_url && tapar && <div className="blackout" />}
+
+        {/* escenario propio del nivel (entra desde el negro, nítido) */}
+        {nivelAbierto?.escenario_url && tapar && !cargando && (
           <div className="escena" style={{ backgroundImage: `url(${nivelAbierto.escenario_url})` }}>
             <span className="escena-ring" />
             <div className="escena-car"><Coche size={58} /></div>
@@ -281,8 +297,8 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
           </div>
         )}
 
-        {/* panel de nivel */}
-        {nivelAbierto && !cargando && (
+        {/* panel de nivel (aparece con el escenario, no durante el zoom) */}
+        {nivelAbierto && !cargando && (nivelAbierto.escenario_url ? tapar : true) && (
           <>
             <button className="volver" onClick={volver}><ArrowLeft size={16}/> Volver al mapa</button>
             <div className="panel">
@@ -382,7 +398,9 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         .wtitle b{display:block;font-size:34px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1;margin-top:2px;text-shadow:0 4px 24px rgba(0,0,0,.6)}
 
         /* loader */
-        .loader{position:absolute;inset:0;z-index:30;background:radial-gradient(circle at 50% 46%,rgba(10,12,20,.82),rgba(4,5,10,.96));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;animation:fin .25s}
+        /* blackout opaco: tapa el zoom borroso del mapa durante la entrada */
+        .blackout{position:absolute;inset:0;z-index:14;background:#05060b;animation:fin .4s ease}
+        .loader{position:absolute;inset:0;z-index:30;background:radial-gradient(circle at 50% 46%,#0b0e16,#05060b 72%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;animation:fin .4s ease}
         @keyframes fin{from{opacity:0}to{opacity:1}}
         .spin{width:66px;height:66px;animation:spin 0.9s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
         .ld-tx{text-align:center}.ld-tx i{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;color:#f0d79a;display:block}
