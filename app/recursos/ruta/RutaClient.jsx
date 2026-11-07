@@ -229,14 +229,15 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
                   <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="5" result="t"/>
                   <feDisplacementMap in="b" in2="t" scale="110"/>
                 </filter>
+                {/* claro: centro 100% despejado (negro) y solo el borde se funde a nube */}
                 <radialGradient id="rv-hole">
-                  <stop offset="0%" stopColor="#000"/><stop offset="48%" stopColor="#000"/><stop offset="100%" stopColor="#fff"/>
+                  <stop offset="0%" stopColor="#000"/><stop offset="68%" stopColor="#000"/><stop offset="100%" stopColor="#fff"/>
                 </radialGradient>
                 <mask id="rv-mask">
                   <rect x="0" y="0" width={CW} height={CH} fill="#fff"/>
                   <g filter="url(#rv-edge)">
                     {NIV.map((n, i) => revelado(i)
-                      ? <circle key={i} cx={n.pos_x/100*CW} cy={n.pos_y/100*CH} r={CW*0.11} fill="url(#rv-hole)"/> : null)}
+                      ? <circle key={i} cx={n.pos_x/100*CW} cy={n.pos_y/100*CH} r={CW*0.2} fill="url(#rv-hole)"/> : null)}
                   </g>
                 </mask>
               </defs>
