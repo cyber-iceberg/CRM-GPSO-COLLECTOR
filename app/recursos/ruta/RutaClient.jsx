@@ -84,6 +84,8 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
   const PER = perfil || FALLBACK_PERFIL;
   const admin = esAdmin || perfil?.rol === 'admin';  // admin entra a todos los niveles
   const supabase = useMemo(() => { try { return createClient(); } catch { return null; } }, []);
+  const cocheTier = Math.min(5, Math.max(1, PER.coche_tier || 1));  // evolución del coche
+  const cocheSrc = `/coche-${cocheTier}.webp`;
   const mapaUrl = (mundo && mundo.imagen_url) || '/mundo1.webp';
 
   const stageRef = useRef(null);
@@ -127,7 +129,7 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
       return { tx: 0, ty: (stage.h - CH) / 2, s };
     }
     const n = NIV[vista.idx];
-    const s = (esMovil ? (n.cam_zoom * 0.78) : n.cam_zoom);
+    const s = (esMovil ? (n.cam_zoom * 0.72) : (n.cam_zoom * 0.82));  // menos zoom → no se acerca tanto
     const ax = esMovil ? 0.5 : 0.33;
     const ay = esMovil ? 0.36 : 0.5;
     const tx = stage.w * ax - s * (n.pos_x/100 * CW);
@@ -240,7 +242,7 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
           {/* coche-avatar aparcado en el nivel actual */}
           <div className="coche" style={{ left: `${NIV[cocheIdx].pos_x}%`, top: `${NIV[cocheIdx].pos_y}%`, transform: `translate(-50%,-50%) scale(${1/cam.s})` }}>
             <span className="coche-ring" />
-            <Coche size={42} />
+            <img className="coche-car" src={cocheSrc} alt="Tu coche" draggable="false" />
           </div>
         </div>
 
@@ -281,7 +283,7 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
           <div className="loader">
             <svg className="spin" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,.12)" strokeWidth="5"/>
               <circle cx="25" cy="25" r="20" fill="none" stroke="#e7cf92" strokeWidth="5" strokeLinecap="round" strokeDasharray="90 160"/></svg>
-            <div className="ld-tx"><i>Entrando al escenario</i><b>{nivelAbierto?.titulo}</b></div>
+            <div className="ld-tx"><i>Viajando…</i><b>{nivelAbierto?.titulo}</b></div>
           </div>
         )}
 
@@ -292,7 +294,7 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         {nivelAbierto?.escenario_url && tapar && !cargando && (
           <div className="escena" style={{ backgroundImage: `url(${nivelAbierto.escenario_url})` }}>
             <span className="escena-ring" />
-            <div className="escena-car"><Coche size={58} /></div>
+            <div className="escena-car"><img className="coche-car-xl" src={cocheSrc} alt="Tu coche" draggable="false" /></div>
             <span className="escena-lbl">🚗 Tu coche está aparcado aquí</span>
           </div>
         )}
@@ -303,7 +305,6 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
             <button className="volver" onClick={volver}><ArrowLeft size={16}/> Volver al mapa</button>
             <div className="panel">
               <button className="panel-x" onClick={volver}><X size={18}/></button>
-              <span className="p-k">Estás en el escenario</span>
               <span className="p-ph">{nivelAbierto.subtitulo} · {estados[vista.idx]==='completado'?'Completado':'En curso'}</span>
               <h2 className="p-h">{nivelAbierto.titulo}</h2>
               <p className="p-d">{nivelAbierto.descripcion}</p>
@@ -374,8 +375,9 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
 
         /* coche */
         .coche{position:absolute;transform-origin:center;z-index:5;pointer-events:none;transition:left 1.8s cubic-bezier(.45,.05,.2,1),top 1.8s cubic-bezier(.45,.05,.2,1)}
-        .coche-ring{position:absolute;left:50%;top:50%;width:62px;height:62px;transform:translate(-50%,-50%);border-radius:50%;
-          border:2px solid rgba(240,207,127,.85);box-shadow:0 0 0 6px rgba(240,207,127,.12),0 0 22px 5px rgba(240,207,127,.38)}
+        .coche-ring{position:absolute;left:50%;top:50%;width:94px;height:94px;transform:translate(-50%,-50%);border-radius:50%;
+          border:2px solid rgba(240,207,127,.7);box-shadow:0 0 0 5px rgba(240,207,127,.1),0 0 24px 6px rgba(240,207,127,.34)}
+        .coche-car{position:relative;z-index:2;width:88px;height:auto;display:block;filter:drop-shadow(0 7px 12px rgba(0,0,0,.6))}
 
         /* HUD */
         .hud{position:absolute;top:20px;left:22px;right:22px;z-index:20;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;transition:opacity .4s}
@@ -409,11 +411,12 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         /* escenario propio del nivel */
         .escena{position:absolute;inset:0;z-index:15;background-size:cover;background-position:center;animation:escin .55s ease}
         @keyframes escin{from{opacity:0}to{opacity:1}}
-        .escena-car{position:absolute;left:36%;top:72%;transform:translate(-50%,-50%);z-index:2;filter:drop-shadow(0 8px 14px rgba(0,0,0,.7))}
-        .escena-ring{position:absolute;left:36%;top:72%;width:84px;height:84px;transform:translate(-50%,-50%);border-radius:50%;
-          border:2px solid rgba(240,207,127,.85);box-shadow:0 0 0 7px rgba(240,207,127,.12),0 0 30px 7px rgba(240,207,127,.4)}
-        .escena-lbl{position:absolute;left:36%;top:72%;transform:translate(-50%,52px);white-space:nowrap;font-size:13px;font-weight:800;color:#f0d79a;
-          background:rgba(9,11,18,.8);padding:7px 14px;border-radius:30px;border:1px solid rgba(201,161,77,.5);z-index:2}
+        .escena-car{position:absolute;left:36%;top:70%;transform:translate(-50%,-50%);z-index:2}
+        .coche-car-xl{width:190px;height:auto;display:block;filter:drop-shadow(0 12px 20px rgba(0,0,0,.7))}
+        .escena-ring{position:absolute;left:36%;top:70%;width:150px;height:34px;transform:translate(-50%,56px);border-radius:50%;
+          background:radial-gradient(ellipse,rgba(240,207,127,.4),transparent 70%);filter:blur(4px);z-index:1}
+        .escena-lbl{position:absolute;left:36%;top:70%;transform:translate(-50%,96px);white-space:nowrap;font-size:13px;font-weight:800;color:#f0d79a;
+          background:rgba(9,11,18,.8);padding:7px 14px;border-radius:30px;border:1px solid rgba(201,161,77,.5);z-index:3}
 
         /* panel */
         .volver{position:absolute;top:22px;right:24px;z-index:26;display:flex;align-items:center;gap:7px;background:rgba(9,11,18,.72);backdrop-filter:blur(8px);
