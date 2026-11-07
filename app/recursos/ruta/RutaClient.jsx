@@ -11,7 +11,8 @@
 //  Requiere: /mundo1.webp en /public  ·  lucide-react
 // =====================================================================
 
-import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { createClient } from '../../../lib/supabase/client';
 import {
   BookOpen, Search, ClipboardCheck, ShoppingCart, Truck, Crown,
   Lock, Check, Play, ChevronRight, Flame, Zap, ArrowLeft, X, FileText, Sheet, Film,
@@ -82,6 +83,7 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
   const NIV = (niveles && niveles.length ? niveles : FALLBACK_NIVELES).slice().sort((a,b)=>a.orden-b.orden);
   const PER = perfil || FALLBACK_PERFIL;
   const admin = esAdmin || perfil?.rol === 'admin';  // admin entra a todos los niveles
+  const supabase = useMemo(() => { try { return createClient(); } catch { return null; } }, []);
   const mapaUrl = (mundo && mundo.imagen_url) || '/mundo1.webp';
 
   const stageRef = useRef(null);
@@ -152,6 +154,24 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
     });
     volver();
     if (i + 1 < NIV.length) setTimeout(() => setCocheIdx(i + 1), 120); // transición del coche
+
+    // persistir en Supabase si hay ids (modo base de datos) → el avance se guarda
+    if (supabase && NIV[i]?.id) {
+      (async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          const next = NIV[i + 1];
+          const filas = [{ alumno_id: user.id, nivel_id: NIV[i].id, estado: 'completado' }];
+          if (next?.id) filas.push({ alumno_id: user.id, nivel_id: next.id, estado: 'en_curso' });
+          await supabase.from('ruta_progreso').upsert(filas, { onConflict: 'alumno_id,nivel_id' });
+          await supabase.from('ruta_perfil').upsert(
+            { alumno_id: user.id, xp_total: (PER.xp_total || 0) + (NIV[i].xp || 0) },
+            { onConflict: 'alumno_id' }
+          );
+        } catch {}
+      })();
+    }
   };
 
   // cerrar con ESC
