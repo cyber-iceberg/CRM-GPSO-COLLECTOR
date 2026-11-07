@@ -98,6 +98,9 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
     return i >= 0 ? i : 0;
   });
   const [estados, setEstados] = useState(() => NIV.map(n => n.estado || 'bloqueado'));
+  const [pan, setPan] = useState({ x: 0, y: 0 });   // arrastre manual del mapa
+  const dragRef = useRef(null);
+  const suppressRef = useRef(false);
 
   // medir el escenario
   useLayoutEffect(() => {
@@ -117,16 +120,17 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
   // transform de la cámara según la vista
   const cam = (() => {
     if (vista.modo === 'mapa') {
+      // FOCO: la cámara enfoca SIEMPRE tu parada actual (tu objetivo).
+      // Lo demás se difumina. Al completar, la cámara viaja a la siguiente.
       const foco = NIV[cocheIdx] || NIV[0];
-      // en móvil, en vista mapa centramos en el coche con algo de zoom para que se vea
-      if (esMovil) {
-        const s = 1.45;
-        const tx = stage.w * 0.5 - s * (foco.pos_x/100 * CW);
-        const ty = stage.h * 0.5 - s * (foco.pos_y/100 * CH);
-        return { tx, ty, s };
-      }
-      const s = 1;
-      return { tx: 0, ty: (stage.h - CH) / 2, s };
+      const s = esMovil ? 2.05 : 1.5;
+      let tx = stage.w * 0.5 - s * (foco.pos_x/100 * CW) + pan.x;
+      let ty = stage.h * 0.5 - s * (foco.pos_y/100 * CH) + pan.y;
+      // límites: el mapa siempre cubre el escenario (no se arrastra al vacío)
+      const minTx = Math.min(0, stage.w - CW * s), minTy = Math.min(0, stage.h - CH * s);
+      tx = Math.max(minTx, Math.min(0, tx));
+      ty = Math.max(minTy, Math.min(0, ty));
+      return { tx, ty, s };
     }
     const n = NIV[vista.idx];
     const s = (esMovil ? (n.cam_zoom * 0.72) : (n.cam_zoom * 0.82));  // menos zoom → no se acerca tanto
@@ -139,7 +143,13 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
 
   const accesible = (i) => admin || estados[i] === 'en_curso' || estados[i] === 'disponible' || estados[i] === 'completado';
 
+  // arrastrar el mapa para explorar la ruta (el foco sigue a tu parada)
+  const onDown = (e) => { if (vista.modo !== 'mapa') return; const p = e.touches ? e.touches[0] : e; dragRef.current = { sx: p.clientX, sy: p.clientY, px: pan.x, py: pan.y, moved: false }; };
+  const onMoveDrag = (e) => { const d = dragRef.current; if (!d) return; const p = e.touches ? e.touches[0] : e; const dx = p.clientX - d.sx, dy = p.clientY - d.sy; if (Math.abs(dx) + Math.abs(dy) > 4) d.moved = true; setPan({ x: d.px + dx, y: d.py + dy }); };
+  const onUp = () => { const d = dragRef.current; dragRef.current = null; if (d?.moved) { suppressRef.current = true; setTimeout(() => { suppressRef.current = false; }, 60); } };
+
   const entrar = (i) => {
+    if (suppressRef.current) return;   // venía de arrastrar, no entrar
     if (!accesible(i)) return;
     setTapar(false); setCargando(false);
     setVista({ modo: 'nivel', idx: i });        // 1) la cámara hace ZOOM (visible) → aspecto de juego
@@ -158,7 +168,7 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
     }
   };
 
-  const volver = () => { setVista({ modo: 'mapa', idx: null }); setTapar(false); setCargando(false); };
+  const volver = () => { setVista({ modo: 'mapa', idx: null }); setTapar(false); setCargando(false); setPan({ x: 0, y: 0 }); };
 
   // completar nivel (demo): desbloquea el siguiente y el coche conduce hasta él
   const completar = (i) => {
@@ -204,25 +214,19 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
   const nivelAbierto = vista.modo === 'nivel' ? NIV[vista.idx] : null;
   const progresoXp = Math.min(100, Math.round((PER.xp_total / (PER.xp_sig || 2000)) * 100));
 
-  // línea-guía de la ruta (une las paradas en orden 1→N)
-  const ptsO = NIV.map(n => [n.pos_x/100*CW, n.pos_y/100*CH]);
-  const rutaD = ptsO.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
-  const rutaDone = ptsO.slice(0, Math.max(1, cocheIdx+1)).map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  // foco (spotlight) sobre tu parada actual — en coordenadas de pantalla
+  const focoN = NIV[cocheIdx] || NIV[0];
+  const spotX = cam.tx + cam.s * (focoN.pos_x/100 * CW);
+  const spotY = cam.ty + cam.s * (focoN.pos_y/100 * CH);
 
   return (
     <div className="ruta-root">
-      <div className="stage" ref={stageRef}>
+      <div className={'stage' + (vista.modo === 'mapa' ? ' grab' : '')} ref={stageRef}
+        onMouseDown={onDown} onMouseMove={onMoveDrag} onMouseUp={onUp} onMouseLeave={onUp}
+        onTouchStart={onDown} onTouchMove={onMoveDrag} onTouchEnd={onUp}>
         {/* CÁMARA */}
         <div className="cam" style={{ width: CW, height: CH, transform: `translate(${cam.tx}px,${cam.ty}px) scale(${cam.s})` }}>
           <img className="mapa" src={mapaUrl} alt={(mundo&&mundo.nombre)||'La Ruta del Importador'} draggable="false" />
-
-          {/* línea-guía de la ruta */}
-          {vista.modo === 'mapa' && (
-            <svg className="ruta-linea" viewBox={`0 0 ${CW} ${CH}`} width={CW} height={CH} preserveAspectRatio="none" aria-hidden="true">
-              <path className="rl-base" d={rutaD} />
-              <path className="rl-done" d={rutaDone} />
-            </svg>
-          )}
 
           {/* checkpoints */}
           {NIV.map((n, i) => {
@@ -252,6 +256,11 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
           </div>
         </div>
 
+        {/* enfoque: difumina todo menos tu objetivo (centro de la pantalla) */}
+        {vista.modo === 'mapa' && (
+          <div className="fog-focus" style={{ background: `radial-gradient(circle at ${spotX}px ${spotY}px, rgba(5,6,11,0) 150px, rgba(5,6,11,.2) 330px, rgba(5,6,11,.8) 620px)` }} />
+        )}
+
         {/* HUD */}
         <div className={`hud ${vista.modo==='nivel'?'dim':''}`}>
           <div className="hud-l">
@@ -276,7 +285,7 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
 
         {/* ayuda de navegación (solo en mapa) */}
         {vista.modo === 'mapa' && (
-          <div className="hint">Sigue el camino — toca cada parada en orden <b>1 → {NIV.length}</b>{admin ? ' · modo admin: entras a todas' : ''}</div>
+          <div className="hint">Toca tu parada iluminada · arrastra para ver la ruta · <b>{Math.min(cocheIdx+1, NIV.length)} / {NIV.length}</b>{admin ? ' · admin: todas' : ''}</div>
         )}
 
         {/* título mundo (solo en mapa) */}
@@ -352,6 +361,8 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         .ruta-root{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
         .ruta-root,.ruta-root *{box-sizing:border-box}
         .stage{position:relative;width:100%;height:calc(100vh - 0px);min-height:560px;overflow:hidden;background:#05060b;border-radius:0}
+        .stage.grab{cursor:grab}
+        .stage.grab:active{cursor:grabbing}
         .cam{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;transition:transform .72s cubic-bezier(.4,.0,.15,1)}
         .mapa{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;user-select:none;-webkit-user-drag:none}
 
@@ -364,6 +375,9 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         .hint{position:absolute;top:92px;left:50%;transform:translateX(-50%);z-index:12;background:rgba(9,11,18,.72);backdrop-filter:blur(8px);
           border:1px solid rgba(201,161,77,.32);border-radius:40px;padding:9px 18px;font-size:13px;color:#dfe4ee;font-weight:600;white-space:nowrap;box-shadow:0 10px 26px rgba(0,0,0,.4)}
         .hint b{color:#f0d79a}
+        /* enfoque progresivo: todo se difumina menos el centro (tu objetivo) */
+        .fog-focus{position:absolute;inset:0;z-index:4;pointer-events:none;
+          background:radial-gradient(ellipse 40% 48% at 50% 48%, rgba(5,6,11,0) 0%, rgba(5,6,11,.12) 40%, rgba(5,6,11,.7) 100%)}
 
         /* checkpoints */
         .cp{position:absolute;transform-origin:center;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;padding:0;
@@ -377,7 +391,11 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         .cp.lock .cp-dot{background:#1b2230;color:#79859b;border-color:#2a3344}
         @keyframes cpp{0%,100%{box-shadow:0 0 0 0 rgba(201,161,77,.5)}50%{box-shadow:0 0 0 14px rgba(201,161,77,0)}}
         .cp-chip{display:flex;flex-direction:column;align-items:center;line-height:1.1;background:rgba(9,11,18,.8);backdrop-filter:blur(8px);
-          border:1px solid rgba(255,255,255,.12);border-radius:30px;padding:6px 14px;white-space:nowrap;box-shadow:0 10px 26px rgba(0,0,0,.5)}
+          border:1px solid rgba(255,255,255,.12);border-radius:30px;padding:6px 14px;white-space:nowrap;box-shadow:0 10px 26px rgba(0,0,0,.5);
+          opacity:0;transition:opacity .25s}
+        /* solo tu objetivo (actual) lleva etiqueta; el resto aparece al pasar por encima */
+        .cp.now .cp-chip,.cp:hover .cp-chip{opacity:1}
+        .cp.now .cp-dot{width:50px;height:50px;font-size:19px}
         .cp-chip b{font-size:13px;font-weight:800;color:#fff}
         .cp-chip i{font-size:10px;font-style:normal;font-weight:700;letter-spacing:.4px;color:#9aa3b2}
         .cp.now .cp-chip{border-color:rgba(201,161,77,.55)} .cp.now .cp-chip i{color:#eccf8f}
