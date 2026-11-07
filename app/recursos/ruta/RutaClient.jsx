@@ -204,8 +204,8 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
   const nivelAbierto = vista.modo === 'nivel' ? NIV[vista.idx] : null;
   const progresoXp = Math.min(100, Math.round((PER.xp_total / (PER.xp_sig || 2000)) * 100));
 
-  // qué paradas están descubiertas (fog of war). Admin lo ve todo.
-  const revelado = (i) => admin || i <= cocheIdx || estados[i] === 'completado' || estados[i] === 'en_curso';
+  // qué paradas están descubiertas (fog of war) — por progreso, para ver el reveal
+  const revelado = (i) => i <= cocheIdx || estados[i] === 'completado' || estados[i] === 'en_curso';
 
   return (
     <div className="ruta-root">
@@ -218,16 +218,32 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
           {vista.modo === 'mapa' && (
             <svg className="niebla" viewBox={`0 0 ${Math.round(CW)} ${Math.round(CH)}`} width={CW} height={CH} preserveAspectRatio="none" aria-hidden="true">
               <defs>
+                {/* textura de nubes/niebla */}
+                <filter id="rv-cloud" x="-10%" y="-10%" width="120%" height="120%">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.005 0.009" numOctaves="4" seed="11" stitchTiles="stitch" result="n"/>
+                  <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.04  0 0 0 0 0.06  0 0 0 0 0.13  0 0 0 -1.4 1.15"/>
+                </filter>
+                {/* bordes de nube: desenfoca y deforma el claro para que NO sea un círculo */}
+                <filter id="rv-edge" x="-40%" y="-40%" width="180%" height="180%">
+                  <feGaussianBlur stdDeviation="30" result="b"/>
+                  <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="5" result="t"/>
+                  <feDisplacementMap in="b" in2="t" scale="110"/>
+                </filter>
                 <radialGradient id="rv-hole">
-                  <stop offset="0%" stopColor="#000"/><stop offset="58%" stopColor="#000"/><stop offset="100%" stopColor="#fff"/>
+                  <stop offset="0%" stopColor="#000"/><stop offset="48%" stopColor="#000"/><stop offset="100%" stopColor="#fff"/>
                 </radialGradient>
                 <mask id="rv-mask">
                   <rect x="0" y="0" width={CW} height={CH} fill="#fff"/>
-                  {NIV.map((n, i) => revelado(i)
-                    ? <circle key={i} cx={n.pos_x/100*CW} cy={n.pos_y/100*CH} r={CW*0.135} fill="url(#rv-hole)"/> : null)}
+                  <g filter="url(#rv-edge)">
+                    {NIV.map((n, i) => revelado(i)
+                      ? <circle key={i} cx={n.pos_x/100*CW} cy={n.pos_y/100*CH} r={CW*0.11} fill="url(#rv-hole)"/> : null)}
+                  </g>
                 </mask>
               </defs>
-              <rect x="0" y="0" width={CW} height={CH} fill="#05070e" opacity="0.84" mask="url(#rv-mask)"/>
+              <g mask="url(#rv-mask)">
+                <rect x="0" y="0" width={CW} height={CH} fill="#060811" opacity="0.8"/>
+                <rect x="0" y="0" width={CW} height={CH} filter="url(#rv-cloud)" opacity="0.6"/>
+              </g>
             </svg>
           )}
 
@@ -257,6 +273,8 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
           {vista.modo === 'mapa' && (
           <div className="coche" onClick={() => entrar(cocheIdx)} title={NIV[cocheIdx].titulo}
             style={{ left: `${NIV[cocheIdx].pos_x}%`, top: `${NIV[cocheIdx].pos_y}%` }}>
+            <span className="coche-ping" />
+            <span className="coche-ping p2" />
             <span className="coche-ring" />
             <img className="coche-car" src={cocheSrc} alt="Tu coche" draggable="false" />
           </div>
@@ -380,10 +398,10 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         /* NIEBLA (fog of war): tapa lo no descubierto */
         .niebla{position:absolute;left:0;top:0;z-index:3;pointer-events:none}
 
-        /* destello al descubrir una parada nueva */
-        .destello{position:absolute;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;z-index:6;pointer-events:none;
-          background:radial-gradient(circle,rgba(255,250,230,.95),rgba(240,207,127,.5) 40%,transparent 72%);animation:dest .9s ease-out forwards}
-        @keyframes dest{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}22%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(11)}}
+        /* destello al descubrir una parada nueva (ilumina la zona) */
+        .destello{position:absolute;transform:translate(-50%,-50%);width:70px;height:70px;border-radius:50%;z-index:6;pointer-events:none;
+          background:radial-gradient(circle,rgba(255,250,235,.95),rgba(240,207,127,.55) 36%,transparent 72%);animation:dest 1.2s ease-out forwards}
+        @keyframes dest{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}16%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(9)}}
 
         /* paradas SIN iconos: completada = punto de brillo · actual = coche + etiqueta */
         .cp{position:absolute;transform:translate(-50%,-50%);background:none;border:none;cursor:pointer;padding:0;z-index:7}
@@ -396,11 +414,14 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         .cp-chip b{font-size:13px;font-weight:800;color:#fff}
         .cp-chip i{font-size:10px;font-style:normal;font-weight:700;letter-spacing:.4px;color:#eccf8f}
 
-        /* coche con RESPLANDOR (sin icono) */
+        /* coche con RESPLANDOR + PULSO de luz "estoy aquí" (sin icono) */
         .coche{position:absolute;transform:translate(-50%,-50%);z-index:8;cursor:pointer;transition:left 1.8s cubic-bezier(.45,.05,.2,1),top 1.8s cubic-bezier(.45,.05,.2,1)}
-        .coche-ring{position:absolute;left:50%;top:50%;width:155px;height:155px;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
-          background:radial-gradient(circle,rgba(240,207,127,.42),rgba(240,207,127,.12) 42%,transparent 70%);animation:resp 2.4s ease-in-out infinite}
-        @keyframes resp{0%,100%{opacity:.72;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}}
+        .coche-ring{position:absolute;left:50%;top:50%;width:150px;height:150px;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+          background:radial-gradient(circle,rgba(240,207,127,.4),rgba(240,207,127,.1) 42%,transparent 70%)}
+        .coche-ping{position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+          border:2px solid rgba(240,207,127,.6);box-shadow:0 0 16px rgba(240,207,127,.4);animation:ping 2.4s cubic-bezier(.2,.6,.4,1) infinite}
+        .coche-ping.p2{animation-delay:1.2s}
+        @keyframes ping{0%{opacity:.8;transform:translate(-50%,-50%) scale(.4)}70%{opacity:0}100%{opacity:0;transform:translate(-50%,-50%) scale(2.9)}}
         .coche-car{position:relative;z-index:2;width:80px;height:auto;display:block;filter:drop-shadow(0 8px 12px rgba(0,0,0,.65))}
 
         /* HUD */
