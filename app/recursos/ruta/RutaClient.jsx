@@ -78,9 +78,10 @@ function Coche({ size = 44 }) {
   );
 }
 
-export default function RutaClient({ mundo, niveles, perfil }) {
+export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) {
   const NIV = (niveles && niveles.length ? niveles : FALLBACK_NIVELES).slice().sort((a,b)=>a.orden-b.orden);
   const PER = perfil || FALLBACK_PERFIL;
+  const admin = esAdmin || perfil?.rol === 'admin';  // admin entra a todos los niveles
   const mapaUrl = (mundo && mundo.imagen_url) || '/mundo1.webp';
 
   const stageRef = useRef(null);
@@ -131,7 +132,7 @@ export default function RutaClient({ mundo, niveles, perfil }) {
     return { tx, ty, s };
   })();
 
-  const accesible = (i) => estados[i] === 'en_curso' || estados[i] === 'disponible' || estados[i] === 'completado';
+  const accesible = (i) => admin || estados[i] === 'en_curso' || estados[i] === 'disponible' || estados[i] === 'completado';
 
   const entrar = useCallback((i) => {
     if (!accesible(i)) return;
@@ -162,12 +163,25 @@ export default function RutaClient({ mundo, niveles, perfil }) {
   const nivelAbierto = vista.modo === 'nivel' ? NIV[vista.idx] : null;
   const progresoXp = Math.min(100, Math.round((PER.xp_total / (PER.xp_sig || 2000)) * 100));
 
+  // línea-guía de la ruta (une las paradas en orden 1→N)
+  const ptsO = NIV.map(n => [n.pos_x/100*CW, n.pos_y/100*CH]);
+  const rutaD = ptsO.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const rutaDone = ptsO.slice(0, Math.max(1, cocheIdx+1)).map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+
   return (
     <div className="ruta-root">
       <div className="stage" ref={stageRef}>
         {/* CÁMARA */}
         <div className="cam" style={{ width: CW, height: CH, transform: `translate(${cam.tx}px,${cam.ty}px) scale(${cam.s})` }}>
           <img className="mapa" src={mapaUrl} alt={(mundo&&mundo.nombre)||'La Ruta del Importador'} draggable="false" />
+
+          {/* línea-guía de la ruta */}
+          {vista.modo === 'mapa' && (
+            <svg className="ruta-linea" viewBox={`0 0 ${CW} ${CH}`} width={CW} height={CH} preserveAspectRatio="none" aria-hidden="true">
+              <path className="rl-base" d={rutaD} />
+              <path className="rl-done" d={rutaDone} />
+            </svg>
+          )}
 
           {/* checkpoints */}
           {NIV.map((n, i) => {
@@ -183,8 +197,8 @@ export default function RutaClient({ mundo, niveles, perfil }) {
                   {st === 'completado' ? <Check size={16}/> : st === 'bloqueado' ? <Lock size={14}/> : <Ic size={16}/>}
                 </span>
                 <span className="cp-chip">
-                  <b>{n.titulo}</b>
-                  <i>{st === 'en_curso' ? 'Ahora' : st === 'completado' ? 'Completado' : n.subtitulo}</i>
+                  <b>{i + 1}. {n.titulo}</b>
+                  <i>{st === 'en_curso' ? '▶ Empieza aquí' : st === 'completado' ? 'Completado' : n.subtitulo}</i>
                 </span>
               </button>
             );
@@ -218,6 +232,11 @@ export default function RutaClient({ mundo, niveles, perfil }) {
             <span className="pill"><Zap size={16}/> {PER.xp_total} XP</span>
           </div>
         </div>
+
+        {/* ayuda de navegación (solo en mapa) */}
+        {vista.modo === 'mapa' && (
+          <div className="hint">Sigue el camino — toca cada parada en orden <b>1 → {NIV.length}</b>{admin ? ' · modo admin: entras a todas' : ''}</div>
+        )}
 
         {/* título mundo (solo en mapa) */}
         {vista.modo === 'mapa' && (
@@ -288,6 +307,16 @@ export default function RutaClient({ mundo, niveles, perfil }) {
         .stage{position:relative;width:100%;height:calc(100vh - 0px);min-height:560px;overflow:hidden;background:#05060b;border-radius:0}
         .cam{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;transition:transform .72s cubic-bezier(.4,.0,.15,1)}
         .mapa{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;user-select:none;-webkit-user-drag:none}
+
+        /* línea-guía de la ruta */
+        .ruta-linea{position:absolute;left:0;top:0;z-index:1;overflow:visible;pointer-events:none}
+        .rl-base{fill:none;stroke:rgba(240,207,127,.4);stroke-width:3;stroke-dasharray:2 15;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(240,200,110,.5))}
+        .rl-done{fill:none;stroke:#ffd27a;stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 6px rgba(255,200,100,.85))}
+
+        /* ayuda de navegación */
+        .hint{position:absolute;top:92px;left:50%;transform:translateX(-50%);z-index:12;background:rgba(9,11,18,.72);backdrop-filter:blur(8px);
+          border:1px solid rgba(201,161,77,.32);border-radius:40px;padding:9px 18px;font-size:13px;color:#dfe4ee;font-weight:600;white-space:nowrap;box-shadow:0 10px 26px rgba(0,0,0,.4)}
+        .hint b{color:#f0d79a}
 
         /* checkpoints */
         .cp{position:absolute;transform-origin:center;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;padding:0;
@@ -379,6 +408,7 @@ export default function RutaClient({ mundo, niveles, perfil }) {
           .hud-l{padding:9px 13px;gap:10px}.ring,.ring svg{width:44px;height:44px}.hud-tx .xp{width:150px}
           .hud-tx .rango{font-size:15px}.pill{padding:9px 13px;font-size:14px}
           .wtitle{right:16px;bottom:14px}.wtitle b{font-size:24px}
+          .hint{top:auto;bottom:80px;left:12px;right:12px;transform:none;white-space:normal;text-align:center;font-size:12px}
           /* panel como hoja inferior */
           .panel{top:auto;bottom:0;left:0;right:0;width:auto;height:auto;max-height:72%;overflow-y:auto;overflow-x:hidden;padding:22px 20px 26px;justify-content:flex-start;
             background:linear-gradient(180deg,rgba(7,9,15,0),rgba(7,9,15,.9) 14%,rgba(7,9,15,.98));border-top-left-radius:22px;border-top-right-radius:22px;
