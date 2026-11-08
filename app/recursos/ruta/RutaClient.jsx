@@ -228,7 +228,7 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
                 {/* textura de nubes/niebla */}
                 <filter id="rv-cloud" x="-10%" y="-10%" width="120%" height="120%">
                   <feTurbulence type="fractalNoise" baseFrequency="0.005 0.009" numOctaves="4" seed="11" stitchTiles="stitch" result="n">
-                    <animate attributeName="baseFrequency" dur="26s" values="0.005 0.009;0.0062 0.0108;0.005 0.009" repeatCount="indefinite"/>
+                    <animate attributeName="baseFrequency" dur="17s" values="0.004 0.008;0.0078 0.0138;0.0052 0.0095;0.004 0.008" repeatCount="indefinite"/>
                   </feTurbulence>
                   <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.04  0 0 0 0 0.06  0 0 0 0 0.13  0 0 0 -1.4 1.15"/>
                 </filter>
@@ -236,7 +236,7 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
                 <filter id="rv-edge" x="-40%" y="-40%" width="180%" height="180%">
                   <feGaussianBlur stdDeviation="30" result="b"/>
                   <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="5" result="t">
-                    <animate attributeName="baseFrequency" dur="20s" values="0.013;0.0165;0.013" repeatCount="indefinite"/>
+                    <animate attributeName="baseFrequency" dur="15s" values="0.012;0.02;0.014;0.012" repeatCount="indefinite"/>
                   </feTurbulence>
                   <feDisplacementMap in="b" in2="t" scale="110"/>
                 </filter>
