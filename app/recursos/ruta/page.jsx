@@ -33,7 +33,7 @@ export default async function RutaPage() {
       // Niveles del mundo (tronco común + rama elegida; de momento todos)
       const { data: nivs } = await supabase
         .from('ruta_niveles')
-        .select('*, ruta_misiones(*), ruta_recursos(*)')
+        .select('*, ruta_misiones(*, ruta_ejercicios(*)), ruta_recursos(*)')
         .eq('mundo_id', mundo.id)
         .order('orden', { ascending: true });
 
@@ -61,8 +61,20 @@ export default async function RutaPage() {
           estado,
           misiones: (n.ruta_misiones || [])
             .sort((a, b) => a.orden - b.orden)
-            .map(ms => ({ titulo: ms.titulo, tipo: ms.tipo, xp: ms.xp,
-              estado: okIds.includes(ms.id) ? 'ok' : 'pendiente' })),
+            .map(ms => {
+              const ejs = (ms.ruta_ejercicios || []).sort((a, b) => (a.orden || 0) - (b.orden || 0));
+              const abierto = ejs.find(e => e.tipo === 'abierta');
+              return {
+                titulo: ms.titulo, tipo: ms.tipo, xp: ms.xp, descripcion: ms.descripcion,
+                video_url: ms.video_url || '',
+                estado: okIds.includes(ms.id) ? 'ok' : 'pendiente',
+                // test: todas las preguntas tipo test
+                preguntas: ejs.filter(e => e.tipo === 'test')
+                  .map(e => ({ pregunta: e.pregunta, opciones: e.opciones, correcta: e.correcta, explicacion: e.explicacion })),
+                // ejercicio de pensar: pregunta + criterio
+                pregunta: abierto?.pregunta, criterio: abierto?.criterio,
+              };
+            }),
           recursos: (n.ruta_recursos || [])
             .sort((a, b) => a.orden - b.orden)
             .map(r => ({ titulo: r.titulo, icono: r.icono, url: r.url })),
