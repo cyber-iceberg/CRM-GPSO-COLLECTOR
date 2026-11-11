@@ -27,9 +27,27 @@ const RICON = { file: FileText, sheet: Sheet, play: Film };
 const FALLBACK_NIVELES = [
   { slug:'fundamentos', titulo:'Fundamentos', subtitulo:'Costa de salida', descripcion:'Entiende el negocio y la mentalidad del importador.',
     orden:1, pos_x:13.3, pos_y:79.0, cam_zoom:2.4, icono:'book', xp:100, estado:'completado', escenario_url:'/escenario-fundamentos.webp',
-    misiones:[{titulo:'Ver módulos 1–3 de la formación',tipo:'ver',xp:40,estado:'ok'},
-              {titulo:'Masterclass: una operación de principio a fin',tipo:'ver',xp:30,estado:'ok'},
-              {titulo:'Test: márgenes y flujo de una importación',tipo:'test',xp:30,estado:'ok'}],
+    misiones:[
+      {titulo:'Ver módulos 1–3 de la formación',tipo:'ver',xp:40,estado:'pendiente',
+       descripcion:'Las bases del negocio de la importación. Cuando los hayas visto, márcalo.', video_url:''},
+      {titulo:'Masterclass: una operación de principio a fin',tipo:'ver',xp:30,estado:'pendiente',
+       descripcion:'Cómo se gana dinero importando, paso a paso.', video_url:''},
+      {titulo:'Test: márgenes y flujo de una importación',tipo:'test',xp:30,estado:'pendiente',
+       preguntas:[
+         {pregunta:'Compras un coche en Alemania por 18.000€, con 1.800€ de costes de importación, y en España se vende a 21.000€. ¿Margen bruto aproximado?',
+          opciones:['1.200€','3.000€','Pierdes dinero','21.000€'],correcta:0,
+          explicacion:'21.000 − 18.000 − 1.800 = 1.200€ de margen bruto.'},
+         {pregunta:'¿Qué define que un coche sea una buena oportunidad?',
+          opciones:['Que sea el más barato','El margen real (coste total vs. venta) y la demanda','Que tenga pocos km siempre','El color'],correcta:1,
+          explicacion:'La oportunidad está en el margen real y en que haya demanda, no solo en el precio bajo.'},
+         {pregunta:'El IVA de importación en España es:',
+          opciones:['10%','21%','Exento','4%'],correcta:1,
+          explicacion:'El IVA general de importación es el 21%.'},
+       ]},
+      {titulo:'Ejercicio: piensa como importador',tipo:'abierta',xp:50,estado:'pendiente',
+       pregunta:'Con tus palabras: ¿por qué un coche más barato no siempre es la mejor oportunidad? Da al menos 2 factores que mirarías antes de decidir.',
+       criterio:'Una buena respuesta entiende que el precio de compra no es lo único: hay que contar los costes totales (importación, transporte, matriculación, posibles reparaciones), el estado real del coche, la demanda y la velocidad de venta en España, y el margen final. Debe aportar al menos 2 factores coherentes y demostrar que la oportunidad = margen real + demanda, no solo precio bajo.'},
+    ],
     recursos:[{titulo:'Guía: cómo funciona una importación',icono:'file'},{titulo:'Glosario del importador',icono:'file'}] },
   { slug:'cazar', titulo:'Cazar oportunidades', subtitulo:'El viaducto', descripcion:'Aprende a detectar coches con potencial en el mercado alemán.',
     orden:2, pos_x:31.4, pos_y:55.5, cam_zoom:2.6, icono:'search', xp:150, estado:'en_curso', escenario_url:'/escenario-cazar.webp',
@@ -106,6 +124,21 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
     if (sonido) { a.pause(); setSonido(false); }
     else { a.volume = 0.5; a.play().then(() => setSonido(true)).catch(() => {}); }
   };
+
+  // --- MOTOR DE MISIONES ---
+  const [mision, setMision] = useState(null);          // índice de misión abierta
+  const [testSel, setTestSel] = useState({});          // selección del test
+  const [respuesta, setRespuesta] = useState('');      // ejercicio abierto
+  const [corrigiendo, setCorrigiendo] = useState(false);
+  const [resultado, setResultado] = useState(null);    // resultado test / IA
+  const [misDone, setMisDone] = useState(() => {
+    const s = new Set();
+    NIV.forEach(n => (n.misiones || []).forEach((m, k) => { if (m.estado === 'ok') s.add(n.slug + ':' + k); }));
+    return s;
+  });
+  const misKey = (nivel, k) => nivel.slug + ':' + k;
+  const misionHecha = (nivel, k) => misDone.has(misKey(nivel, k));
+  const tipoMision = (m) => m.tipo === 'test' ? 'test' : ((m.tipo === 'abierta' || m.tipo === 'ejercicio') && m.pregunta ? 'abierta' : 'ver');
 
   // medir el escenario
   useLayoutEffect(() => {
@@ -213,6 +246,48 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
 
   // qué paradas están descubiertas (fog of war) — por progreso, para ver el reveal
   const revelado = (i) => i <= cocheIdx || estados[i] === 'completado' || estados[i] === 'en_curso';
+
+  // --- acciones de misión ---
+  const abrirMision = (k) => { setMision(k); setTestSel({}); setRespuesta(''); setResultado(null); setCorrigiendo(false); };
+  const cerrarMision = () => { setMision(null); setResultado(null); setCorrigiendo(false); };
+
+  const completarMision = (k) => {
+    const nivel = nivelAbierto; if (!nivel) return;
+    setMisDone(prev => {
+      const ns = new Set(prev); ns.add(misKey(nivel, k));
+      const todas = (nivel.misiones || []).every((m, i) => ns.has(misKey(nivel, i)));
+      if (todas) setTimeout(() => completar(vista.idx), 450);  // nivel completo → avanzar
+      return ns;
+    });
+    // guardar misión en Supabase (modo BD)
+    if (supabase && nivel.id) {
+      (async () => { try {
+        const { data: { user } } = await supabase.auth.getUser(); if (!user) return;
+        await supabase.from('ruta_progreso').upsert(
+          { alumno_id: user.id, nivel_id: nivel.id, estado: 'en_curso' },
+          { onConflict: 'alumno_id,nivel_id' });
+      } catch {} })();
+    }
+    cerrarMision();
+  };
+
+  const corregirTest = (m) => {
+    let ok = 0; m.preguntas.forEach((q, qi) => { if (testSel[qi] === q.correcta) ok++; });
+    const nota = Math.round(ok / m.preguntas.length * 100);
+    setResultado({ tipo: 'test', ok, total: m.preguntas.length, nota, aprobado: nota >= 60 });
+  };
+
+  const enviarAbierta = async (m) => {
+    if ((respuesta || '').trim().length < 5) { setResultado({ tipo: 'abierta', apto: false, feedback: 'Escribe una respuesta más completa.' }); return; }
+    setCorrigiendo(true); setResultado(null);
+    try {
+      const r = await fetch('/api/ruta-corregir', { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ pregunta: m.pregunta, criterio: m.criterio, respuesta }) });
+      const data = await r.json();
+      setResultado({ tipo: 'abierta', ...data });
+    } catch { setResultado({ tipo: 'abierta', apto: false, feedback: 'No se pudo corregir ahora. Inténtalo de nuevo.' }); }
+    setCorrigiendo(false);
+  };
 
   return (
     <div className="ruta-root">
@@ -362,13 +437,13 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
 
               <span className="p-sec">Misiones</span>
               {(nivelAbierto.misiones||[]).map((m, k) => {
-                const ok = m.estado === 'ok'; const now = m.estado === 'en_curso';
+                const hecha = misionHecha(nivelAbierto, k);
                 return (
-                  <div key={k} className={`mis ${ok?'d':now?'n':'l'}`}>
-                    <span className="mb">{ok ? <Check size={15}/> : now ? <Play size={14}/> : <Lock size={13}/>}</span>
+                  <button key={k} className={`mis ${hecha?'d':'n'}`} onClick={() => !hecha && abrirMision(k)} disabled={hecha}>
+                    <span className="mb">{hecha ? <Check size={15}/> : <Play size={14}/>}</span>
                     <span className="mt"><b>{m.titulo}</b></span>
-                    <span className="xpt">+{m.xp} XP</span>
-                  </div>
+                    <span className="xpt">{hecha ? '✓' : `+${m.xp} XP`}</span>
+                  </button>
                 );
               })}
 
@@ -381,12 +456,79 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
               </>}
 
               <div className="p-cta">
-                <button className="btn" onClick={() => completar(vista.idx)}>Continuar misión <ChevronRight size={18}/></button>
-                {!nivelAbierto.escenario_url && <span className="park">🚗 Tu coche está aparcado aquí</span>}
+                {(() => {
+                  const ms = nivelAbierto.misiones || [];
+                  const hechas = ms.filter((m, i) => misionHecha(nivelAbierto, i)).length;
+                  const pend = ms.findIndex((m, i) => !misionHecha(nivelAbierto, i));
+                  return pend >= 0
+                    ? <><button className="btn" onClick={() => abrirMision(pend)}>Continuar misión <ChevronRight size={18}/></button>
+                        <span className="park2">{hechas}/{ms.length} misiones</span></>
+                    : <button className="btn" onClick={() => completar(vista.idx)}>¡Nivel completado! Avanzar <ChevronRight size={18}/></button>;
+                })()}
               </div>
             </div>
           </>
         )}
+
+        {/* VENTANA DE MISIÓN (motor de ejercicios) */}
+        {mision != null && nivelAbierto && nivelAbierto.misiones?.[mision] && (() => {
+          const m = nivelAbierto.misiones[mision]; const t = tipoMision(m);
+          return (
+            <div className="mrun" onClick={cerrarMision}>
+              <div className="mrun-card" onClick={e => e.stopPropagation()}>
+                <button className="mrun-x" onClick={cerrarMision}><X size={18}/></button>
+                <span className="mrun-k">{t==='test'?'Test':t==='abierta'?'Ejercicio de pensar':'Contenido'} · +{m.xp} XP</span>
+                <h3 className="mrun-h">{m.titulo}</h3>
+
+                {t==='ver' && (<>
+                  <div className="mrun-video">{m.video_url
+                    ? <iframe src={m.video_url} title={m.titulo} allowFullScreen style={{border:0,width:'100%',height:'100%',borderRadius:12}} />
+                    : <span><Play size={30}/> Vídeo de la formación</span>}</div>
+                  {m.descripcion && <p className="mrun-d">{m.descripcion}</p>}
+                  <button className="btn" onClick={() => completarMision(mision)}>Marcar como visto ✓</button>
+                </>)}
+
+                {t==='test' && (<>
+                  {(m.preguntas||[]).map((q, qi) => (
+                    <div className="mrun-q" key={qi}>
+                      <b>{qi+1}. {q.pregunta}</b>
+                      <div className="mrun-ops">
+                        {q.opciones.map((op, oi) => {
+                          const corr = resultado?.tipo==='test'; const sel = testSel[qi]===oi;
+                          const cls = corr ? (oi===q.correcta?'ok':(sel?'bad':'')) : (sel?'sel':'');
+                          return <button key={oi} className={'mrun-op '+cls} disabled={corr} onClick={() => setTestSel(s => ({...s,[qi]:oi}))}>{op}</button>;
+                        })}
+                      </div>
+                      {resultado?.tipo==='test' && q.explicacion && <p className="mrun-exp">{q.explicacion}</p>}
+                    </div>
+                  ))}
+                  {resultado?.tipo!=='test'
+                    ? <button className="btn" disabled={Object.keys(testSel).length < (m.preguntas||[]).length} onClick={() => corregirTest(m)}>Corregir test</button>
+                    : (resultado.aprobado
+                        ? <div className="mrun-res ok"><b>¡Aprobado! {resultado.ok}/{resultado.total} ({resultado.nota}%)</b>
+                            <button className="btn" onClick={() => completarMision(mision)}>Completar · +{m.xp} XP</button></div>
+                        : <div className="mrun-res bad"><b>{resultado.ok}/{resultado.total} ({resultado.nota}%). Necesitas 60%.</b>
+                            <button className="btn2" onClick={() => { setResultado(null); setTestSel({}); }}>Reintentar</button></div>)}
+                </>)}
+
+                {t==='abierta' && (<>
+                  <p className="mrun-d">{m.pregunta}</p>
+                  <textarea className="mrun-ta" rows={5} value={respuesta} onChange={e => setRespuesta(e.target.value)}
+                    placeholder="Escribe tu respuesta con tus palabras…" disabled={resultado?.apto} />
+                  {resultado?.tipo==='abierta' && (
+                    <div className={'mrun-res ' + (resultado.pendiente ? 'pend' : resultado.apto ? 'ok' : 'bad')}>
+                      {resultado.nota != null && <b>Nota: {resultado.nota}/100 · {resultado.apto ? 'Apto' : 'Mejorable'}</b>}
+                      <p>{resultado.feedback}</p>
+                    </div>
+                  )}
+                  {resultado?.apto
+                    ? <button className="btn" onClick={() => completarMision(mision)}>Completar · +{m.xp} XP</button>
+                    : <button className="btn" disabled={corrigiendo} onClick={() => enviarAbierta(m)}>{corrigiendo ? 'Corrigiendo con IA…' : 'Enviar a corrección'}</button>}
+                </>)}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* banda sonora + botón on/off (siempre visible) */}
         <audio ref={audioRef} src="/musica-mundo.mp3" loop preload="auto" />
@@ -504,7 +646,9 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         .p-h{font-size:clamp(28px,3.4vw,42px);font-weight:900;color:#fff;letter-spacing:-1px;margin:3px 0 8px}
         .p-d{font-size:15px;color:#c3cad8;line-height:1.5;max-width:460px;margin:0 0 4px}
         .p-sec{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8793a6;font-weight:800;margin:18px 0 9px;display:block}
-        .mis{display:flex;align-items:center;gap:12px;padding:12px 15px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);margin-bottom:8px}
+        .mis{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 15px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);margin-bottom:8px;cursor:pointer;font-family:inherit;transition:background .2s,border-color .2s}
+        .mis.n:hover{background:rgba(201,161,77,.1);border-color:rgba(201,161,77,.45)}
+        .mis.d{cursor:default;opacity:.8}
         .mis .mb{width:31px;height:31px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:900}
         .mis.d .mb{background:linear-gradient(135deg,#63d79a,#2d9d63);color:#06240f}
         .mis.n .mb{background:linear-gradient(135deg,#f3dc9f,#c9a14d);color:#1c1406}
@@ -516,6 +660,38 @@ export default function RutaClient({ mundo, niveles, perfil, esAdmin = false }) 
         .p-cta{display:flex;align-items:center;gap:14px;margin-top:22px;flex-wrap:wrap}
         .btn{display:flex;align-items:center;gap:7px;padding:15px 26px;border-radius:13px;border:none;cursor:pointer;background:linear-gradient(135deg,#f3dc9f,#c9a14d);color:#1c1406;font-weight:900;font-size:15px;box-shadow:0 14px 32px rgba(201,161,77,.4)}
         .park{font-size:13px;font-weight:700;color:#f0d79a}
+        .park2{font-size:13px;font-weight:700;color:#aab4c6}
+        .btn2{padding:12px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#eef2f8;font-weight:800;font-size:14px;cursor:pointer}
+
+        /* ---- VENTANA DE MISIÓN (motor de ejercicios) ---- */
+        .mrun{position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:20px;
+          background:rgba(4,5,10,.72);backdrop-filter:blur(6px);animation:fin .2s ease}
+        .mrun-card{position:relative;width:min(620px,94vw);max-height:88vh;overflow-y:auto;background:#0c0f17;border:1px solid rgba(255,255,255,.12);
+          border-radius:20px;padding:30px 30px 26px;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:pin .3s cubic-bezier(.2,.7,.3,1)}
+        .mrun-x{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#dfe4ee;cursor:pointer}
+        .mrun-k{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#e0bd72;font-weight:800}
+        .mrun-h{font-size:24px;font-weight:900;color:#fff;letter-spacing:-.5px;margin:6px 0 16px}
+        .mrun-video{width:100%;aspect-ratio:16/9;border-radius:12px;background:#05060b;border:1px solid rgba(255,255,255,.1);display:grid;place-items:center;color:#8793a6;font-weight:700;gap:8px;margin-bottom:14px}
+        .mrun-video span{display:flex;flex-direction:column;align-items:center;gap:8px}
+        .mrun-d{font-size:15px;color:#c3cad8;line-height:1.55;margin:0 0 18px}
+        .mrun-q{margin-bottom:18px}
+        .mrun-q>b{display:block;font-size:15px;color:#eef2f8;margin-bottom:10px;line-height:1.4}
+        .mrun-ops{display:flex;flex-direction:column;gap:8px}
+        .mrun-op{text-align:left;padding:12px 15px;border-radius:11px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#dfe4ee;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+        .mrun-op:hover{border-color:rgba(201,161,77,.5)}
+        .mrun-op.sel{border-color:#c9a14d;background:rgba(201,161,77,.14)}
+        .mrun-op.ok{border-color:#2d9d63;background:rgba(45,157,99,.18);color:#bff2d4}
+        .mrun-op.bad{border-color:#c0392b;background:rgba(192,57,43,.16);color:#f3c0b9}
+        .mrun-exp{font-size:12.5px;color:#9aa3b2;margin:8px 0 0;line-height:1.45}
+        .mrun-ta{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:#05060b;color:#eef2f8;padding:13px 15px;font-size:14.5px;font-family:inherit;line-height:1.5;resize:vertical;margin-bottom:14px}
+        .mrun-ta:focus{outline:none;border-color:rgba(201,161,77,.6)}
+        .mrun-res{border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:14px;line-height:1.5}
+        .mrun-res b{display:block;margin-bottom:5px}
+        .mrun-res.ok{background:rgba(45,157,99,.14);border:1px solid rgba(45,157,99,.4);color:#cdeedd;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+        .mrun-res.bad{background:rgba(192,57,43,.12);border:1px solid rgba(192,57,43,.35);color:#f0cfc9;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+        .mrun-res.pend{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:#c3cad8}
+        .mrun-card .btn{width:100%;justify-content:center;margin-top:4px}
+        .mrun-res .btn,.mrun-res .btn2{width:auto;margin:0}
 
         @media (max-width:820px){
           .stage{height:calc(100vh - 0px);min-height:520px}
