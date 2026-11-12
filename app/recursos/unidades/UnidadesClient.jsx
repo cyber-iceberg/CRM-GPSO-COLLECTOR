@@ -102,8 +102,8 @@ export default function UnidadesClient({ email, perfil }) {
   const cambiarGaraje = useCallback((n) => {
     const k = (n + GARAJES.length) % GARAJES.length; if (k === g || persiana) return;
     setPersiana(true); setPanel(null);
-    setTimeout(() => { setG(k); setI(0); setDir(1); prepararSim(GARAJES[k].coches[0], GARAJES[k]); }, 380);
-    setTimeout(() => setPersiana(false), 820);
+    setTimeout(() => { setG(k); setI(0); setDir(1); prepararSim(GARAJES[k].coches[0], GARAJES[k]); }, 620);
+    setTimeout(() => setPersiana(false), 1050);
   }, [g, persiana, prepararSim]);
 
   useEffect(() => { prepararSim(GARAJES[1].coches[0], GARAJES[1]); }, [prepararSim]);
@@ -462,10 +462,16 @@ export default function UnidadesClient({ email, perfil }) {
         .gj-pie{position:absolute;left:0;right:0;bottom:11px;z-index:14;text-align:center;font-size:9.5px;letter-spacing:1.6px;text-transform:uppercase;color:#5d6575}
 
         /* ===== persiana ===== */
-        .gj-persiana{position:absolute;inset:0;z-index:40;background:repeating-linear-gradient(to bottom,#0c1017 0 26px,#080b11 26px 28px);transform:translateY(-101%);
-          transition:transform .36s cubic-bezier(.6,0,.3,1);display:flex;align-items:center;justify-content:center;pointer-events:none;border-bottom:4px solid var(--ac)}
+        /* puerta metálica de garaje: baja, cambia el garaje por detrás y vuelve a subir */
+        .gj-persiana{position:absolute;inset:0;z-index:40;transform:translateY(-102%);transition:transform .55s cubic-bezier(.55,0,.25,1);
+          display:flex;align-items:center;justify-content:center;pointer-events:none;
+          background:
+            linear-gradient(90deg, rgba(0,0,0,.55), transparent 12%, transparent 88%, rgba(0,0,0,.55)),
+            repeating-linear-gradient(to bottom, #2b313c 0 3px, #1b2029 3px 22px, #0c0f15 22px 25px, #232832 25px 44px);
+          border-bottom:18px solid #0a0c11;box-shadow:0 10px 0 var(--ac), 0 30px 60px rgba(0,0,0,.8)}
         .gj-persiana.baja{transform:none}
-        .gj-persiana span{font-size:clamp(30px,6vw,84px);font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:4px;color:var(--ac);text-shadow:0 0 40px var(--ac)}
+        .gj-persiana span{font-size:clamp(30px,6vw,84px);font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:4px;color:var(--ac);
+          text-shadow:0 0 40px var(--ac);background:rgba(8,10,16,.78);padding:14px 34px;border:2px solid var(--ac)}
 
         /* ===== panel ===== */
         .gj-velo{position:absolute;inset:0;z-index:48;background:rgba(3,4,8,.55);opacity:0;pointer-events:none;transition:opacity .3s}
