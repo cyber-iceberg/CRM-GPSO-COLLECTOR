@@ -25,11 +25,14 @@ import MenuDrawer from '../components/MenuDrawer';
 // ---------------------------------------------------------------------
 const MODULOS = [
   { id: 'fiscalidad',   t: 'Fiscalidad',   s: 'del importador',     marca: 'Mercedes',    img: '/mercedes.png',    activo: true, href: '/recursos/fiscalidad',
-    cx: 1000, cy: 700, conecta: ['negociacion', 'operativa', 'ruta'],
+    cx: 1000, cy: 700, conecta: ['unidades', 'operativa', 'ruta'],
     desc: 'Quién, qué y cómo se factura cada operación — con coches reales.' },
-  { id: 'negociacion',  t: 'Negociación',  s: 'compra en origen',   marca: 'Ferrari',     img: '/ferrari.png',     activo: false,
+  // UNIDADES · qué coche importar por tramo de capital (ocupa el sitio de
+  // "Negociación"). Igual que La Ruta: próximamente para alumnos, entras tú.
+  // Para abrirlo a todos: pon activo:true y quita soloAdmin.
+  { id: 'unidades',     t: 'Unidades',     s: 'qué coche importar', marca: 'Ferrari',     img: '/ferrari.png',     activo: false, soloAdmin: true, href: '/recursos/unidades',
     cx: 680, cy: 440, conecta: ['ruta'],
-    desc: 'Cómo negociar el precio en Alemania y cerrar la compra.' },
+    desc: 'Los coches que merece la pena buscar según tu capital, con su objetivo de compra y un simulador para descartar rápido.' },
   // LA RUTA DEL IMPORTADOR · mundo gamificado.
   //   activo:false  → se muestra como "Próximamente" a los alumnos.
   //   soloAdmin:true → pero TÚ (perfil.rol === 'admin') sí puedes entrar.
