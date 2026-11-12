@@ -202,7 +202,7 @@ export default function UnidadesClient({ email, perfil }) {
           <div className="brand-tile" style={{ width: 42, height: 42 }}><img src="/collector.jpg" alt="GPSO" /></div>
           <div>
             <div className="marca" style={{ fontSize: 17 }}>gpso<span className="low">collector<span className="dot">.</span></span></div>
-            <div className="sublabel">Unidades · elige qué importar</div>
+            <div className="sublabel">El garaje potencial · elige qué importar</div>
           </div>
         </div>
         <div className="top-right">
