@@ -39,6 +39,13 @@ const GARAJES = [
     lead: DESCARTE.lead, coches: DESCARTE.coches, rojo: true },
 ];
 
+// ---- dónde cae el aro LED de la plataforma en cada foto (en % del lienzo 16:9) ----
+const HALO = {
+  t0: { cy: 74.4, w: 59, h: 12.8 }, t1: { cy: 73.3, w: 66, h: 15.3 }, t2: { cy: 73.3, w: 72.6, h: 9.5 },
+  t3: { cy: 74.4, w: 74.6, h: 11.3 }, descarte: { cy: 73.5, w: 76.5, h: 12 },
+};
+const CON_TUBOS = { t0: true, t1: true, descarte: true }; // garajes a los que se añaden neones de techo
+
 // ---- barras de stats (salen de los datos de la guía) ----
 const DEM = { Amplia: [92, 'Amplia · público general'], Selectiva: [62, 'Selectiva · comprador premium'], Nicho: [36, 'Nicho · aficionado'] };
 const DURO = /excepcional|exigente|descuento|estricto|ajustado|flota|barata|selectivo|no localizado|sobrevalorar/i;
@@ -64,6 +71,8 @@ export default function UnidadesClient({ email, perfil }) {
   const [sim, setSim] = useState({ venta: '', precio: '', costes: '', objetivo: '' });
   const [fondos, setFondos] = useState({});   // id → URL de la imagen del garaje que ha cargado
   const [sinFoto, setSinFoto] = useState({}); // slug → 1 si falta la foto propia · 2 si tampoco hay la genérica
+  const [listo, setListo] = useState(false);  // pantalla de carga: se levanta cuando hay estilos + fondo
+  const [fuera, setFuera] = useState(false);
   const tiraRef = useRef(null);
   const touch = useRef(null);
 
@@ -87,12 +96,17 @@ export default function UnidadesClient({ email, perfil }) {
   // ¿existe la imagen de fondo de cada garaje?
   useEffect(() => {
     // se busca en /public/unidades/ y, si no está, en la raíz de /public/
+    const t0 = Date.now();
     GARAJES.forEach(x => {
-      const prueba = (urls) => { if (!urls.length) return; const im = new Image();
-        im.onload = () => setFondos(f => ({ ...f, [x.id]: urls[0] })); im.onerror = () => prueba(urls.slice(1)); im.src = urls[0]; };
+      const fin = () => { if (x.id === GARAJES[1].id) setTimeout(() => setListo(true), Math.max(0, 900 - (Date.now() - t0))); };
+      const prueba = (urls) => { if (!urls.length) return fin(); const im = new Image();
+        im.onload = () => { setFondos(f => ({ ...f, [x.id]: urls[0] })); fin(); }; im.onerror = () => prueba(urls.slice(1)); im.src = urls[0]; };
       prueba([`/unidades/garaje-${x.id}.webp`, `/garaje-${x.id}.webp`]);
     });
+    const seguro = setTimeout(() => setListo(true), 5000); // por si la red va muy lenta
+    return () => clearTimeout(seguro);
   }, []);
+  useEffect(() => { if (listo) { const t = setTimeout(() => setFuera(true), 900); return () => clearTimeout(t); } }, [listo]);
   // precarga de los coches vecinos
   useEffect(() => {
     [1, -1].forEach(d => { const v = lista[(i + d + lista.length) % lista.length]; if (v) { const im = new Image(); im.src = `/unidades/${slug(v.n)}.webp`; } });
@@ -223,7 +237,14 @@ export default function UnidadesClient({ email, perfil }) {
       <div className="gj-esc-w">
         <div className="gj-esc" key={'e' + gar.id}>
           {fondos[gar.id]
-            ? <div className="gj-foto" style={{ backgroundImage: `url(${fondos[gar.id]})` }} />
+            ? <>
+                <div className="gj-foto" style={{ backgroundImage: `url(${fondos[gar.id]})` }} />
+                {/* la misma foto en modo "screen": hace parpadear los neones del techo y respirar el LED de la plataforma */}
+                <div className="gj-neon" style={{ backgroundImage: `url(${fondos[gar.id]})` }} />
+                <div className="gj-led" style={{ backgroundImage: `url(${fondos[gar.id]})`, '--cy': HALO[gar.id].cy + '%' }} />
+                {CON_TUBOS[gar.id] && <div className="tubos" aria-hidden="true"><span /><span /><span /><span /></div>}
+                <div className="halo" aria-hidden="true" style={{ top: HALO[gar.id].cy + '%', width: HALO[gar.id].w + '%', aspectRatio: `${HALO[gar.id].w * 16} / ${HALO[gar.id].h * 9}` }}><b /><i /><i /></div>
+              </>
             : <div className="gj-css" aria-hidden="true">
                 <div className="pared"><span /><span /><span /><span /><span /><span /></div>
                 <div className="suelo" />
@@ -276,6 +297,22 @@ export default function UnidadesClient({ email, perfil }) {
         ))}
       </div>
       <div className="gj-pie">Guía {REVISION} · objetivos de compra, no ofertas · ← → coche · ↑ ↓ garaje</div>
+
+      {/* ---------- pantalla de carga: puerta cerrada hasta que hay estilos y fondo ---------- */}
+      {!fuera && (
+        <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22,
+          background: 'linear-gradient(90deg, rgba(0,0,0,.55), transparent 12%, transparent 88%, rgba(0,0,0,.55)), repeating-linear-gradient(to bottom, #2b313c 0 3px, #1b2029 3px 22px, #0c0f15 22px 25px, #232832 25px 44px)',
+          borderBottom: '18px solid #0a0c11', boxShadow: '0 10px 0 #e8c26a, 0 30px 60px rgba(0,0,0,.8)',
+          transform: listo ? 'translateY(-103%)' : 'none', transition: 'transform .8s cubic-bezier(.6,0,.2,1)', pointerEvents: listo ? 'none' : 'auto' }}>
+          <style dangerouslySetInnerHTML={{ __html: '@keyframes gjCarga{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}' }} />
+          <div style={{ fontFamily: 'system-ui,sans-serif', fontSize: 'clamp(26px,5vw,64px)', fontWeight: 800, fontStyle: 'italic', textTransform: 'uppercase', letterSpacing: 4, color: '#e8c26a',
+            textShadow: '0 0 40px #e8c26a', background: 'rgba(8,10,16,.8)', padding: '14px 34px', border: '2px solid #e8c26a' }}>El garaje</div>
+          <div style={{ width: 'min(300px,60vw)', height: 4, background: 'rgba(255,255,255,.12)', overflow: 'hidden' }}>
+            <div style={{ width: '40%', height: '100%', background: '#e8c26a', boxShadow: '0 0 14px #e8c26a', animation: 'gjCarga 1.1s ease-in-out infinite' }} />
+          </div>
+          <div style={{ fontFamily: 'system-ui,sans-serif', fontSize: 11, letterSpacing: 4, textTransform: 'uppercase', color: '#aab1bf', fontWeight: 700 }}>Abriendo persiana…</div>
+        </div>
+      )}
 
       {/* ---------- persiana al cambiar de garaje ---------- */}
       <div className={'gj-persiana' + (persiana ? ' baja' : '')} aria-hidden="true"><span>{gar.rojo ? 'Zona roja' : 'Garaje ' + gar.num}</span></div>
@@ -350,6 +387,29 @@ export default function UnidadesClient({ email, perfil }) {
         .gj-vin{position:absolute;inset:0;background:
           linear-gradient(to right, rgba(4,6,10,.72) 0%, rgba(4,6,10,.2) 30%, rgba(4,6,10,0) 44%, rgba(4,6,10,0) 60%, rgba(4,6,10,.45) 82%, rgba(4,6,10,.7) 100%),
           linear-gradient(to bottom, rgba(4,6,10,.8) 0%, rgba(4,6,10,.1) 22%, rgba(4,6,10,0) 60%, rgba(4,6,10,.88) 100%);pointer-events:none}
+        /* --- luz viva sobre la foto --- */
+        .gj-neon,.gj-led{position:absolute;inset:0;background-size:100% 100%;mix-blend-mode:screen;pointer-events:none}
+        .gj-neon{filter:brightness(1.5) saturate(1.7) blur(1.5px);-webkit-mask:linear-gradient(to bottom,#000 0,#000 40%,transparent 60%);mask:linear-gradient(to bottom,#000 0,#000 40%,transparent 60%);
+          animation:neonTecho 7s linear infinite}
+        @keyframes neonTecho{0%,100%{opacity:.5}6%{opacity:.5}7%{opacity:.05}8%{opacity:.6}9.5%{opacity:.1}11%{opacity:.7}40%{opacity:.35}62%{opacity:.75}63%{opacity:.2}64%{opacity:.7}85%{opacity:.4}}
+        .gj-led{filter:brightness(1.8) saturate(1.9) blur(3px);-webkit-mask:radial-gradient(ellipse 48% 15% at 50% var(--cy),#000 45%,transparent 100%);mask:radial-gradient(ellipse 48% 15% at 50% var(--cy),#000 45%,transparent 100%);
+          animation:ledPulso 2.4s ease-in-out infinite alternate}
+        @keyframes ledPulso{from{opacity:.05}to{opacity:.95}}
+        .halo{position:absolute;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+        .halo i{position:absolute;inset:0;border-radius:50%;border:2px solid var(--ac);box-shadow:0 0 24px var(--ac),inset 0 0 24px var(--ac);opacity:0;animation:onda 3.6s ease-out infinite}
+        .halo i:last-child{animation-delay:1.8s}
+        @keyframes onda{0%{transform:scale(.9);opacity:0}14%{opacity:.75}100%{transform:scale(1.26);opacity:0}}
+        /* columna de luz que sube de la plataforma, detrás del coche */
+        .halo b{position:absolute;left:12%;right:12%;bottom:50%;height:330%;border-radius:50% 50% 0 0 / 30% 30% 0 0;filter:blur(22px);opacity:.5;
+          background:linear-gradient(to top, color-mix(in srgb, var(--ac) 55%, transparent), color-mix(in srgb, var(--ac) 12%, transparent) 55%, transparent);
+          animation:respira 4.2s ease-in-out infinite alternate}
+        @keyframes respira{from{opacity:.22;transform:scaleX(.92)}to{opacity:.6;transform:scaleX(1.04)}}
+        /* neones añadidos en el techo (en perspectiva hacia el centro) */
+        .tubos span{position:absolute;height:.55%;border-radius:6px;background:color-mix(in srgb, var(--ac) 60%, #fff);box-shadow:0 0 8px var(--ac),0 0 22px var(--ac),0 0 70px var(--ac),0 0 140px var(--ac);animation:neon 5s ease-in-out infinite}
+        .tubos span:nth-child(1){left:3%;top:5%;width:27%;transform:rotate(11deg);transform-origin:left}
+        .tubos span:nth-child(2){right:3%;top:5%;width:27%;transform:rotate(-11deg);transform-origin:right;animation-delay:-1.7s}
+        .tubos span:nth-child(3){left:14%;top:1.5%;width:19%;transform:rotate(7deg);transform-origin:left;opacity:.7;animation-delay:-3.1s}
+        .tubos span:nth-child(4){right:14%;top:1.5%;width:19%;transform:rotate(-7deg);transform-origin:right;opacity:.7;animation-delay:-.6s}
         .gj-css{position:absolute;inset:0;background:linear-gradient(#0b0f18 0%,#0d121c 56%,#04060a 56%)}
         .gj-css .pared{position:absolute;left:0;right:0;top:0;height:56%;display:flex;justify-content:space-around;padding:0 6%;
           background:repeating-linear-gradient(90deg, rgba(255,255,255,.022) 0 2px, transparent 2px 120px), linear-gradient(#070a11,#111827)}
