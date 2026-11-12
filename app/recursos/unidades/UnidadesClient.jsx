@@ -10,7 +10,7 @@
 //     el coche entra derrapando a la plataforma, con sus barras de stats.
 //   · "Analizar unidad" abre el simulador (venta, precio, compra máxima).
 //
-//  IMÁGENES (van en /public/unidades/). Si falta alguna NO se rompe nada:
+//  IMÁGENES (van en /public/ o en /public/unidades/, se buscan en los dos). Si falta alguna NO se rompe nada:
 //   · garaje-t0.webp … garaje-t3.webp, garaje-descarte.webp  → fondo
 //     (si no existe, se dibuja un garaje con CSS)
 //   · <slug>.webp → coche recortado con fondo transparente, vista 3/4
@@ -62,7 +62,7 @@ export default function UnidadesClient({ email, perfil }) {
   const [persiana, setPersiana] = useState(false);
   const [panel, setPanel] = useState(null); // null | 'sim' | 'regla'
   const [sim, setSim] = useState({ venta: '', precio: '', costes: '', objetivo: '' });
-  const [fondos, setFondos] = useState({});   // id → true si existe la imagen del garaje
+  const [fondos, setFondos] = useState({});   // id → URL de la imagen del garaje que ha cargado
   const [sinFoto, setSinFoto] = useState({}); // slug → 1 si falta la foto propia · 2 si tampoco hay la genérica
   const tiraRef = useRef(null);
   const touch = useRef(null);
@@ -72,7 +72,12 @@ export default function UnidadesClient({ email, perfil }) {
   const c = lista[i] || lista[0];
   const sl = slug(c.n);
   const acento = ACENTO[gar.id];
-  const foto = sinFoto[sl] === 1 ? `/unidades/tipo-${tipoDe(sl)}.webp` : `/unidades/${sl}.webp`;
+  // dónde buscar la foto del coche, por orden: su foto (en /unidades/ o en la raíz de public),
+  // luego el coche bajo lona de su carrocería, y si no hay nada, la silueta
+  const rutas = [`/unidades/${sl}.webp`, `/${sl}.webp`, `/unidades/tipo-${tipoDe(sl)}.webp`, `/tipo-${tipoDe(sl)}.webp`];
+  const nFoto = sinFoto[sl] || 0;
+  const foto = rutas[nFoto];
+  const falla = (src) => setSinFoto(s => (rutas[s[sl] || 0] === src ? { ...s, [sl]: (s[sl] || 0) + 1 } : s));
 
   useEffect(() => {
     document.body.classList.add('ocultar-theme-toggle');
@@ -81,7 +86,12 @@ export default function UnidadesClient({ email, perfil }) {
 
   // ¿existe la imagen de fondo de cada garaje?
   useEffect(() => {
-    GARAJES.forEach(x => { const im = new Image(); im.onload = () => setFondos(f => ({ ...f, [x.id]: true })); im.src = `/unidades/garaje-${x.id}.webp`; });
+    // se busca en /public/unidades/ y, si no está, en la raíz de /public/
+    GARAJES.forEach(x => {
+      const prueba = (urls) => { if (!urls.length) return; const im = new Image();
+        im.onload = () => setFondos(f => ({ ...f, [x.id]: urls[0] })); im.onerror = () => prueba(urls.slice(1)); im.src = urls[0]; };
+      prueba([`/unidades/garaje-${x.id}.webp`, `/garaje-${x.id}.webp`]);
+    });
   }, []);
   // precarga de los coches vecinos
   useEffect(() => {
@@ -170,7 +180,7 @@ export default function UnidadesClient({ email, perfil }) {
         const dx = e.changedTouches[0].clientX - touch.current; touch.current = null; if (Math.abs(dx) > 48) mover(dx < 0 ? 1 : -1); }}>
 
       {/* ---------- ambiente (la foto del garaje desenfocada; se ve sobre todo en móvil) ---------- */}
-      <div className="gj-bg" key={'bg' + gar.id} style={fondos[gar.id] ? { backgroundImage: `url(/unidades/garaje-${gar.id}.webp)` } : undefined} />
+      <div className="gj-bg" key={'bg' + gar.id} style={fondos[gar.id] ? { backgroundImage: `url(${fondos[gar.id]})` } : undefined} />
 
       {/* ---------- cabecera ---------- */}
       <header className="gj-top">
@@ -182,7 +192,7 @@ export default function UnidadesClient({ email, perfil }) {
           </div>
         </div>
         <div className="top-right">
-          <a href="/unidades/guia-unidades-gpso.pdf" download className="volver dl">↓ Descargar la guía</a>
+          <a href="/guia-unidades-gpso.pdf" download className="volver dl">↓ Descargar la guía</a>
           <a href="/recursos" className="volver">Recursos</a>
           <MenuDrawer perfil={perfil} email={email} />
         </div>
@@ -213,7 +223,7 @@ export default function UnidadesClient({ email, perfil }) {
       <div className="gj-esc-w">
         <div className="gj-esc" key={'e' + gar.id}>
           {fondos[gar.id]
-            ? <div className="gj-foto" style={{ backgroundImage: `url(/unidades/garaje-${gar.id}.webp)` }} />
+            ? <div className="gj-foto" style={{ backgroundImage: `url(${fondos[gar.id]})` }} />
             : <div className="gj-css" aria-hidden="true">
                 <div className="pared"><span /><span /><span /><span /><span /><span /></div>
                 <div className="suelo" />
@@ -221,12 +231,13 @@ export default function UnidadesClient({ email, perfil }) {
                 <div className="plat"><i /><b /></div>
               </div>}
           <div className={'car ' + (dir > 0 ? 'der' : 'izq')} key={g + '-' + i}>
-            {sinFoto[sl] === 2
+            {nFoto >= rutas.length
               ? <div className="silueta"><svg viewBox="0 0 640 220" aria-hidden="true"><path d="M30 165c0-22 12-34 40-38l66-10c26-36 62-58 128-60h112c52 2 92 22 124 58l72 14c26 5 38 18 38 40v14c0 8-5 13-13 13h-46a52 52 0 0 0-104 0H232a52 52 0 0 0-104 0H44c-9 0-14-5-14-14z" /><circle cx="180" cy="176" r="38" /><circle cx="499" cy="176" r="38" /></svg><span>foto pendiente · {sl}.webp</span></div>
               : <>
-                  <img className="car-img" src={foto} alt={c.m} draggable="false" onError={() => setSinFoto(s => ({ ...s, [sl]: (s[sl] || 0) + 1 }))} />
+                  <img className="car-img" src={foto} alt={c.m} draggable="false" onError={() => falla(foto)}
+                  ref={(el) => { if (el && el.complete && el.naturalWidth === 0) falla(foto); }} />
                   <img className="car-ref" src={foto} alt="" aria-hidden="true" draggable="false" />
-                  {sinFoto[sl] === 1 && <div className="lona">Por desvelar</div>}
+                  {nFoto >= 2 && <div className="lona">Por desvelar</div>}
                 </>}
             {gar.rojo && <div className="sello">No comprar<small>al precio de anuncio</small></div>}
           </div>
