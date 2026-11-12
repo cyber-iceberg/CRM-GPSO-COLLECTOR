@@ -169,17 +169,8 @@ export default function UnidadesClient({ email, perfil }) {
       onTouchEnd={(e) => { if (touch.current == null || e.target.closest('.gj-panel') || e.target.closest('.gj-tira') || e.target.closest('.gj-tabs')) return;
         const dx = e.changedTouches[0].clientX - touch.current; touch.current = null; if (Math.abs(dx) > 48) mover(dx < 0 ? 1 : -1); }}>
 
-      {/* ---------- fondo: imagen del garaje o garaje dibujado ---------- */}
-      <div className="gj-bg" key={'bg' + gar.id}>
-        {fondos[gar.id]
-          ? <div className="gj-foto" style={{ backgroundImage: `url(/unidades/garaje-${gar.id}.webp)` }} />
-          : <div className="gj-css" aria-hidden="true">
-              <div className="pared"><span /><span /><span /><span /><span /><span /></div>
-              <div className="suelo" />
-              <div className="foco" />
-            </div>}
-        <div className="gj-vin" />
-      </div>
+      {/* ---------- ambiente (la foto del garaje desenfocada; se ve sobre todo en móvil) ---------- */}
+      <div className="gj-bg" key={'bg' + gar.id} style={fondos[gar.id] ? { backgroundImage: `url(/unidades/garaje-${gar.id}.webp)` } : undefined} />
 
       {/* ---------- cabecera ---------- */}
       <header className="gj-top">
@@ -218,19 +209,29 @@ export default function UnidadesClient({ email, perfil }) {
         </div>
       </div>
 
-      {/* ---------- escenario: plataforma + coche ---------- */}
-      <div className="gj-esc">
-        <div className="plat"><i /><b /></div>
-        <div className={'car ' + (dir > 0 ? 'der' : 'izq')} key={g + '-' + i}>
-          {sinFoto[sl] === 2
-            ? <div className="silueta"><svg viewBox="0 0 640 220" aria-hidden="true"><path d="M30 165c0-22 12-34 40-38l66-10c26-36 62-58 128-60h112c52 2 92 22 124 58l72 14c26 5 38 18 38 40v14c0 8-5 13-13 13h-46a52 52 0 0 0-104 0H232a52 52 0 0 0-104 0H44c-9 0-14-5-14-14z" /><circle cx="180" cy="176" r="38" /><circle cx="499" cy="176" r="38" /></svg><span>foto pendiente · {sl}.webp</span></div>
-            : <>
-                <img className="car-img" src={foto} alt={c.m} draggable="false" onError={() => setSinFoto(s => ({ ...s, [sl]: (s[sl] || 0) + 1 }))} />
-                <img className="car-ref" src={foto} alt="" aria-hidden="true" draggable="false" />
-                {sinFoto[sl] === 1 && <div className="lona">Por desvelar</div>}
-              </>}
-          {gar.rojo && <div className="sello">No comprar<small>al precio de anuncio</small></div>}
+      {/* ---------- escenario: lienzo 16:9 (garaje + coche clavado a la plataforma) ---------- */}
+      <div className="gj-esc-w">
+        <div className="gj-esc" key={'e' + gar.id}>
+          {fondos[gar.id]
+            ? <div className="gj-foto" style={{ backgroundImage: `url(/unidades/garaje-${gar.id}.webp)` }} />
+            : <div className="gj-css" aria-hidden="true">
+                <div className="pared"><span /><span /><span /><span /><span /><span /></div>
+                <div className="suelo" />
+                <div className="foco" />
+                <div className="plat"><i /><b /></div>
+              </div>}
+          <div className={'car ' + (dir > 0 ? 'der' : 'izq')} key={g + '-' + i}>
+            {sinFoto[sl] === 2
+              ? <div className="silueta"><svg viewBox="0 0 640 220" aria-hidden="true"><path d="M30 165c0-22 12-34 40-38l66-10c26-36 62-58 128-60h112c52 2 92 22 124 58l72 14c26 5 38 18 38 40v14c0 8-5 13-13 13h-46a52 52 0 0 0-104 0H232a52 52 0 0 0-104 0H44c-9 0-14-5-14-14z" /><circle cx="180" cy="176" r="38" /><circle cx="499" cy="176" r="38" /></svg><span>foto pendiente · {sl}.webp</span></div>
+              : <>
+                  <img className="car-img" src={foto} alt={c.m} draggable="false" onError={() => setSinFoto(s => ({ ...s, [sl]: (s[sl] || 0) + 1 }))} />
+                  <img className="car-ref" src={foto} alt="" aria-hidden="true" draggable="false" />
+                  {sinFoto[sl] === 1 && <div className="lona">Por desvelar</div>}
+                </>}
+            {gar.rojo && <div className="sello">No comprar<small>al precio de anuncio</small></div>}
+          </div>
         </div>
+        <div className="gj-vin" />
         <button className="fl iz" onClick={() => mover(-1)} aria-label="Coche anterior">‹</button>
         <button className="fl de" onClick={() => mover(1)} aria-label="Coche siguiente">›</button>
       </div>
@@ -332,12 +333,12 @@ export default function UnidadesClient({ email, perfil }) {
         .gj button{font-family:inherit}
 
         /* ===== fondo ===== */
-        .gj-bg{position:absolute;inset:0;animation:gjIn .7s ease both}
+        .gj-bg{position:absolute;inset:-40px;background:#05070c center/cover no-repeat;filter:blur(26px) brightness(.38);animation:gjIn .7s ease both}
         @keyframes gjIn{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:none}}
-        .gj-foto{position:absolute;inset:0;background-size:cover;background-position:center 62%}
+        .gj-foto{position:absolute;inset:0;background-size:100% 100%}
         .gj-vin{position:absolute;inset:0;background:
-          radial-gradient(ellipse 62% 46% at 50% 66%, transparent 30%, rgba(4,6,10,.62) 100%),
-          linear-gradient(to bottom, rgba(4,6,10,.86) 0%, rgba(4,6,10,.12) 26%, rgba(4,6,10,0) 55%, rgba(4,6,10,.9) 100%)}
+          linear-gradient(to right, rgba(4,6,10,.72) 0%, rgba(4,6,10,.2) 30%, rgba(4,6,10,0) 44%, rgba(4,6,10,0) 60%, rgba(4,6,10,.45) 82%, rgba(4,6,10,.7) 100%),
+          linear-gradient(to bottom, rgba(4,6,10,.8) 0%, rgba(4,6,10,.1) 22%, rgba(4,6,10,0) 60%, rgba(4,6,10,.88) 100%);pointer-events:none}
         .gj-css{position:absolute;inset:0;background:linear-gradient(#0b0f18 0%,#0d121c 56%,#04060a 56%)}
         .gj-css .pared{position:absolute;left:0;right:0;top:0;height:56%;display:flex;justify-content:space-around;padding:0 6%;
           background:repeating-linear-gradient(90deg, rgba(255,255,255,.022) 0 2px, transparent 2px 120px), linear-gradient(#070a11,#111827)}
@@ -393,21 +394,25 @@ export default function UnidadesClient({ email, perfil }) {
         .bd.no{border-color:var(--ac);color:var(--ac)}
 
         /* ===== escenario ===== */
-        .gj-esc{position:absolute;left:0;right:0;bottom:118px;height:56%;z-index:10;pointer-events:none}
-        .plat{position:absolute;left:50%;bottom:2%;width:min(74vw,980px);aspect-ratio:5/1;transform:translateX(-50%)}
+        .gj-esc-w{position:absolute;inset:0;z-index:5;overflow:hidden;pointer-events:none}
+        /* lienzo 16:9 que cubre la pantalla: todo lo de dentro va en % de la foto, así el coche cae siempre en la plataforma */
+        .gj-esc{position:absolute;left:50%;top:50%;width:max(100vw,177.78vh);height:max(100vh,56.25vw);transform:translate(-50%,-50%);animation:escIn .7s ease both}
+        @keyframes escIn{from{opacity:0}to{opacity:1}}
+        .plat{position:absolute;left:50%;top:74%;width:64%;aspect-ratio:5/1;transform:translate(-50%,-50%)}
         .plat i{position:absolute;inset:0;border-radius:50%;background:radial-gradient(ellipse at center, color-mix(in srgb, var(--ac) 30%, transparent) 0%, rgba(0,0,0,.5) 55%, transparent 72%)}
         .plat{overflow:visible}
         .plat b{border-width:5px !important;position:absolute;left:4%;width:92%;top:50%;aspect-ratio:1;margin-top:-46%;border-radius:50%;border:2px solid var(--ac);opacity:.75;box-shadow:0 0 26px var(--ac), inset 0 0 40px color-mix(in srgb, var(--ac) 40%, transparent);
           -webkit-mask:conic-gradient(from 0deg,#000 0 12%,transparent 12% 25%,#000 25% 37%,transparent 37% 50%,#000 50% 62%,transparent 62% 75%,#000 75% 87%,transparent 87%);
           mask:conic-gradient(from 0deg,#000 0 12%,transparent 12% 25%,#000 25% 37%,transparent 37% 50%,#000 50% 62%,transparent 62% 75%,#000 75% 87%,transparent 87%);animation:giro 16s linear infinite}
         @keyframes giro{from{transform:scaleY(.19) rotate(0)}to{transform:scaleY(.19) rotate(360deg)}}
-        .car{position:absolute;left:50%;bottom:9%;width:min(58vw,820px);transform:translateX(-50%)}
+        .car{position:absolute;left:50%;bottom:25%;width:40%;transform:translateX(-50%)}
         .car.der{animation:entraD .62s cubic-bezier(.12,.85,.22,1) both}
         .car.izq{animation:entraI .62s cubic-bezier(.12,.85,.22,1) both}
         @keyframes entraD{0%{opacity:0;transform:translateX(18%) skewX(-10deg);filter:blur(14px) brightness(2)}60%{opacity:1;filter:blur(0) brightness(1.15)}100%{opacity:1;transform:translateX(-50%);filter:none}}
         @keyframes entraI{0%{opacity:0;transform:translateX(-118%) skewX(10deg);filter:blur(14px) brightness(2)}60%{opacity:1;filter:blur(0) brightness(1.15)}100%{opacity:1;transform:translateX(-50%);filter:none}}
-        .car-img{display:block;width:100%;height:auto;max-height:46vh;object-fit:contain;object-position:bottom;filter:drop-shadow(0 26px 22px rgba(0,0,0,.75))}
-        .car-ref{position:absolute;left:0;top:100%;width:100%;max-height:46vh;object-fit:contain;object-position:top;transform:scaleY(-1);opacity:.2;filter:blur(2px);
+        .car-img,.car-ref{max-height:calc(max(100vh,56.25vw) * .36)}
+        .car-img{display:block;width:100%;height:auto;object-fit:contain;object-position:bottom;filter:drop-shadow(0 18px 14px rgba(0,0,0,.8))}
+        .car-ref{position:absolute;left:0;top:97%;width:100%;object-fit:contain;object-position:top;transform:scaleY(-1);opacity:.22;filter:blur(2px);
           -webkit-mask:linear-gradient(to top,#000,transparent 55%);mask:linear-gradient(to top,#000,transparent 55%)}
         .silueta{position:relative;text-align:center;padding-bottom:6px}
         .silueta svg{width:86%;fill:#0a0d14;stroke:var(--ac);stroke-width:2;filter:drop-shadow(0 0 18px color-mix(in srgb, var(--ac) 60%, transparent))}
@@ -417,7 +422,7 @@ export default function UnidadesClient({ email, perfil }) {
           font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:2px;background:rgba(10,4,4,.55);text-align:center;line-height:1;animation:sello .35s .45s cubic-bezier(.2,1.6,.4,1) both}
         .sello small{display:block;font-size:11px;letter-spacing:2.5px;margin-top:6px;font-style:normal}
         @keyframes sello{from{opacity:0;transform:translate(-50%,-50%) rotate(-9deg) scale(2.2)}to{opacity:1;transform:translate(-50%,-50%) rotate(-9deg) scale(1)}}
-        .fl{position:absolute;top:44%;width:58px;height:92px;border:1px solid rgba(255,255,255,.2);background:rgba(8,10,16,.55);backdrop-filter:blur(6px);color:#fff;font-size:44px;line-height:1;
+        .fl{position:absolute;top:56%;width:58px;height:92px;border:1px solid rgba(255,255,255,.2);background:rgba(8,10,16,.55);backdrop-filter:blur(6px);color:#fff;font-size:44px;line-height:1;
           cursor:pointer;pointer-events:auto;transform:skewX(-12deg);transition:all .18s;padding:0 0 8px}
         .fl:hover{background:var(--ac);border-color:var(--ac);color:#05070c;box-shadow:0 0 30px color-mix(in srgb, var(--ac) 60%, transparent)}
         .fl.iz{left:26px}.fl.de{right:26px}
@@ -515,7 +520,6 @@ export default function UnidadesClient({ email, perfil }) {
         }
         @media (max-width:1180px) and (min-width:761px){
           .gj-ficha{width:290px;right:22px}.gj-rotulo{left:22px}
-          .car{width:min(50vw,820px)}
         }
 
         /* ===== móvil ===== */
@@ -530,11 +534,12 @@ export default function UnidadesClient({ email, perfil }) {
           .gj-rotulo{position:relative;left:auto;top:auto;max-width:none;padding:10px 16px 0}
           .gj-rotulo h1{font-size:44px}
           .gr-m{font-size:14px}.gr-n em{font-size:26px}
-          .gj-esc{position:relative;left:auto;right:auto;bottom:auto;height:210px;margin-top:6px}
-          .plat{width:112vw;bottom:0}
-          .car{width:84vw;bottom:12%}
-          .car-img,.car-ref{max-height:170px}
-          .fl{width:40px;height:64px;font-size:32px;top:34%}.fl.iz{left:6px}.fl.de{right:6px}
+          .gj-esc-w{position:relative;inset:auto;aspect-ratio:16/9;margin-top:8px}
+          .gj-esc{left:0;top:0;width:100%;height:100%;transform:none}
+          .gj-vin{background:linear-gradient(to bottom, rgba(4,6,10,.55), transparent 22%, transparent 80%, rgba(4,6,10,.7))}
+          .car{width:50%}
+          .car-img,.car-ref{max-height:calc(56.25vw * .5)}
+          .fl{width:36px;height:58px;font-size:30px;top:36%}.fl.iz{left:6px}.fl.de{right:6px}
           .gj-tira{position:relative;bottom:auto;padding:10px 16px;justify-content:flex-start}
           .gj-ficha{position:relative;right:auto;top:auto;width:auto;margin:4px 12px 0}
           .gj-pie{position:relative;bottom:auto;padding:14px 16px 26px;letter-spacing:1px}
