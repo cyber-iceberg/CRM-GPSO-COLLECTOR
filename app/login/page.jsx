@@ -1,7 +1,9 @@
 'use client';
 
 // =====================================================================
-//  GPSO COLLECTOR · LOGIN  ·  app/login/page.jsx  (v6)
+//  GPSO COLLECTOR · LOGIN  ·  app/login/page.jsx  (v7)
+//  v7: "¿Olvidaste tu contraseña?" → envía un enlace por email que lleva a
+//      /auth/nueva-contrasena para poner una nueva.
 //  v6: Panel de BIENVENIDA para nuevos miembros — les explica que el
 //      siguiente paso es crear cuenta y que usen el MISMO email de la
 //      formación en vídeo para que el acceso se active más rápido.
@@ -32,6 +34,7 @@ export default function LoginPage() {
 
   async function submit() {
     setError(''); setOk('');
+    if (modo === 'recuperar') return recuperar();
     if (!email || !pass) { setError('Rellena email y contraseña.'); return; }
     if (modo === 'registro' && !nombre) { setError('Dinos tu nombre.'); return; }
     setCargando(true);
@@ -57,6 +60,22 @@ export default function LoginPage() {
       setEntrando(false);
     }
   }
+  // Envía el email con el enlace para poner una contraseña nueva.
+  // Siempre muestra el mismo mensaje, exista o no la cuenta (no damos pistas).
+  async function recuperar() {
+    if (!email) { setError('Escribe el email de tu cuenta.'); return; }
+    setCargando(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/auth/nueva-contrasena`,
+    });
+    setCargando(false);
+    if (error && /rate|seconds|limit/i.test(error.message)) {
+      setError('Has pedido varios enlaces seguidos. Espera unos minutos y vuelve a intentarlo.');
+      return;
+    }
+    setOk('Si ese email tiene cuenta, te llegará un enlace para crear una contraseña nueva. Revisa también la carpeta de spam. Ábrelo en este mismo navegador.');
+  }
+
   function traducir(msg) {
     if (!msg) return 'Algo ha fallado. Inténtalo de nuevo.';
     if (msg.includes('Invalid login')) return 'Email o contraseña incorrectos.';
@@ -135,12 +154,21 @@ export default function LoginPage() {
         </div>
 
         <div style={{ padding: '18px 26px 26px' }}>
+          {modo === 'recuperar' ? (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 800, fontSize: 16, color: '#f4f4f4' }}>Recuperar contraseña</div>
+              <div style={{ fontSize: 12.5, color: 'var(--gray-mid)', marginTop: 5, lineHeight: 1.5 }}>
+                Escribe el email de tu cuenta y te enviamos un enlace para crear una contraseña nueva.
+              </div>
+            </div>
+          ) : (
           <div className="seg" style={{ display: 'flex', width: '100%', marginBottom: 18 }}>
             <button className={`seg-btn ${modo === 'login' ? 'active' : ''}`} style={{ flex: 1, justifyContent: 'center', ...(modo === 'login' ? segActivo : {}) }}
               onClick={() => { setModo('login'); setError(''); setOk(''); }}>Entrar</button>
             <button className={`seg-btn ${modo === 'registro' ? 'active' : ''}`} style={{ flex: 1, justifyContent: 'center', ...(modo === 'registro' ? segActivo : {}) }}
               onClick={() => { setModo('registro'); setError(''); setOk(''); }}>Crear cuenta</button>
           </div>
+          )}
 
           {modo === 'registro' && (
             <div style={{ marginBottom: 12 }}>
@@ -150,18 +178,25 @@ export default function LoginPage() {
           )}
           <div style={{ marginBottom: 12 }}>
             <label className="etiqueta">Email</label>
-            <input className="campo" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tucorreo@email.com" autoComplete="email" />
+            <input className="campo" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tucorreo@email.com" autoComplete="email"
+              onKeyDown={e => modo === 'recuperar' && e.key === 'Enter' && submit()} />
             {modo === 'registro' && (
               <div style={{ fontSize: 11, color: 'var(--gray-mid)', marginTop: 5, lineHeight: 1.4 }}>
                 El mismo que usaste en la formación en vídeo.
               </div>
             )}
           </div>
-          <div style={{ marginBottom: 12 }}>
+          {modo !== 'recuperar' && <div style={{ marginBottom: 12 }}>
             <label className="etiqueta">Contraseña</label>
             <input className="campo" type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="••••••••"
               autoComplete={modo === 'login' ? 'current-password' : 'new-password'} onKeyDown={e => e.key === 'Enter' && submit()} />
-          </div>
+            {modo === 'login' && (
+              <button onClick={() => { setModo('recuperar'); setError(''); setOk(''); }}
+                style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, color: '#e3c987', fontWeight: 600 }}>
+                ¿Olvidaste tu contraseña?
+              </button>
+            )}
+          </div>}
 
           {error && <div className="aviso error" style={{ marginTop: 4 }}>{error}</div>}
           {ok && <div className="aviso ok" style={{ marginTop: 4 }}>{ok}</div>}
@@ -169,9 +204,15 @@ export default function LoginPage() {
           <button className="btn-de" disabled={cargando} onClick={submit}
             style={{ width: '100%', marginTop: 16, fontSize: 14, background: GRAD_ROJO, color: '#fff' }}>
             {cargando
-              ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span className="spinner-mini" /> {modo === 'login' ? 'ENTRANDO…' : 'CREANDO…'}</span>
-              : (modo === 'login' ? 'ENTRAR' : 'CREAR CUENTA')}
+              ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span className="spinner-mini" /> {modo === 'login' ? 'ENTRANDO…' : modo === 'recuperar' ? 'ENVIANDO…' : 'CREANDO…'}</span>
+              : (modo === 'login' ? 'ENTRAR' : modo === 'recuperar' ? 'ENVIAR ENLACE' : 'CREAR CUENTA')}
           </button>
+          {modo === 'recuperar' && (
+            <button onClick={() => { setModo('login'); setError(''); setOk(''); }}
+              style={{ display: 'block', margin: '14px auto 0', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: 'var(--gray-mid)' }}>
+              ← Volver a entrar
+            </button>
+          )}
           <p style={{ fontSize: 11.5, color: 'var(--gray-mid)', textAlign: 'center', marginTop: 16, lineHeight: 1.5 }}>
             Acceso exclusivo para alumnos de la formación GPSO Collector.
           </p>
